@@ -41,6 +41,7 @@ verivision-ai/
 │   │   │   ├── security.py
 │   │   │   ├── exceptions.py
 │   │   │   ├── middleware.py
+│   │   │   ├── redis_client.py
 │   │   │   └── logging_config.py
 │   │   │
 │   │   ├── models/
@@ -257,7 +258,7 @@ verivision-ai/
 | **Day 1** | Repo create, `.gitignore`, `README.md`, `LICENSE`, `.env.example`, `Makefile`, poora folder structure banao | `requirements.txt` — sab dependencies list karo, `venv` setup karo |
 | **Day 2** | `backend/app/core/config.py` — pydantic-settings se environment variables load karo | `backend/app/core/database.py` — SQLAlchemy engine + async session setup karo |
 | **Day 3** | `backend/app/core/security.py` — JWT token creation, password hashing (bcrypt) | `backend/app/core/exceptions.py` — custom error classes banao (NotFound, Unauthorized, ValidationError, etc.) |
-| **Day 4** | `backend/app/core/middleware.py` — CORS, global error handler, request logging middleware | `backend/app/core/logging_config.py` — structured JSON logging setup karo |
+| **Day 4** | `backend/app/core/middleware.py` — CORS, global error handler, request logging middleware + `backend/app/core/redis_client.py` — Upstash Redis connection setup (rate limiting + caching) | `backend/app/core/logging_config.py` — structured JSON logging setup karo |
 | **Day 5** | `backend/app/main.py` — FastAPI app create karo, middleware attach karo, startup/shutdown events | `backend/alembic.ini` + `backend/migrations/env.py` — Alembic migration setup karo |
 | **Day 6** | Dono milke: `backend/app/core/__init__.py` + sab `__init__.py` files banao, poora core/ test karo — server start hota hai, .env load hota hai, logging kaam karta hai |
 
@@ -280,7 +281,7 @@ verivision-ai/
 
 | Day | Anil | Disha |
 |:---|:---|:---|
-| **Day 1** | `backend/app/routers/__init__.py` + `auth.py` — POST /login, POST /register, GET /me | `backend/app/shared/__init__.py` + `llm_client.py` — Ollama wrapper banao (chat + vision dono), connection test |
+| **Day 1** | `backend/app/routers/__init__.py` + `auth.py` — POST /login, POST /register, GET /me | `backend/app/shared/__init__.py` + `llm_client.py` — NVIDIA NIM wrapper banao (chat + vision dono via OpenAI SDK), connection test |
 | **Day 2** | `backend/app/routers/products.py` — CRUD endpoints for golden references (upload, list, delete, cascade sync with FAISS) | `backend/app/shared/memory.py` — Working Memory class banao (per-inspection state store) |
 | **Day 3** | `backend/app/routers/inspections.py` — POST /inspect (upload + trigger pipeline), GET /inspections (list), GET /inspections/{id} | `backend/app/shared/evidence_store.py` — Evidence Store banao (append-only, never overwrite, audit trail) |
 | **Day 4** | `backend/app/routers/reviews.py` — GET /reviews (queue), POST /reviews/{id} (submit verdict) | `backend/app/shared/tool_registry.py` — Tool Registry banao (tool name → function mapping) |
@@ -418,7 +419,7 @@ Total unique files in plan: **~120 files**
 | Category | Count | All Covered? |
 |:---|:---|:---|
 | Root config files (.gitignore, README, LICENSE, .env.example, Makefile, docker-compose.yml) | 6 | ✅ |
-| Backend Core (config, database, security, exceptions, middleware, logging, main.py) | 7 | ✅ |
+| Backend Core (config, database, security, exceptions, middleware, redis_client, logging, main.py) | 8 | ✅ |
 | Backend Models (user, product, inspection, evidence, review, analytics) | 6 | ✅ |
 | Backend Schemas (auth, product, inspection, review, report) | 5 | ✅ |
 | Backend Routers (auth, inspections, products, reviews, reports, analytics, admin) | 7 | ✅ |
