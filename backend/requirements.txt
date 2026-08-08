@@ -35,6 +35,7 @@ networkx>=3.4
 reportlab>=4.4.0
 
 redis>=6.0.0
+upstash-redis>=1.0.0
 
 structlog>=25.0.0
 prometheus-client>=0.22.0
@@ -42,5 +43,6 @@ sentry-sdk>=2.30.0
 
 pytest>=8.3.0
 pytest-asyncio>=1.0.0
+pytest-cov>=6.0.0
 
 ruff>=0.12.0
