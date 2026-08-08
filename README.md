@@ -43,12 +43,12 @@ Data Layer (PostgreSQL + FAISS + File Storage)
 | Layer | Technology |
 |:---|:---|
 | **Backend** | Python 3.11+, FastAPI, Pydantic v2, SQLAlchemy 2.0, Alembic |
-| **AI / ML** | LangGraph, Ollama (LLaMA 3, LLaVA), CLIP, FAISS, EasyOCR |
+| **AI / ML (NVIDIA NIM)** | LangGraph, NVIDIA NIM (`nemotron-3-super-120b`, `nemotron-3-nano-omni-30b`), OpenCLIP, FAISS, PaddleOCR |
 | **Computer Vision** | OpenCV, scikit-image, Pillow |
-| **Frontend** | React 18, Vite, Recharts |
-| **Database** | PostgreSQL (async via asyncpg) |
+| **Frontend** | React 18, Vite, Tailwind CSS, shadcn/ui, Recharts |
+| **Database & Caching** | PostgreSQL (async via asyncpg) / SQLite (local dev), Upstash Redis |
 | **Reports** | ReportLab (PDF generation) |
-| **DevOps** | Docker, Docker Compose |
+| **Deployment** | Vercel (Frontend), Render (Backend), Docker & Docker Compose |
 
 ---
 

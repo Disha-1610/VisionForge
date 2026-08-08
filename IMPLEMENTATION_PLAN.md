@@ -380,8 +380,8 @@ verivision-ai/
 | **Day 2** | `frontend/src/services/analyticsService.js` — analytics API calls | `frontend/src/hooks/useAuth.js` + `useInspection.js` + `useReview.js` + `useAnalytics.js` — custom hooks |
 | **Day 3** | PDF download button integrate karo, CSV export add karo | `frontend/src/utils/formatters.js` + `validators.js` + `constants.js` — utility functions |
 | **Day 4** | Responsive design fix karo (mobile + tablet), dark mode polish | UI polish — animations, transitions, loading states, empty states, error states |
-| **Day 5** | Full end-to-end testing — login se PDF download tak | `docker-compose.yml` + `backend/Dockerfile` + `frontend/Dockerfile` — Docker setup |
-| **Day 6** | `docs/architecture.md` + `docs/api_reference.md` + `docs/deployment.md` + `docs/contributing.md` | Dono milke: **PROJECT DONE** ✅ — final demo, README update, git tag v1.0.0 |
+| **Day 5** | Full end-to-end testing — login se PDF download tak | `docker-compose.yml` + `backend/Dockerfile` + `frontend/Dockerfile` + `frontend/vercel.json` (Vercel Frontend) + `backend/render.yaml` (Render Backend) — Cloud Deployment setup |
+| **Day 6** | `docs/architecture.md` + `docs/api_reference.md` + `docs/deployment.md` (Vercel + Render guide) + `docs/contributing.md` | Dono milke: **PROJECT DONE** ✅ — final demo, README update, git tag v1.0.0 |
 
 ---
 
@@ -406,7 +406,7 @@ verivision-ai/
 | **Agents** | base_agent, structural, component, connector, usage | ocr, label, material, manufacturing, vlm |
 | **Services** | embedding, review_service, analytics_service | fraud_memory, reporting_service, notification |
 | **Frontend Pages** | Login, Dashboard, NewInspection, InspectionList, InspectionDetail, HumanReview, Settings, Analytics | ProductCatalog, ROIEditor (+ all components, hooks, services) |
-| **DevOps** | Docker, Makefile, end-to-end tests | docs/, test fixtures, test suites |
+| **DevOps & Cloud** | Docker, Vercel (Frontend), Render (Backend), Makefile, end-to-end tests | docs/, test fixtures, test suites |
 
 > **Note:** Har Saturday (Day 6) dono milke code review + integration test karenge. Koi bhi stage individually test hona chahiye pehle, phir dono ka code merge hoga.
 
