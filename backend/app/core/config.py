@@ -36,10 +36,10 @@ class Settings(BaseSettings):
     RELOAD: bool = Field(default=True, description="Auto-reload on code changes")
     WORKERS: int = Field(default=1, description="Number of worker processes")
 
-    # ── Database (PostgreSQL) ────────────────────────────────────
+    # ── Database (SQLite for local dev / PostgreSQL for production) ──
     DATABASE_URL: str = Field(
-        default="postgresql+asyncpg://postgres:postgres@localhost:5432/visionforge",
-        description="Async PostgreSQL database connection URL",
+        default="sqlite+aiosqlite:///./visionforge.db",
+        description="Async database connection URL (SQLite for local dev, PostgreSQL for prod)",
     )
     DATABASE_ECHO: bool = Field(default=False, description="Echo SQL queries to log")
 
