@@ -256,7 +256,7 @@ verivision-ai/
 | Day | Anil | Disha |
 |:---|:---|:---|
 | **Day 1** | Repo create, `.gitignore`, `README.md`, `LICENSE`, `.env.example`, `Makefile`, poora folder structure banao | `requirements.txt` — sab dependencies list karo, `venv` setup karo |
-| **Day 2** | `backend/app/core/config.py` — pydantic-settings se environment variables load karo | `backend/app/core/database.py` — SQLAlchemy engine + async session setup karo |
+| **Day 2** | `backend/app/core/config.py` — pydantic-settings se environment variables load karo | `backend/app/core/database.py` — SQLAlchemy 2.0 async engine + asyncpg PostgreSQL session setup karo |
 | **Day 3** | `backend/app/core/security.py` — JWT token creation, password hashing (bcrypt) | `backend/app/core/exceptions.py` — custom error classes banao (NotFound, Unauthorized, ValidationError, etc.) |
 | **Day 4** | `backend/app/core/middleware.py` — CORS, global error handler, request logging middleware + `backend/app/core/redis_client.py` — Upstash Redis connection setup (rate limiting + caching) | `backend/app/core/logging_config.py` — structured JSON logging setup karo |
 | **Day 5** | `backend/app/main.py` — FastAPI app create karo, middleware attach karo, startup/shutdown events | `backend/alembic.ini` + `backend/migrations/env.py` — Alembic migration setup karo |
@@ -311,7 +311,7 @@ verivision-ai/
 | **Day 2** | `backend/app/pipeline/agents/structural_agent.py` — SSIM score, JET heatmap generate, anomaly regions mark | `backend/app/pipeline/agents/label_agent.py` — Template matching, QC seals, logos, stickers check |
 | **Day 3** | `backend/app/pipeline/agents/component_agent.py` — Contour detection, capacitors/ICs count, position compare, missing parts | `backend/app/pipeline/agents/material_agent.py` — Color histogram (HSV), surface texture, non-OEM material detect |
 | **Day 4** | `backend/app/pipeline/agents/connector_agent.py` — Edge detection, pins check, connector shape match, damage detect | `backend/app/pipeline/agents/manufacturing_agent.py` — Solder quality, assembly marks, manufacturing defects |
-| **Day 5** | `backend/app/pipeline/agents/usage_agent.py` — Wear patterns (scratches, discoloration, age signs) | `backend/app/pipeline/agents/vlm_agent.py` — Ollama + LLaVA visual inspection, semantic defect description |
+| **Day 5** | `backend/app/pipeline/agents/usage_agent.py` — Wear patterns (scratches, discoloration, age signs) | `backend/app/pipeline/agents/vlm_agent.py` — NVIDIA NIM Vision Model (`nvidia/nemotron-3-nano-omni-30b-a3b-reasoning`) visual inspection, semantic defect description |
 | **Day 6** | Dono milke: sab 9 agents individually test karo — sample ROI crops pe run karke evidence output verify karo |
 
 ---
