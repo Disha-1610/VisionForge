@@ -347,3 +347,150 @@ VisionForge/
 | **DevOps & Cloud** | Docker, Vercel (Frontend), Render (Backend), Makefile, end-to-end tests | CI/CD, docs/, test fixtures, test suites |
 
 > **Note:** Har Saturday (Day 6) dono milke code review + integration test karenge.
+
+---
+
+## 📈 DAY-WISE PROGRESS TRACKER
+
+> ✅ = Done | 🔄 = In Progress | ⬜ = Not Started
+>
+> Jab bhi koi task complete ho, uska checkbox `[ ]` ko `[x]` mein change kardo aur status emoji update kardo.
+
+---
+
+### ⚡ SPRINT PHASE (Aug 7 – Aug 27) — Pre-Classes
+
+| # | Date | Who | File(s) | Task Description | Status |
+|:--|:-----|:----|:--------|:-----------------|:------:|
+| 1 | Aug 7 | Anil | `.gitignore`, `README.md`, `LICENSE`, `.env.example`, `Makefile`, folder structure | [x] Project repo + folder structure setup | ✅ |
+| 2 | Aug 7 | Disha | `requirements.txt`, `venv/` | [x] Dependencies list + virtual environment | ✅ |
+| 3 | Aug 8 | Anil | `core/config.py` | [x] Pydantic-settings environment config | ✅ |
+| 4 | Aug 8 | Disha | `core/database.py` | [x] SQLAlchemy 2.0 async engine + session | ✅ |
+| 5 | Aug 9 | Anil | `core/security.py` | [x] JWT tokens + Argon2/bcrypt password hashing | ✅ |
+| 6 | Aug 9 | Disha | `core/exceptions.py` | [x] Custom HTTP error classes | ✅ |
+| 7 | Aug 10 | Anil | `core/middleware.py`, `core/redis_client.py` | [ ] CORS + error handler + request logging + Upstash Redis | ⬜ |
+| 8 | Aug 10 | Disha | `core/logging_config.py` | [ ] Structured JSON logging setup | ⬜ |
+| 9 | Aug 11 | Anil | `app/main.py` | [ ] FastAPI app + middleware attach + startup/shutdown | ⬜ |
+| 10 | Aug 11 | Disha | `alembic.ini`, `migrations/env.py` | [ ] Alembic migration setup | ⬜ |
+| 11 | Aug 12 | Anil | `models/user.py`, `models/inspection.py`, `models/review.py` | [ ] User + Inspection + HumanReview + AuditLog tables | ⬜ |
+| 12 | Aug 12 | Disha | `models/product.py`, `models/evidence.py`, `models/analytics.py` | [ ] GoldenReference + Evidence + FraudPattern + VendorScore tables | ⬜ |
+| 13 | Aug 14 | Anil | `schemas/auth.py`, `schemas/inspection.py`, `schemas/review.py` | [ ] Auth + Inspection + Review Pydantic schemas | ⬜ |
+| 14 | Aug 14 | Disha | `schemas/product.py`, `schemas/report.py` | [ ] Product + Report Pydantic schemas | ⬜ |
+| 15 | Aug 15 | Anil | `migrations/versions/001_initial_tables.py`, `routers/auth.py` | [ ] Initial migration + Auth API (login/register/me) | ⬜ |
+| 16 | Aug 15 | Disha | `shared/llm_client.py` | [ ] NVIDIA NIM wrapper (chat + vision via OpenAI SDK) | ⬜ |
+| 17 | Aug 16 | Anil | `routers/products.py` | [ ] Product CRUD endpoints (upload, list, delete, FAISS sync) | ⬜ |
+| 18 | Aug 16 | Disha | `shared/memory.py` | [ ] Working Memory class (per-inspection state) | ⬜ |
+| 19 | Aug 17 | Anil | `routers/inspections.py` | [ ] POST /inspect, GET /inspections, GET /inspections/{id} | ⬜ |
+| 20 | Aug 17 | Disha | `shared/evidence_store.py` | [ ] Append-only Evidence Store + audit trail | ⬜ |
+| 21 | Aug 18 | Anil | `routers/reviews.py`, `routers/reports.py` | [ ] Review queue + verdict submit + PDF download endpoints | ⬜ |
+| 22 | Aug 18 | Disha | `shared/tool_registry.py` | [ ] Tool Registry (tool name → function mapping) | ⬜ |
+| 23 | Aug 19 | Anil | `routers/analytics.py`, `routers/admin.py` | [ ] Dashboard data + admin settings endpoints | ⬜ |
+| 24 | Aug 19 | Disha | `shared/knowledge_graph.py` | [ ] Fraud Knowledge Graph (NetworkX based) | ⬜ |
+| 25 | Aug 21 | Anil | `pipeline/state.py` | [ ] Pipeline TypedDict state definition | ⬜ |
+| 26 | Aug 21 | Disha | `utils/image_utils.py` | [ ] Crop, resize, normalize, blur/brightness check | ⬜ |
+| 27 | Aug 22 | Anil | `pipeline/stages/quality_check.py` | [ ] Stage 1: blur, lighting, resolution, duplicate, smart resize | ⬜ |
+| 28 | Aug 22 | Disha | `utils/cv_utils.py` | [ ] OpenCV wrappers (histogram, edge, homography) | ⬜ |
+| 29 | Aug 23 | Anil | `pipeline/stages/authenticity.py` | [ ] Stage 2: ELA, EXIF, screenshot detect, noise analysis | ⬜ |
+| 30 | Aug 23 | Disha | `pipeline/stages/authenticity.py` (cont.) | [ ] Copy-move detection, lighting consistency, scoring | ⬜ |
+| 31 | Aug 24 | Anil | `services/embedding_service.py` | [ ] CLIP embedding + FAISS index build/search/delete | ⬜ |
+| 32 | Aug 24 | Disha | `utils/file_utils.py` | [ ] File I/O, path helpers, temp file cleanup | ⬜ |
+| 33 | Aug 25 | Anil | `pipeline/stages/reference_match.py` | [ ] Stage 3: FAISS search, Part ID, angle verify, ROI load | ⬜ |
+| 34 | Aug 25 | Disha | `data/roi_templates/` | [ ] 2-3 sample ROI template JSON files | ⬜ |
+| 35 | Aug 26 | Anil | `pipeline/stages/roi_scheduler.py` | [ ] Stage 4: ROI → agent mapping, crop, parallel schedule | ⬜ |
+| 36 | Aug 26 | Both | — | [ ] Stage 1-4 integration test (image upload → ROI crop) | ⬜ |
+| 37 | Aug 27 | Anil | `pipeline/agents/base_agent.py` | [ ] Abstract base class for all agents | ⬜ |
+| 38 | Aug 27 | Disha | `pipeline/agents/ocr_agent.py` | [ ] EasyOCR text extraction agent | ⬜ |
+
+---
+
+### ☕ NORMAL PHASE (Aug 28 – Oct 8) — Post-Classes
+
+| # | Date | Who | File(s) | Task Description | Status |
+|:--|:-----|:----|:--------|:-----------------|:------:|
+| 39 | Aug 28 | Anil | `pipeline/agents/structural_agent.py` | [ ] SSIM score, JET heatmap, anomaly regions | ⬜ |
+| 40 | Aug 28 | Disha | `pipeline/agents/label_agent.py` | [ ] Template matching, QC seals, logos check | ⬜ |
+| 41 | Aug 29 | Anil | `pipeline/agents/component_agent.py` | [ ] Contour detection, capacitor/IC count, missing parts | ⬜ |
+| 42 | Aug 29 | Disha | `pipeline/agents/material_agent.py` | [ ] HSV histogram, texture, non-OEM material detect | ⬜ |
+| 43 | Aug 30 | Anil | `pipeline/agents/connector_agent.py` | [ ] Edge detection, pins, connector shape, damage | ⬜ |
+| 44 | Aug 30 | Disha | `pipeline/agents/manufacturing_agent.py` | [ ] Solder quality, assembly marks, defects | ⬜ |
+| 45 | Aug 31 | Anil | `pipeline/agents/usage_agent.py` | [ ] Wear patterns, scratches, discoloration | ⬜ |
+| 46 | Aug 31 | Disha | `pipeline/agents/vlm_agent.py` | [ ] NVIDIA NIM Vision Model inspection | ⬜ |
+| 47 | Sep 1 | Anil | — | [ ] Agent testing — sample ROI crops pe verify | ⬜ |
+| 48 | Sep 1 | Disha | — | [ ] Agent testing & prompt tuning | ⬜ |
+| 49 | Sep 2 | Both | — | [ ] All 9 agents unit test + edge cases | ⬜ |
+| 50 | Sep 4 | Anil | `pipeline/stages/evidence_fusion.py` | [ ] Stage 6: multi-angle merge, confidence aggregation | ⬜ |
+| 51 | Sep 4 | Disha | `pipeline/stages/debate.py` | [ ] Stage 7: multi-agent debate, LLM prompts | ⬜ |
+| 52 | Sep 5 | Anil | `pipeline/stages/debate.py` (cont.) | [ ] Rounds logic, consensus, max rounds | ⬜ |
+| 53 | Sep 5 | Disha | `pipeline/stages/evidence_fusion.py` (cont.) | [ ] Cross-angle matching, IoU dedup | ⬜ |
+| 54 | Sep 7 | Anil | `pipeline/stages/causal_reasoning.py` | [ ] Stage 8: evidence chain, root cause, LLM narrative | ⬜ |
+| 55 | Sep 7 | Disha | `pipeline/stages/judge.py` | [ ] Stage 9: verdict (Accept/Reject/Review), confidence | ⬜ |
+| 56 | Sep 8 | Anil | `pipeline/stages/policy_engine.py` | [ ] Stage 10: configurable rules, escalation | ⬜ |
+| 57 | Sep 8 | Disha | `services/fraud_memory_service.py` | [ ] Stage 12: permanent storage, similar case search | ⬜ |
+| 58 | Sep 9 | Anil | `services/review_service.py` | [ ] Stage 11: human review logic, audit log | ⬜ |
+| 59 | Sep 9 | Disha | `services/reporting_service.py` | [ ] Stage 13: ReportLab PDF, evidence embed | ⬜ |
+| 60 | Sep 10 | Anil | `services/analytics_service.py` | [ ] Stage 14: fraud trends, vendor scores, stats | ⬜ |
+| 61 | Sep 10 | Both | — | [ ] Stage 6-14 integration test | ⬜ |
+| 62 | Sep 11 | Anil | `pipeline/workflow.py` | [ ] LangGraph StateGraph, nodes + edges | ⬜ |
+| 63 | Sep 11 | Disha | `pipeline/workflow.py` (cont.) | [ ] Conditional edges (quality fail → stop, etc.) | ⬜ |
+| 64 | Sep 12 | Anil | `routers/inspections.py` (update) | [ ] Pipeline trigger from POST /inspect | ⬜ |
+| 65 | Sep 12 | Disha | `services/notification_service.py` | [ ] Alerts (review needed, quarantine triggered) | ⬜ |
+| 66 | Sep 14 | Anil | `routers/admin.py` (update) | [ ] Threshold tuning, ROI upload, policy CRUD | ⬜ |
+| 67 | Sep 14 | Disha | `migrations/versions/002_*.py`, `003_*.py` | [ ] Evidence store + fraud memory migrations | ⬜ |
+| 68 | Sep 15 | Anil | — | [ ] Full pipeline E2E test (image → PDF report) | ⬜ |
+| 69 | Sep 15 | Disha | `tests/conftest.py` | [ ] Test fixtures + test DB setup | ⬜ |
+| 70 | Sep 16 | Anil | `tests/test_pipeline/` | [ ] Pipeline stage tests (quality, auth, ref, debate, judge, full) | ⬜ |
+| 71 | Sep 16 | Disha | `tests/test_agents/` | [ ] Agent tests (ocr, label, component, structural, vlm) | ⬜ |
+| 72 | Sep 17 | Anil | `tests/test_routers/`, `tests/test_services/` | [ ] Router + service tests | ⬜ |
+| 73 | Sep 17 | Both | — | [ ] 🏁 **BACKEND DONE** — Full demo run | ⬜ |
+| 74 | Sep 18 | Anil | `package.json`, `vite.config.js`, `index.html`, `main.jsx`, `App.jsx` | [ ] Vite + React project setup | ⬜ |
+| 75 | Sep 18 | Disha | `src/index.css` | [ ] Global styles, design system, dark mode vars | ⬜ |
+| 76 | Sep 19 | Anil | `context/AuthContext.jsx`, `context/ThemeContext.jsx`, `services/api.js` | [ ] Auth context + theme context + axios interceptors | ⬜ |
+| 77 | Sep 19 | Disha | `components/common/Button,Modal,Card,Table,Badge,Loader,Toast` | [ ] Common UI components | ⬜ |
+| 78 | Sep 21 | Anil | `pages/LoginPage.jsx` | [ ] Login/register form with JWT | ⬜ |
+| 79 | Sep 21 | Disha | `components/layout/Sidebar,Header,PageWrapper,ProtectedRoute` | [ ] Layout components | ⬜ |
+| 80 | Sep 22 | Anil | `pages/DashboardPage.jsx` | [ ] Dashboard — summary cards, recent inspections | ⬜ |
+| 81 | Sep 22 | Disha | `routes/AppRoutes.jsx` | [ ] All routes + role-based access | ⬜ |
+| 82 | Sep 23 | Anil | `pages/NewInspectionPage.jsx` | [ ] Image upload (drag-drop), metadata, pipeline trigger | ⬜ |
+| 83 | Sep 23 | Disha | `components/inspection/ImageUploader.jsx` | [ ] Drag-drop component with preview + validation | ⬜ |
+| 84 | Sep 24 | Anil | `pages/InspectionListPage.jsx` | [ ] Inspections table, filters, search, pagination | ⬜ |
+| 85 | Sep 24 | Disha | `services/authService.js`, `inspectionService.js` | [ ] API call functions | ⬜ |
+| 86 | Sep 25 | Anil | `pages/InspectionDetailPage.jsx` | [ ] Case detail, verdict banner, evidence cards, timeline | ⬜ |
+| 87 | Sep 25 | Disha | `components/inspection/ImageCompare,HeatmapOverlay` | [ ] Side-by-side viewer + heatmap overlay | ⬜ |
+| 88 | Sep 26 | Anil | `components/inspection/VerdictBanner,EvidenceCard,TimelineView` | [ ] Inspection detail sub-components | ⬜ |
+| 89 | Sep 26 | Disha | `components/review/ROIOverlay.jsx` | [ ] Bounding box display on images | ⬜ |
+| 90 | Sep 28 | Anil | `pages/HumanReviewPage.jsx` | [ ] Review workbench — approve/reject/override | ⬜ |
+| 91 | Sep 28 | Disha | `components/review/ReviewPanel,CommentBox` | [ ] Review panel + comment box | ⬜ |
+| 92 | Sep 29 | Anil | `pages/ProductCatalogPage.jsx` | [ ] Golden reference upload, list, delete, FAISS sync | ⬜ |
+| 93 | Sep 29 | Disha | `pages/ROIEditorPage.jsx` | [ ] Canvas pe ROI bounding boxes draw | ⬜ |
+| 94 | Sep 30 | Anil | `pages/SettingsPage.jsx` | [ ] Threshold tuning, policy rules, system config | ⬜ |
+| 95 | Sep 30 | Disha | `services/productService,reviewService,reportService` | [ ] API call functions | ⬜ |
+| 96 | Oct 1 | Both | — | [ ] All pages backend connect + API integration test | ⬜ |
+| 97 | Oct 2 | Anil | `pages/AnalyticsPage.jsx` | [ ] Charts layout, filters, date range picker | ⬜ |
+| 98 | Oct 2 | Disha | `components/analytics/FraudTrend,VendorRisk,DetectorAccuracy` | [ ] Analytics chart components | ⬜ |
+| 99 | Oct 3 | Anil | `services/analyticsService.js` | [ ] Analytics API calls | ⬜ |
+| 100 | Oct 3 | Disha | `hooks/useAuth,useInspection,useReview,useAnalytics` | [ ] Custom React hooks | ⬜ |
+| 101 | Oct 5 | Anil | — | [ ] PDF download button + CSV export | ⬜ |
+| 102 | Oct 5 | Disha | `utils/formatters,validators,constants` | [ ] Utility functions | ⬜ |
+| 103 | Oct 6 | Anil | — | [ ] Responsive design (mobile + tablet) + dark mode polish | ⬜ |
+| 104 | Oct 6 | Disha | — | [ ] UI polish — animations, transitions, loading/empty/error states | ⬜ |
+| 105 | Oct 7 | Anil | `vercel.json`, `render.yaml`, `docker-compose.yml`, `Dockerfile` | [ ] Cloud deployment (Vercel + Render + Docker) | ⬜ |
+| 106 | Oct 7 | Disha | `.github/workflows/ci.yml`, `docs/deployment.md` | [ ] CI/CD pipeline + deployment docs | ⬜ |
+| 107 | Oct 8 | Both | — | [ ] 🎉 **PROJECT DONE** — Final demo, README update, git tag v1.0.0 | ⬜ |
+
+---
+
+### 📊 Progress Stats
+
+| Metric | Count |
+|:---|:---|
+| **Total Tasks** | 107 |
+| **Completed** | 6 / 107 |
+| **Remaining** | 101 / 107 |
+| **Progress** | ██░░░░░░░░░░░░░░░░░░ 5.6% |
+| **Sprint Phase Tasks (Aug 7–27)** | 38 |
+| **Normal Phase Tasks (Aug 28–Oct 8)** | 69 |
+
+> **Kaise update karein?** Task complete hone pe:
+> 1. `[ ]` ko `[x]` mein change karo
+> 2. Status column mein `⬜` ko `✅` mein change karo
+> 3. Bottom mein **Completed** count update karo aur progress bar badhao
