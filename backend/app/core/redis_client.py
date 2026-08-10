@@ -2,7 +2,7 @@
 import logging
 import time
 
-from upstash_redis import AsyncRedis
+from upstash_redis import AsyncRedis  # type: ignore
 
 from app.core.config import settings
 
