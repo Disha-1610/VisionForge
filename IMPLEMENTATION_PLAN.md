@@ -41,7 +41,7 @@ VeriVision-MVP/
 │   │   ├── models/
 │   │   │   ├── user.py
 │   │   │   ├── product.py            # GoldenReference
-│   │   │   ├── inspection.py         # includes verdict + review fields
+│   │   │   ├── inspection.py         # includes verdict, review, vendor, location fields
 │   │   │   └── evidence.py
 │   │   │
 │   │   ├── schemas/
@@ -54,7 +54,8 @@ VeriVision-MVP/
 │   │   │   ├── auth.py
 │   │   │   ├── products.py           # golden reference upload
 │   │   │   ├── inspections.py        # upload + trigger pipeline + approve/override
-│   │   │   └── reports.py            # report fetch (PDF/JSON)
+│   │   │   ├── reports.py            # report fetch (PDF/JSON)
+│   │   │   └── analytics.py          # summary, by-vendor, by-location, monthly-trend
 │   │   │
 │   │   ├── pipeline/
 │   │   │   ├── workflow.py           # LangGraph — wires all 7 stages
@@ -83,7 +84,8 @@ VeriVision-MVP/
 │   │   │
 │   │   ├── services/
 │   │   │   ├── embedding_service.py  # CLIP + FAISS
-│   │   │   └── reporting_service.py
+│   │   │   ├── reporting_service.py
+│   │   │   └── analytics_service.py  # vendor/location/monthly aggregation queries
 │   │   │
 │   │   └── utils/
 │   │       ├── image_utils.py
@@ -108,18 +110,22 @@ VeriVision-MVP/
 │       ├── pages/
 │       │   ├── LoginPage.jsx
 │       │   ├── DashboardPage.jsx         # includes inspection list
-│       │   ├── NewInspectionPage.jsx
-│       │   └── InspectionDetailPage.jsx  # report + verdict + approve/override
+│       │   ├── NewInspectionPage.jsx     # captures vendor + location at intake
+│       │   ├── InspectionDetailPage.jsx  # report + verdict + approve/override
+│       │   └── AnalyticsPage.jsx         # vendor/location fraud breakdown + monthly trend
 │       │
 │       ├── components/
 │       │   ├── common/
 │       │   ├── layout/
-│       │   └── inspection/
-│       │       ├── ImageUploader.jsx
-│       │       ├── ImageCompare.jsx
-│       │       ├── ROIOverlay.jsx
-│       │       ├── EvidenceCard.jsx
-│       │       └── VerdictBanner.jsx
+│       │   ├── inspection/
+│       │   │   ├── ImageUploader.jsx
+│       │   │   ├── ImageCompare.jsx
+│       │   │   ├── ROIOverlay.jsx
+│       │   │   ├── EvidenceCard.jsx
+│       │   │   └── VerdictBanner.jsx
+│       │   └── analytics/
+│       │       ├── FraudTrendChart.jsx
+│       │       └── VendorLocationTable.jsx
 │       │
 │       ├── context/
 │       │   └── AuthContext.jsx
@@ -128,7 +134,8 @@ VeriVision-MVP/
 │       │   ├── api.js
 │       │   ├── authService.js
 │       │   ├── inspectionService.js
-│       │   └── productService.js
+│       │   ├── productService.js
+│       │   └── analyticsService.js
 │       │
 │       └── routes/
 │           └── AppRoutes.jsx
@@ -150,7 +157,7 @@ VeriVision-MVP/
 
 | Day | Anil | Disha |
 |:---|:---|:---|
-| **Day 1 (Aug 17)** | Repo create, `.gitignore`, `README.md`, folder structure, `requirements.txt` | DB models: `user.py`, `inspection.py`, `evidence.py`, `product.py` |
+| **Day 1 (Aug 17)** | Repo create, `.gitignore`, `README.md`, folder structure, `requirements.txt` | DB models: `user.py`, `inspection.py` (+ vendor, location fields), `evidence.py`, `product.py` |
 | **Day 2 (Aug 18)** | `core/security.py` — JWT token creation, password hashing (bcrypt) | `core/database.py` — async SQLAlchemy engine + Alembic init |
 | **Day 3 (Aug 19)** | `schemas/auth.py` + `schemas/inspection.py` | `schemas/product.py` + `schemas/report.py` |
 | **Day 4 (Aug 20)** | `routers/auth.py` (login/register/me) + `routers/products.py` (golden reference upload) | `routers/inspections.py` (skeleton) + `shared/evidence_store.py` |
@@ -178,7 +185,7 @@ VeriVision-MVP/
 |:---|:---|:---|
 | **Day 1 (Aug 31)** | Stage 5: `evidence_fusion.py` — multi-angle merge, confidence aggregation | Stage 6: `judge.py` — prompt design (verdict + root cause in one LLM call) |
 | **Day 2 (Sep 1)** | Stage 7: `policy_engine.py` — hardcoded rules → action | Stage 6 cont. — Judge testing/tuning on real cases |
-| **Day 3 (Sep 2)** | Report generation (PDF/JSON) integration | `services/reporting_service.py` + report schema |
+| **Day 3 (Sep 2)** | Report generation (PDF/JSON) integration + `routers/analytics.py` | `services/reporting_service.py` + report schema + `services/analytics_service.py` (vendor/location/monthly aggregation) |
 | **Day 4 (Sep 3)** | Dono milke: `pipeline/workflow.py` — wire all 7 stages via LangGraph | |
 | **Day 5 (Sep 4)** | Dono milke: curate 20–30 golden-vs-fraud test image pairs, run full pipeline, log results | |
 | **Day 6 (Sep 5)** | Dono milke: fix bugs from accuracy run, write pytest for Judge, Fusion, Reference-match | |
@@ -192,9 +199,9 @@ VeriVision-MVP/
 | **Day 1 (Sep 7)** | Frontend setup, `LoginPage.jsx`, `services/api.js` | `DashboardPage.jsx` + `NewInspectionPage.jsx` (drag-drop upload) |
 | **Day 2 (Sep 8)** | `InspectionDetailPage.jsx` — verdict banner, evidence cards | `ImageCompare.jsx` + `ROIOverlay.jsx` |
 | **Day 3 (Sep 9)** | Dono milke: connect frontend ↔ backend, integration test | |
-| **Day 4 (Sep 10)** | Approve/Override action on report page (replaces full review workflow) | UI polish, responsive fixes |
+| **Day 4 (Sep 10)** | Approve/Override action on report page (replaces full review workflow) | `AnalyticsPage.jsx` + `FraudTrendChart.jsx` + `VendorLocationTable.jsx` |
 | **Day 5 (Sep 11)** | Deploy — Vercel (frontend) + Render (backend), env config | `README.md` update, demo script prep |
-| **Day 6 (Sep 12)** | Dono milke: **MVP DONE** 🎉 — final demo rehearsal, accuracy numbers finalized for pitch | |
+| **Day 6 (Sep 12)** | Dono milke: **MVP DONE** 🎉 — final demo rehearsal, quick UI polish pass, accuracy numbers finalized for pitch | |
 
 ---
 
@@ -216,11 +223,11 @@ VeriVision-MVP/
 |:---|:---|:---|
 | **Core Setup** | security, main.py, config | database, exceptions, migrations |
 | **Models & Schemas** | user, inspection + auth/inspection schemas | product, evidence + product/report schemas |
-| **Routers & Shared** | auth, products, inspections, reports | evidence_store, llm_client, memory |
+| **Routers & Shared** | auth, products, inspections, reports, analytics | evidence_store, llm_client, memory |
 | **Pipeline Stages** | quality_check, reference_match, roi_scheduler, evidence_fusion, policy_engine | authenticity, judge |
 | **Agents** | base_agent, label, vlm | ocr, structural |
-| **Services** | embedding_service | reporting_service |
-| **Frontend** | Login, InspectionDetail, deploy (Vercel/Render) | Dashboard, NewInspection, ImageCompare/ROIOverlay |
+| **Services** | embedding_service | reporting_service, analytics_service |
+| **Frontend** | Login, InspectionDetail, deploy (Vercel/Render) | Dashboard, NewInspection, Analytics, ImageCompare/ROIOverlay |
 | **Testing** | pytest suite, workflow wiring | accuracy test set curation, bug fixes |
 
 > **Note:** Har Saturday (Day 6) dono milke code review + integration test karenge.

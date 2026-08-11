@@ -14,6 +14,7 @@
 │ • Image Upload                                                                  │
 │ • Inspection Dashboard                                                          │
 │ • Explainable Fraud Report UI (with Approve/Override action)                   │
+│ • Analytics Dashboard (vendor/location fraud breakdown, monthly trend)         │
 └───────────────────────────────┬─────────────────────────────────────────────────┘
                                 │ REST API
                                 ▼
@@ -49,6 +50,7 @@
 │  BUSINESS SERVICES                                                              │
 │                                                                                 │
 │ • Reporting Service (explainable report generation)                            │
+│ • Analytics Service (vendor/location/monthly fraud aggregation)                │
 └───────────────────────────────┬─────────────────────────────────────────────────┘
                                 ▼
 ┌───────────────────────────────────────────────────────────────────────────────┐
@@ -59,7 +61,7 @@
 │   ├── Metadata Database  (info about every golden image)                      │
 │   └── FAISS Index        (embeddings only, for similarity search)             │
 │                                                                                 │
-│ • Inspection History                                                          │
+│ • Inspection History      (tagged with vendor + location at intake)           │
 │ • Generated Reports                                                           │
 └───────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -95,6 +97,7 @@
 
 **D. Business Services**
 - Reporting Service (Human Review is a single UI action on the report, not a separate service/queue)
+- Analytics Service (vendor/location fraud breakdown, monthly trend)
 
 ---
 
@@ -236,7 +239,36 @@ else:
 
 ---
 
-## 4. Shared Services
+## 4. Analytics Dashboard (Business Service)
+
+*(Not a pipeline stage — reads from Inspection History after the fact, refreshed whenever the dashboard is opened. Runs independently of the per-inspection pipeline.)*
+
+**Data requirement**
+- Every Inspection record must capture `vendor` and `location` at intake time — entered on the New Inspection form, not inferred by the pipeline.
+
+**Rules**
+- **Total Inspections** — count of all inspections in the selected date range.
+- **Total Fraud Cases** — count where Judge verdict = Reject or Policy action = Quarantine.
+- **Fraud Rate** — fraud cases ÷ total inspections.
+- **Vendor Breakdown** — inspections, fraud count, and fraud rate grouped by vendor, sorted by fraud rate descending.
+- **Location Breakdown** — same, grouped by location/site.
+- **Monthly Fraud Trend** — fraud case count per calendar month, for trend charting.
+- **Top Offenders** — the single highest-fraud-rate vendor and the single highest-fraud-rate location, surfaced explicitly rather than buried in a sorted table.
+- Aggregation runs as direct SQL queries against the Inspection table (`GROUP BY vendor`, `GROUP BY location`, `GROUP BY month`) — no separate analytics database needed at MVP scale.
+
+**Endpoints**
+```
+GET /analytics/summary          → total inspections, total fraud, fraud rate
+GET /analytics/by-vendor        → vendor-wise breakdown, sorted by fraud rate
+GET /analytics/by-location      → location-wise breakdown, sorted by fraud rate
+GET /analytics/monthly-trend    → fraud count per month
+```
+
+**Still deferred (roadmap, not MVP):** detector-level accuracy tracking, human-override rate, tampering-trend-vs-physical-fraud split — these need history across model versions and aren't meaningful until the pipeline has been running a while.
+
+---
+
+## 5. Shared Services
 
 ### Working Memory
 - One shared memory object per inspection.
@@ -252,7 +284,7 @@ else:
 
 ---
 
-## 5. Golden Reference Repository (Data Layer)
+## 6. Golden Reference Repository (Data Layer)
 
 ```
 Admin
@@ -276,7 +308,7 @@ Generate embedding → Search FAISS → Retrieve Golden Image + Metadata → AI 
 
 ---
 
-## 6. Deferred to Roadmap (Full 14-Stage Design)
+## 7. Deferred to Roadmap (Full 14-Stage Design)
 
 These are real, designed components — just not required to prove the core pipeline works. Cutting them was a scoping decision, not a capability gap:
 
@@ -284,13 +316,13 @@ These are real, designed components — just not required to prove the core pipe
 - **Fraud Memory & Continuous Learning** — permanent storage + similarity search across historical fraud cases
 - **Fraud Knowledge Graph** — relationship graph across components, labels, OCR findings
 - **Tool Registry** — dynamic capability routing for agents
-- **Analytics Dashboard** — fraud trends, vendor risk, detector accuracy over time
+- **Richer Analytics** — detector accuracy over time, human-override rate, tampering-vs-physical-fraud split (the basic vendor/location/monthly view is now in MVP scope — see Section 4)
 - **5 additional evidence agents** — Component, Material, Connector, Manufacturing, Usage
 - **Full human review workflow** — queue, escalation rules, multi-reviewer audit trail
 
 ---
 
-## 7. MVP Success Metric
+## 8. MVP Success Metric
 
 The pipeline is considered validated when, on a curated test set of golden-vs-fraud image pairs, it produces:
 - A measured precision/recall (not a guess)
