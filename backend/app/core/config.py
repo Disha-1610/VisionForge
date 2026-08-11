@@ -1,7 +1,5 @@
-import os
 from functools import lru_cache
 from pathlib import Path
-from typing import List, Union
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -62,7 +60,7 @@ class Settings(BaseSettings):
 
     # ── CORS Settings ────────────────────────────────────────────────────────
     # CORS (Cross-Origin Resource Sharing): Browser permission to allow frontend to make API calls to backend.
-    CORS_ORIGINS: Union[str, List[str]] = Field(
+    CORS_ORIGINS: str | list[str] = Field(
         default="http://localhost:5173,http://localhost:3000",
         description="Allowed CORS origins (comma-separated or JSON list)",
     )
@@ -74,7 +72,7 @@ class Settings(BaseSettings):
     # toh ye function usko comma (,) se break karke list ['http://a.com', 'http://b.com'] bana deta hai.
     @field_validator("CORS_ORIGINS", mode="before")
     @classmethod
-    def assemble_cors_origins(cls, v: Union[str, List[str]]) -> List[str]:
+    def assemble_cors_origins(cls, v: str | list[str]) -> list[str]:
         if isinstance(v, str) and not v.startswith("["):
             return [i.strip() for i in v.split(",") if i.strip()]
         elif isinstance(v, list):
@@ -160,7 +158,7 @@ class Settings(BaseSettings):
 # @lru_cache() ka matlab: "Least Recently Used Cache".
 # Initial launch par ek baar Settings() object create hone ke baad ye function result memory mein freeze kar leta hai.
 # Jab bhi code mein get_settings() call hoga, .env file dobara parse nahi hogi — instantly cached Settings return hongi.
-@lru_cache()
+@lru_cache
 def get_settings() -> Settings:
     """
     Get cached instance of application settings.

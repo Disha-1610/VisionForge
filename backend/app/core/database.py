@@ -5,7 +5,10 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 from sqlalchemy.orm import DeclarativeBase
+
 from app.core.config import settings
+
+
 #parent class for all DB tables(models) to inherit from
 class Base(DeclarativeBase):
     pass

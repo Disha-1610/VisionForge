@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 
 
 class AppException(Exception):
@@ -9,7 +9,7 @@ class AppException(Exception):
         message: str,
         status_code: int = 500,
         code: str = "INTERNAL_SERVER_ERROR",
-        details: Optional[Any] = None,
+        details: Any | None = None,
     ):
         self.message = message
         self.status_code = status_code
@@ -36,7 +36,7 @@ class NotFoundError(AppException):
         self,
         message: str = "Resource not found",
         code: str = "NOT_FOUND",
-        details: Optional[Any] = None,
+        details: Any | None = None,
     ):
         super().__init__(
             message, status_code=404, code=code, details=details
@@ -49,7 +49,7 @@ class ValidationError(AppException):
         self,
         message: str = "Validation failed",
         code: str = "VALIDATION_ERROR",
-        details: Optional[Any] = None,
+        details: Any | None = None,
     ):
         super().__init__(
             message, status_code=422, code=code, details=details
@@ -62,7 +62,7 @@ class UnauthorizedError(AppException):
         self,
         message: str = "Unauthorized",
         code: str = "UNAUTHORIZED",
-        details: Optional[Any] = None,
+        details: Any | None = None,
     ):
         super().__init__(
             message, status_code=401, code=code, details=details
@@ -75,7 +75,7 @@ class ForbiddenError(AppException):
         self,
         message: str = "Forbidden",
         code: str = "FORBIDDEN",
-        details: Optional[Any] = None,
+        details: Any | None = None,
     ):
         super().__init__(
             message, status_code=403, code=code, details=details
@@ -88,7 +88,7 @@ class ConflictError(AppException):
         self,
         message: str = "Resource already exists",
         code: str = "CONFLICT",
-        details: Optional[Any] = None,
+        details: Any | None = None,
     ):
         super().__init__(
             message, status_code=409, code=code, details=details

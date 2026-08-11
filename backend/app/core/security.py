@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, Optional
+from typing import Any
 
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
@@ -58,8 +58,8 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 # ── JWT Token Utilities ───────────────────────────────────────────────────────
 
 def create_access_token(
-    data: Dict[str, Any],
-    expires_delta: Optional[timedelta] = None
+    data: dict[str, Any],
+    expires_delta: timedelta | None = None
 ) -> str:
     """
     Generates a signed JWT access token for user authentication.
@@ -99,8 +99,8 @@ def create_access_token(
 
 
 def create_refresh_token(
-    data: Dict[str, Any],
-    expires_delta: Optional[timedelta] = None
+    data: dict[str, Any],
+    expires_delta: timedelta | None = None
 ) -> str:
     """
     Generates a signed JWT refresh token for renewing access tokens.
@@ -134,7 +134,7 @@ def create_refresh_token(
     return encoded_jwt
 
 
-def decode_token(token: str) -> Dict[str, Any]:
+def decode_token(token: str) -> dict[str, Any]:
     """
     Decodes and validates a JWT token string.
     
@@ -163,7 +163,7 @@ def decode_token(token: str) -> Dict[str, Any]:
         )
 
 
-def get_current_user_id(token: Optional[str] = Depends(oauth2_scheme)) -> str:
+def get_current_user_id(token: str | None = Depends(oauth2_scheme)) -> str:
     """
     FastAPI dependency that extracts and validates user_id (subject claim) from bearer token.
     
@@ -192,7 +192,7 @@ def get_current_user_id(token: Optional[str] = Depends(oauth2_scheme)) -> str:
             code="INVALID_TOKEN_TYPE"
         )
 
-    user_id: Optional[str] = payload.get("sub")
+    user_id: str | None = payload.get("sub")
     if not user_id:
         raise UnauthorizedError(
             message="Token subject claim is missing",
