@@ -135,6 +135,9 @@ class Settings(BaseSettings):
     CACHE_TTL_GOLDEN_REFERENCE: int = Field(default=86400, description="TTL for golden reference cache")
     CACHE_TTL_ANALYTICS: int = Field(default=300, description="TTL for analytics summary cache")
 
+    # ── Server-Sent Events (SSE) Settings ───────────────────────────────────
+    SSE_PING_INTERVAL_SECONDS: int = Field(default=15, description="Keep-alive ping interval for SSE streams in seconds")
+
     # ── Automated Directory Creation Method ──────────────────────────────────
     # Ye method application startup par saare necessary local storage folders create karta hai.
     # mkdir(parents=True, exist_ok=True) ka matlab:

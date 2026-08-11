@@ -314,7 +314,7 @@ VisionForge/
 | Day | Anil | Disha |
 |:---|:---|:---|
 | **Day 1 (Oct 2)** | `frontend/src/pages/AnalyticsPage.jsx` — charts layout, filters, date range picker | `frontend/src/components/analytics/FraudTrendChart.jsx` + `VendorRiskTable.jsx` + `DetectorAccuracyChart.jsx` |
-| **Day 2 (Oct 3)** | `frontend/src/services/analyticsService.js` — analytics API calls | `frontend/src/hooks/useAuth.js` + `useInspection.js` + `useReview.js` + `useAnalytics.js` — custom hooks |
+| **Day 2 (Oct 3)** | `frontend/src/services/analyticsService.js` — analytics API calls | `frontend/src/hooks/useAuth.js` + `useInspection.js` + `useReview.js` + `usePipelineStream.js` (SSE stream subscriber) + `useAnalytics.js` — custom hooks |
 | **Day 3 (Oct 5)** | PDF download button integrate karo, CSV export add karo | `frontend/src/utils/formatters.js` + `validators.js` + `constants.js` — utility functions |
 | **Day 4 (Oct 6)** | Responsive design fix karo (mobile + tablet), dark mode polish | UI polish — animations, transitions, loading states, empty states, error states |
 | **Day 5 (Oct 7)** | `frontend/vercel.json` (Vercel Frontend) + `backend/render.yaml` (Render Backend) + `docker-compose.yml` Cloud Deployment setup | `.github/workflows/ci.yml` — GitHub Actions CI/CD pipeline setup + `docs/deployment.md` |
