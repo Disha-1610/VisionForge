@@ -66,9 +66,10 @@ VeriVision-MVP/
 │   │   │   │   ├── authenticity.py        # Stage 2
 │   │   │   │   ├── reference_match.py     # Stage 3
 │   │   │   │   ├── roi_scheduler.py       # Stage 4
-│   │   │   │   ├── evidence_fusion.py     # Stage 5
-│   │   │   │   ├── judge.py               # Stage 6 — verdict + root cause
-│   │   │   │   └── policy_engine.py       # Stage 7
+|   |   |   |   ├── evidence_execution.py  # Stage 5
+│   │   │   │   ├── evidence_fusion.py     # Stage 6
+│   │   │   │   ├── judge.py               # Stage 7 — verdict + root cause
+│   │   │   │   └── policy_engine.py       # Stage 8
 │   │   │   │
 │   │   │   └── agents/
 │   │   │       ├── base_agent.py
