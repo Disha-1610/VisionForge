@@ -1,6 +1,6 @@
 # VeriVision AI — MVP Pipeline Architecture
 
-> Scoped-down version of the full 14-stage design — 7 stages, 4 evidence agents. Built to validate the core reasoning pipeline (accuracy + explainability) before investing in scale features. The full 14-stage design remains the long-term roadmap.
+> Scoped MVP — 8 stages (Disha's split of ROI Scheduler vs. Evidence Execution adopted), 4 evidence agents, every tool/model on the free tier. Focus this round: **pipeline accuracy**, not feature breadth. The full 14-stage design remains the long-term roadmap.
 
 ---
 
@@ -21,24 +21,27 @@
 ┌───────────────────────────────────────────────────────────────────────────────┐
 │                         BACKEND - BUSINESS LOGIC                               │
 ├───────────────────────────────────────────────────────────────────────────────┤
-│  EXECUTION PIPELINE                                                            │
+│  EXECUTION PIPELINE  (every model below is free-tier or fully local)          │
 │                                                                                 │
 │  IMAGE INPUT (Single / Multi-angle Images)                                    │
 │                 │                                                              │
 │                 ▼                                                              │
-│  1. Image Intake & Quality Validation                                          │
+│  1. Image Intake & Quality Validation        — OpenCV (local)                 │
 │                 ▼                                                              │
-│  2. Image Authenticity Verification                                            │
+│  2. Image Authenticity Verification          — OpenCV + Pillow (local)        │
 │                 ▼                                                              │
-│  3. Reference Intelligence                                                     │
+│  3. Reference Intelligence                   — CLIP + FAISS (local)           │
 │                 ▼                                                              │
-│  4. ROI Scheduler + Specialized Evidence Agents                                │
+│  4. ROI Scheduler                            — pure logic (no model)          │
 │                 ▼                                                              │
-│  5. Multi-View Evidence Fusion                                                 │
+│  5. Evidence Execution — Specialized Agents  — EasyOCR, OpenCV,               │
+│                                                  YOLO11n, NVIDIA NIM free VLM  │
 │                 ▼                                                              │
-│  6. AI Judge  (verdict + root-cause reasoning, single pass)                    │
+│  6. Multi-View Evidence Fusion               — pure logic (no model)          │
 │                 ▼                                                              │
-│  7. Policy Engine + Explainable Report                                         │
+│  7. AI Judge (verdict + root-cause reasoning) — NVIDIA NIM free-tier LLM      │
+│                 ▼                                                              │
+│  8. Policy Engine + Explainable Report        — code + ReportLab (local)      │
 │                 ▼                                                              │
 │        Human Approve / Override (single action, not a queue)                  │
 │                                                                                 │
@@ -63,12 +66,39 @@
 │                                                                                 │
 │ • Inspection History      (tagged with vendor + location at intake)           │
 │ • Generated Reports                                                           │
+│ • YOLO Weights            (component_detector.pt — fine-tuned, self-owned)    │
 └───────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 2. Component Classification
+## 2. Tooling Stack — Free-Tier Only
+
+Every stage below runs on a free-tier API or a fully local/open-source library. No paid keys required anywhere in this pipeline.
+
+| Stage | Tool / Model | Cost | Notes |
+|:---|:---|:---|:---|
+| 1. Quality Validation | OpenCV (Laplacian blur, brightness histogram) | Free — local | No API, no rate limit |
+| 2. Authenticity Verification | OpenCV + Pillow (ELA, EXIF via `exifread`) | Free — local | No API, no rate limit |
+| 3. Reference Intelligence | CLIP (`open-clip-torch` or HF `clip-vit-base-patch32`) + FAISS | Free — local | Runs on CPU fine for MVP scale |
+| 4. ROI Scheduler | Pure Python logic | Free | No model needed |
+| 5a. OCR Agent | EasyOCR | Free — local, open-source | |
+| 5b. Label Agent | OpenCV `cv2.matchTemplate` | Free — local | |
+| 5c. Structural Agent | OpenCV SSIM + **YOLO11n (Ultralytics)** | Free — AGPL-3.0 | See Section 4, Stage 5 for detail |
+| 5d. VLM Agent | NVIDIA NIM free tier — **Nemotron Nano Omni** (vision+reasoning) | Free — rate-limited | Request-based limit (~40 RPM, unofficial), not token-capped — good for image payloads |
+| 6. Evidence Fusion | Pure math/logic | Free | No model needed |
+| 7. AI Judge | NVIDIA NIM free tier — **DeepSeek-V3.2** | Free — rate-limited | Fallback: Groq free tier (Llama 3.3 70B) |
+| 8. Policy + Report | Code + ReportLab (PDF) | Free — local | |
+| Analytics | SQL aggregation (GROUP BY) | Free | No model needed |
+
+**Two things to design around, since they're free:**
+- **Rate limits, not cost.** NVIDIA NIM's free tier is request-based (~40 requests/minute, unofficial and load-dependent) rather than token-capped — a real advantage for an image-heavy pipeline where every VLM call carries a full image payload. Still, the `llm_client.py` wrapper should retry with backoff and fall back to **Groq free tier** (Llama 3.3 70B for text, Llama 4 Scout for vision) if NVIDIA NIM is rate-limited or briefly down mid-demo.
+- **NVIDIA's trial terms** allow them to use prompts/images sent to the free endpoint to improve their models, and explicitly exclude production use. Fine for a hackathon/portfolio demo — just don't treat it as a production data-handling guarantee later.
+- **YOLO's AGPL-3.0 license requires the project to stay open-source** if you use it without an Ultralytics Enterprise license. Since this is already an open-source GitHub portfolio project, this is a non-issue — just don't fork it into a closed-source product later without revisiting the license.
+
+---
+
+## 3. Component Classification
 
 | Component | Pipeline Stage? | Shared Service? | Why? |
 | --- | --- | --- | --- |
@@ -84,12 +114,12 @@
 - Image Intake & Quality Validation — Blur Detection, Lighting Check, Resolution Check, Format Validation
 - Image Authenticity Verification — ELA, EXIF Validation, basic tamper checks
 - Reference Intelligence — CLIP Embeddings, FAISS Search, Golden Image Selection, ROI Template Loading
+- ROI Scheduler — ROI Type → Agent mapping, parallel dispatch planning
 - Multi-View Evidence Fusion — Merge detections, cross-angle matching, confidence aggregation
 - Policy Engine — configurable-in-code rules mapping verdict → action
 
 **B. AI Agent Layer**
-- ROI Scheduler — maps ROI Type → assigned agent
-- Specialized Evidence Agents — OCR, Label, Structural, VLM (4, down from 9)
+- Specialized Evidence Agents — OCR, Label, **Structural (SSIM + YOLO11n object detection)**, VLM (4, down from 9)
 - AI Judge — single LLM reasoning pass: resolves evidence, decides verdict, explains root cause (absorbs what were separately Debate + Causal Reasoning + Judge stages in the full design)
 
 **C. Shared Runtime Services**
@@ -101,13 +131,14 @@
 
 ---
 
-## 3. Pipeline Stages
+## 4. Pipeline Stages
 
 ### 1. Image Intake & Quality Validation
 *(Not an agent — fixed CV algorithms)*
+**Tool:** OpenCV — free, local, no rate limit.
 
 **Rules**
-- Check whether every uploaded image is blurry or has insufficient lighting.
+- Check whether every uploaded image is blurry (Laplacian variance) or has insufficient lighting (brightness histogram).
 - Verify image detail is sufficient for reliable inspection (serial numbers, labels, connectors, scratches must be visible).
 - Accept only supported formats (JPG, JPEG, PNG); reject corrupted files immediately.
 - Detect duplicate images and ignore repeated uploads.
@@ -119,6 +150,7 @@
 
 ### 2. Image Authenticity Verification
 *(Not an agent — deterministic image forensics)*
+**Tool:** OpenCV + Pillow (ELA, EXIF) — free, local.
 
 **Rules**
 - Run Error Level Analysis (ELA) to check whether the image has been edited.
@@ -131,6 +163,7 @@
 
 ### 3. Reference Intelligence
 *(Not an agent — embedding search + retrieval)*
+**Tool:** CLIP (open-source, local) + FAISS (open-source, local) — free, no API.
 
 **Rules**
 - Generate a CLIP embedding for every uploaded image.
@@ -142,21 +175,22 @@
 
 ---
 
-### 4. ROI Scheduler + Specialized Evidence Agents
-*(Scheduler is not an agent; the 4 evidence agents are)*
+### 4. ROI Scheduler
+*(Not an agent — pure scheduling logic, split out from Evidence Execution)*
+**Tool:** None — pure Python.
 
-**Scheduler rules**
+**Rules**
 - Read the ROI template for the matched golden reference.
 - Identify the inspection type required for each ROI (Text, Label, Structural, general visual).
 - Assign each ROI to exactly one of the 4 agents; route the same agent to multiple ROIs instead of duplicating.
-- Group same-type ROIs into a single execution batch; run independent agents in parallel.
+- Group same-type ROIs into a single execution batch.
 - Prioritize critical ROIs (serial numbers, security labels, QC seals) before non-critical ones.
-- Distribute both the **Golden ROI** and the **Inspection ROI** to the assigned agent for comparison.
+- Produce an execution plan (ROI → agent mapping) and hand it to Stage 5 — the scheduler itself does not run any model.
 
 ```
 Input: Golden Image + ROI Template + Inspection Image
         ↓
-Read ROI Template → Map ROI Type → Assigned Agent → Schedule execution
+Read ROI Template → Map ROI Type → Assigned Agent → Output execution plan
 ```
 
 | ROI Type | Agent |
@@ -166,20 +200,49 @@ Read ROI Template → Map ROI Type → Assigned Agent → Schedule execution
 | Component layout, PCB trace, physical structure | Structural Agent |
 | General visual anomaly, anything not covered above | VLM Agent |
 
-**Agent rules (all 4)**
+---
+
+### 5. Evidence Execution — Specialized Agents
+*(Agent stage — runs the execution plan produced by Stage 4, dispatches to the 4 agents in parallel)*
+
+**Execution rules**
+- Run independent agents in parallel where possible; respect the priority order from the scheduler.
+- Distribute both the **Golden ROI** and the **Inspection ROI** to the assigned agent for comparison.
 - Each agent is responsible for only its inspection domain and must not modify another agent's findings.
 - Every agent returns: Evidence, Confidence, ROI, Explanation, Processing time.
 - Agents must report failure rather than fabricate results; confidence values follow a consistent scale across agents.
 - Store all findings in the Evidence Store.
 
+**5a. OCR Agent** — `EasyOCR` (free, local). Reads serials/part numbers, diffs against expected text.
+
+**5b. Label Agent** — `cv2.matchTemplate` (free, local). Compares label/seal/logo regions against the golden template.
+
+**5c. Structural Agent — where YOLO goes** — `OpenCV SSIM` + **YOLO11n (Ultralytics, free under AGPL-3.0)**.
+
+This is the stage where object-level detection adds real accuracy, not just novelty:
+- SSIM alone gives a single holistic similarity number for a region — it's sensitive to lighting and minor alignment shifts, and it can't tell you *what* is different, only *that* something is.
+- YOLO adds a structured, per-object signal: it detects and counts individual components (capacitors, connectors, chips) in both the golden ROI and the inspection ROI, and reports **which specific component is missing, extra, or misplaced** — this is both more accurate (object presence/count is a stronger fraud signal than pixel similarity) and more explainable (the Judge and the final report can say "capacitor at position 3 is missing" instead of "structural similarity: 0.71").
+- Combine both signals: SSIM catches general structural drift, YOLO catches discrete component-level tampering. Fusion (Stage 6) weighs them together.
+
+**Getting a usable YOLO model without a paid dataset or paid compute:**
+1. Annotate 15–20 of your own golden reference images with bounding boxes for the components that matter (capacitors, connectors, chips) — Roboflow's free tier covers annotation for a project this size.
+2. Fine-tune `YOLO11n` (the nano variant — smallest, fastest, fits free compute) on that annotated set using a free Google Colab GPU session. A nano model on ~20 images trains in well under an hour.
+3. Export the weights to `data/yolo_weights/component_detector.pt` and load them locally in `structural_agent.py` — no inference API, no ongoing cost.
+4. Pretrained COCO-weights YOLO won't help here — COCO has no "capacitor" or "connector" class. The fine-tune step is what makes it useful, not the base model.
+5. License: AGPL-3.0 is free as long as the repo stays open-source, which it already is.
+
+**5d. VLM Agent** — NVIDIA NIM free tier, **Nemotron Nano Omni** (vision + reasoning + 1M context, primary), Groq free tier (Llama 4 Scout) as fallback if NVIDIA NIM is rate-limited. Catches general visual anomalies the other 3 agents aren't specifically looking for; also the fallback when a region doesn't cleanly map to OCR/Label/Structural. Nemotron Omni's combined vision+reasoning means it can return a short explanation alongside the detection, not just a raw label.
+
 ---
 
-### 5. Multi-View Evidence Fusion
+### 6. Multi-View Evidence Fusion
 *(Not an agent — mathematical aggregation)*
+**Tool:** None — pure logic.
 
 **Rules**
 - Combine evidence from all available image angles; merge duplicate findings.
 - Increase confidence when multiple angles confirm the same defect; reduce it when evidence conflicts.
+- Weigh YOLO's discrete component-level findings alongside SSIM's holistic score from the Structural Agent — don't let one silently override the other.
 - Ignore missing angles if they're optional.
 - Preserve the original per-detector confidence before fusion.
 - Record which angles contributed to each final conclusion.
@@ -187,11 +250,12 @@ Read ROI Template → Map ROI Type → Assigned Agent → Schedule execution
 
 ---
 
-### 6. AI Judge
+### 7. AI Judge
 *(Agent — single reasoning pass; absorbs Debate + Causal Reasoning + Judge from the full design)*
+**Tool:** NVIDIA NIM free tier — **DeepSeek-V3.2** (primary — 685B reasoning MoE, sparse attention, long context, agentic tools), Groq free tier (Llama 3.3 70B Versatile) as fallback if rate-limited.
 
 **Rules**
-- Read all fused evidence in one context window.
+- Read all fused evidence in one context window, including YOLO's specific component-level findings.
 - Where evidence conflicts, resolve it directly in the reasoning chain instead of running a multi-round debate — note which evidence was weighted higher and why.
 - Build a cause-and-effect explanation connecting anomalies into a coherent fraud scenario; distinguish root cause from secondary effects.
 - Reject conclusions unsupported by stored evidence; mark uncertain relationships explicitly.
@@ -201,16 +265,18 @@ Example output:
 ```
 Fraud Probability = 92%
 Confidence = 96%
-Category = Counterfeit Label
-Root Cause = Label template mismatch (95% match failure) confirmed by OCR serial mismatch
+Category = Counterfeit Component
+Root Cause = YOLO detected capacitor missing at ROI position 3 (golden: 4 detected, inspection: 3 detected),
+             confirmed by SSIM drop (0.71) in the same region
 ```
 
 > **Why merged:** a full multi-round debate loop is expensive to tune and hard to demo convincingly in a month. One well-prompted reasoning call that shows its work (which evidence it weighted, what it rejected and why) gives ~80% of the explainability value for a fraction of the engineering cost. Multi-agent debate stays on the roadmap for when the agent count and evidence volume actually need it.
 
 ---
 
-### 7. Policy Engine + Explainable Report
+### 8. Policy Engine + Explainable Report
 *(Policy is deterministic code; report generation reads the Judge's output)*
+**Tool:** Plain code + ReportLab (PDF) — free, local.
 
 **Policy rules**
 - Calculate Fraud Score, Confidence Score, Fraud Category from the Judge's output.
@@ -227,8 +293,8 @@ else:
 ```
 
 **Report rules**
-- Generate a report after every completed inspection with: Case ID, fraud score, category, evidence per agent, root-cause explanation, recommended action, authenticity verdict.
-- Display original images alongside annotated ROI overlays.
+- Generate a report after every completed inspection with: Case ID, fraud score, category, evidence per agent (including YOLO's detected/expected component counts), root-cause explanation, recommended action, authenticity verdict.
+- Display original images alongside annotated ROI overlays — including YOLO's bounding boxes.
 - Show confidence per agent/detector.
 - Generate identical reports when replaying stored evidence (reproducibility).
 
@@ -239,9 +305,10 @@ else:
 
 ---
 
-## 4. Analytics Dashboard (Business Service)
+## 5. Analytics Dashboard (Business Service)
 
 *(Not a pipeline stage — reads from Inspection History after the fact, refreshed whenever the dashboard is opened. Runs independently of the per-inspection pipeline.)*
+**Tool:** SQL aggregation — free, no model.
 
 **Data requirement**
 - Every Inspection record must capture `vendor` and `location` at intake time — entered on the New Inspection form, not inferred by the pipeline.
@@ -268,23 +335,24 @@ GET /analytics/monthly-trend    → fraud count per month
 
 ---
 
-## 5. Shared Services
+## 6. Shared Services
 
 ### Working Memory
 - One shared memory object per inspection.
 - All stages read from and write to it; no duplicated fields across stages.
 
 ### Evidence Store
-- Stores every agent's result: detector name, confidence, ROI, bounding box, timestamp.
+- Stores every agent's result: detector name, confidence, ROI, bounding box (including YOLO detections), timestamp.
 - Append-only — never overwrite existing evidence; preserves a complete audit trail for the report.
 
 ### LLM Client
-- Single wrapper around the chosen provider (chat + vision) used by the VLM Agent and the Judge.
+- Single wrapper around the chosen provider (chat + vision), used by the VLM Agent and the Judge.
+- **Primary: NVIDIA NIM free tier** (Nemotron Nano Omni for vision, DeepSeek-V3.2 for text reasoning) — request-based rate limit, no token cap, one API key covers both vision and text. **Fallback: Groq free tier** (Llama 4 Scout / Llama 3.3 70B) if NVIDIA NIM is rate-limited or down.
 - Centralizes retries, timeouts, and prompt/response logging for debugging accuracy issues.
 
 ---
 
-## 6. Golden Reference Repository (Data Layer)
+## 7. Golden Reference Repository (Data Layer)
 
 ```
 Admin
@@ -308,7 +376,7 @@ Generate embedding → Search FAISS → Retrieve Golden Image + Metadata → AI 
 
 ---
 
-## 7. Deferred to Roadmap (Full 14-Stage Design)
+## 8. Deferred to Roadmap (Full 14-Stage Design)
 
 These are real, designed components — just not required to prove the core pipeline works. Cutting them was a scoping decision, not a capability gap:
 
@@ -316,16 +384,17 @@ These are real, designed components — just not required to prove the core pipe
 - **Fraud Memory & Continuous Learning** — permanent storage + similarity search across historical fraud cases
 - **Fraud Knowledge Graph** — relationship graph across components, labels, OCR findings
 - **Tool Registry** — dynamic capability routing for agents
-- **Richer Analytics** — detector accuracy over time, human-override rate, tampering-vs-physical-fraud split (the basic vendor/location/monthly view is now in MVP scope — see Section 4)
-- **5 additional evidence agents** — Component, Material, Connector, Manufacturing, Usage
+- **Richer Analytics** — detector accuracy over time, human-override rate, tampering-vs-physical-fraud split (the basic vendor/location/monthly view is now in MVP scope — see Section 5)
+- **5 additional evidence agents** — Component, Material, Connector, Manufacturing, Usage (YOLO's component detection now covers a good chunk of what the Component agent would have done)
 - **Full human review workflow** — queue, escalation rules, multi-reviewer audit trail
+- **YOLO on Label Agent** — extending object detection to seals/logos, once the component detector proves out
 
 ---
 
-## 8. MVP Success Metric
+## 9. MVP Success Metric
 
 The pipeline is considered validated when, on a curated test set of golden-vs-fraud image pairs, it produces:
 - A measured precision/recall (not a guess)
-- At least one documented failure case with a clear explanation of why the Judge got it wrong
+- At least one documented failure case with a clear explanation of why the Judge got it wrong — and whether YOLO's component-level evidence helped or was overridden
 
 This number — not stage count — is the artifact that should anchor any explanation of this project.
