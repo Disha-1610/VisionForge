@@ -34,7 +34,7 @@
 │                 ▼                                                              │
 │  4. ROI Scheduler                            — pure logic (no model)          │
 │                 ▼                                                              │
-│  5. Evidence Execution — Specialized Agents  — EasyOCR, OpenCV,               │
+│  5. Evidence Execution — Specialized Agents  — PaddleOCR, OpenCV,               │
 │                                                  YOLO11n, NVIDIA NIM free VLM  │
 │                 ▼                                                              │
 │  6. Multi-View Evidence Fusion               — pure logic (no model)          │
@@ -82,7 +82,7 @@ Every stage below runs on a free-tier API or a fully local/open-source library. 
 | 2. Authenticity Verification | OpenCV + Pillow (ELA, EXIF via `exifread`) | Free — local | No API, no rate limit |
 | 3. Reference Intelligence | CLIP (`open-clip-torch` or HF `clip-vit-base-patch32`) + FAISS | Free — local | Runs on CPU fine for MVP scale |
 | 4. ROI Scheduler | Pure Python logic | Free | No model needed |
-| 5a. OCR Agent | EasyOCR | Free — local, open-source | |
+| 5a. OCR Agent | PaddleOCR | Free — local, open-source | |
 | 5b. Label Agent | OpenCV `cv2.matchTemplate` | Free — local | |
 | 5c. Structural Agent | OpenCV SSIM + **YOLO11n (Ultralytics)** | Free — AGPL-3.0 | See Section 4, Stage 5 for detail |
 | 5d. VLM Agent | NVIDIA NIM free tier — **Nemotron Nano Omni** (vision+reasoning) | Free — rate-limited | Request-based limit (~40 RPM, unofficial), not token-capped — good for image payloads |
@@ -213,7 +213,7 @@ Read ROI Template → Map ROI Type → Assigned Agent → Output execution plan
 - Agents must report failure rather than fabricate results; confidence values follow a consistent scale across agents.
 - Store all findings in the Evidence Store.
 
-**5a. OCR Agent** — `EasyOCR` (free, local). Reads serials/part numbers, diffs against expected text.
+**5a. OCR Agent** — `PaddleOCR` (free, local). Reads serials/part numbers, diffs against expected text.
 
 **5b. Label Agent** — `cv2.matchTemplate` (free, local). Compares label/seal/logo regions against the golden template.
 
