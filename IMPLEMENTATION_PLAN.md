@@ -250,7 +250,7 @@ VeriVision-MVP/
 | Object detection (Structural Agent) | YOLO11n, self fine-tuned, AGPL-3.0 (free — repo stays open-source) | Ultralytics Enterprise license |
 | Dataset annotation | Roboflow free tier | Paid annotation tools |
 | Model training | Google Colab free GPU (T4) | Paid Colab Pro / cloud GPU |
-| OCR | EasyOCR, local | Paid OCR APIs |
+| OCR | PaddleOCR, local | Paid OCR APIs |
 
 ---
 
