@@ -85,7 +85,7 @@ Every stage below runs on a free-tier API or a fully local/open-source library. 
 | 5a. OCR Agent | EasyOCR | Free — local, open-source | |
 | 5b. Label Agent | OpenCV `cv2.matchTemplate` | Free — local | |
 | 5c. Structural Agent | OpenCV SSIM + **YOLO11n (Ultralytics)** | Free — AGPL-3.0 | See Section 4, Stage 5 for detail |
-| 5d. VLM Agent | NVIDIA NIM free tier — **Nemotron Nano Omni** (vision+reasoning) | Free — rate-limited | Request-based limit (~40 RPM, unofficial), not token-capped — good for image payloads |
+| 5d. VLM Agent | NVIDIA NIM free tier — **Nemotron Nano Omni** (`nvidia/nemotron-3-nano-omni-30b-a3b-reasoning`, verified active) | Free — rate-limited | Request-based limit (~40 RPM, unofficial), not token-capped — good for image payloads |
 | 6. Evidence Fusion | Pure math/logic | Free | No model needed |
 | 7. AI Judge | NVIDIA NIM free tier — **DeepSeek-V3.2** | Free — rate-limited | Fallback: Groq free tier (Llama 3.3 70B) |
 | 8. Policy + Report | Code + ReportLab (PDF) | Free — local | |
@@ -231,7 +231,7 @@ This is the stage where object-level detection adds real accuracy, not just nove
 4. Pretrained COCO-weights YOLO won't help here — COCO has no "capacitor" or "connector" class. The fine-tune step is what makes it useful, not the base model.
 5. License: AGPL-3.0 is free as long as the repo stays open-source, which it already is.
 
-**5d. VLM Agent** — NVIDIA NIM free tier, **Nemotron Nano Omni** (vision + reasoning + 1M context, primary), Groq free tier (Llama 4 Scout) as fallback if NVIDIA NIM is rate-limited. Catches general visual anomalies the other 3 agents aren't specifically looking for; also the fallback when a region doesn't cleanly map to OCR/Label/Structural. Nemotron Omni's combined vision+reasoning means it can return a short explanation alongside the detection, not just a raw label.
+**5d. VLM Agent** — NVIDIA NIM free tier, **Nemotron Nano Omni** (`nvidia/nemotron-3-nano-omni-30b-a3b-reasoning`, verified active, 33B omni-modal reasoning, 262K context), Groq free tier (Llama 4 Scout / Llama 3.2 90B Vision) as fallback. Catches general visual anomalies the other 3 agents aren't specifically looking for; also the fallback when a region doesn't cleanly map to OCR/Label/Structural. Nemotron Omni's combined vision+reasoning means it can return a short explanation alongside the detection, not just a raw label.
 
 ---
 

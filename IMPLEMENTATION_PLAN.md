@@ -76,7 +76,7 @@ VeriVision-MVP/
 │   │   │       ├── ocr_agent.py           # EasyOCR, free/local
 │   │   │       ├── label_agent.py         # OpenCV template matching, free/local
 │   │   │       ├── structural_agent.py    # SSIM + YOLO11n component detection
-│   │   │       └── vlm_agent.py           # NVIDIA NIM free tier (Nemotron Nano Omni), Groq fallback
+│   │   │       └── vlm_agent.py           # NVIDIA NIM free tier (nvidia/nemotron-3-nano-omni-30b-a3b-reasoning), Groq fallback
 │   │   │
 │   │   ├── shared/
 │   │   │   ├── memory.py             # Working Memory
