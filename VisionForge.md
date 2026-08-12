@@ -82,17 +82,17 @@ Every stage below runs on a free-tier API or a fully local/open-source library. 
 | 2. Authenticity Verification | OpenCV + Pillow (ELA, EXIF via `exifread`) | Free — local | No API, no rate limit |
 | 3. Reference Intelligence | CLIP (`open-clip-torch` or HF `clip-vit-base-patch32`) + FAISS | Free — local | Runs on CPU fine for MVP scale |
 | 4. ROI Scheduler | Pure Python logic | Free | No model needed |
-| 5a. OCR Agent | EasyOCR | Free — local, open-source | |
+| 5a. OCR Agent | Primary: **PaddleOCR**, Secondary: **EasyOCR** | Free — local, open-source | High precision on tiny/stamped industrial serial numbers |
 | 5b. Label Agent | OpenCV `cv2.matchTemplate` | Free — local | |
 | 5c. Structural Agent | OpenCV SSIM + **YOLO11n (Ultralytics)** | Free — AGPL-3.0 | See Section 4, Stage 5 for detail |
-| 5d. VLM Agent | NVIDIA NIM free tier — **Nemotron Nano Omni** (`nvidia/nemotron-3-nano-omni-30b-a3b-reasoning`, verified active) | Free — rate-limited | Request-based limit (~40 RPM, unofficial), not token-capped — good for image payloads |
+| 5d. VLM Agent | Primary: NVIDIA NIM (**Nemotron Nano Omni** — `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning`, verified)<br>Secondary: Groq (**Qwen 3.6 27B Vision** — `qwen/qwen3.6-27b`, verified) | Free — rate-limited | Primary on NVIDIA NIM, auto-fallback to Groq Qwen 3.6 27B if NIM is rate-limited or down |
 | 6. Evidence Fusion | Pure math/logic | Free | No model needed |
-| 7. AI Judge | NVIDIA NIM free tier — **DeepSeek-V3.2** | Free — rate-limited | Fallback: Groq free tier (Llama 3.3 70B) |
+| 7. AI Judge | Primary: Groq (**GPT-OSS 20B** — `openai/gpt-oss-20b`, verified active & ultra-fast)<br>Secondary: NVIDIA NIM (**Nemotron Super 120B** — `nvidia/nemotron-3-super-120b-a12b`, verified reasoning) | Free — rate-limited | Primary on Groq for ultra-fast response, auto-fallback to NVIDIA NIM Nemotron Super 120B |
 | 8. Policy + Report | Code + ReportLab (PDF) | Free — local | |
 | Analytics | SQL aggregation (GROUP BY) | Free | No model needed |
 
 **Two things to design around, since they're free:**
-- **Rate limits, not cost.** NVIDIA NIM's free tier is request-based (~40 requests/minute, unofficial and load-dependent) rather than token-capped — a real advantage for an image-heavy pipeline where every VLM call carries a full image payload. Still, the `llm_client.py` wrapper should retry with backoff and fall back to **Groq free tier** (Llama 3.3 70B for text, Llama 4 Scout for vision) if NVIDIA NIM is rate-limited or briefly down mid-demo.
+- **Rate limits, not cost.** Groq & NVIDIA NIM free tiers are request-based. The `llm_client.py` wrapper retries with backoff and automatically handles primary/secondary failover (Groq `openai/gpt-oss-20b` primary for AI Judge, NVIDIA NIM `nvidia/nemotron-3-super-120b-a12b` fallback; NVIDIA NIM `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning` primary for VLM Agent, Groq `qwen/qwen3.6-27b` fallback).
 - **NVIDIA's trial terms** allow them to use prompts/images sent to the free endpoint to improve their models, and explicitly exclude production use. Fine for a hackathon/portfolio demo — just don't treat it as a production data-handling guarantee later.
 - **YOLO's AGPL-3.0 license requires the project to stay open-source** if you use it without an Ultralytics Enterprise license. Since this is already an open-source GitHub portfolio project, this is a non-issue — just don't fork it into a closed-source product later without revisiting the license.
 
@@ -207,13 +207,14 @@ Read ROI Template → Map ROI Type → Assigned Agent → Output execution plan
 
 **Execution rules**
 - Run independent agents in parallel where possible; respect the priority order from the scheduler.
-- Distribute both the **Golden ROI** and the **Inspection ROI** to the assigned agent for comparison.
+- Crop the exact bounding box regions defined in the ROI template from both the **Golden Reference Image** and **Inspection Image**.
+- Distribute only the cropped **Golden ROI** and **Inspection ROI** image pair to the assigned agent for comparison (e.g., OCR Agent receives only the small cropped text ROI, not the full image).
 - Each agent is responsible for only its inspection domain and must not modify another agent's findings.
 - Every agent returns: Evidence, Confidence, ROI, Explanation, Processing time.
 - Agents must report failure rather than fabricate results; confidence values follow a consistent scale across agents.
 - Store all findings in the Evidence Store.
 
-**5a. OCR Agent** — `EasyOCR` (free, local). Reads serials/part numbers, diffs against expected text.
+**5a. OCR Agent** — Primary: **PaddleOCR** (industrial-grade precision on tiny/stamped serials & part numbers), Secondary: **EasyOCR** (lightweight fallback). Reads serials/part numbers from cropped text ROI, diffs against expected text.
 
 **5b. Label Agent** — `cv2.matchTemplate` (free, local). Compares label/seal/logo regions against the golden template.
 
@@ -231,7 +232,7 @@ This is the stage where object-level detection adds real accuracy, not just nove
 4. Pretrained COCO-weights YOLO won't help here — COCO has no "capacitor" or "connector" class. The fine-tune step is what makes it useful, not the base model.
 5. License: AGPL-3.0 is free as long as the repo stays open-source, which it already is.
 
-**5d. VLM Agent** — NVIDIA NIM free tier, **Nemotron Nano Omni** (`nvidia/nemotron-3-nano-omni-30b-a3b-reasoning`, verified active, 33B omni-modal reasoning, 262K context), Groq free tier (Llama 4 Scout / Llama 3.2 90B Vision) as fallback. Catches general visual anomalies the other 3 agents aren't specifically looking for; also the fallback when a region doesn't cleanly map to OCR/Label/Structural. Nemotron Omni's combined vision+reasoning means it can return a short explanation alongside the detection, not just a raw label.
+**5d. VLM Agent** — Primary: NVIDIA NIM **Nemotron Nano Omni** (`nvidia/nemotron-3-nano-omni-30b-a3b-reasoning`, verified active, 33B omni-modal reasoning, 262K context). Secondary / Fallback: Groq **Qwen 3.6 27B Vision** (`qwen/qwen3.6-27b`, verified active, 27B multimodal reasoning). Catches general visual anomalies the other 3 agents aren't specifically looking for; also the fallback when a region doesn't cleanly map to OCR/Label/Structural. Combined vision+reasoning means it can return a short explanation alongside the detection, not just a raw label.
 
 ---
 
@@ -252,7 +253,7 @@ This is the stage where object-level detection adds real accuracy, not just nove
 
 ### 7. AI Judge
 *(Agent — single reasoning pass; absorbs Debate + Causal Reasoning + Judge from the full design)*
-**Tool:** NVIDIA NIM free tier — **DeepSeek-V3.2** (primary — 685B reasoning MoE, sparse attention, long context, agentic tools), Groq free tier (Llama 3.3 70B Versatile) as fallback if rate-limited.
+**Tool:** Primary: Groq free tier — **`openai/gpt-oss-20b`** (verified active & ultra-fast). Secondary / Fallback: NVIDIA NIM free tier — **`nvidia/nemotron-3-super-120b-a12b`** (124B MoE high-precision reasoning).
 
 **Rules**
 - Read all fused evidence in one context window, including YOLO's specific component-level findings.
@@ -311,7 +312,8 @@ else:
 **Tool:** SQL aggregation — free, no model.
 
 **Data requirement**
-- Every Inspection record must capture `vendor` and `location` at intake time — entered on the New Inspection form, not inferred by the pipeline.
+- Master `vendors` table (`id`, `name`, `site_name`, `code`) provides a clean predefined dropdown list for the New Inspection form (`GET /vendors`), preventing freeform typing typos.
+- Every Inspection record captures `vendor_id` and `location` at intake time.
 
 **Rules**
 - **Total Inspections** — count of all inspections in the selected date range.
@@ -319,15 +321,18 @@ else:
 - **Fraud Rate** — fraud cases ÷ total inspections.
 - **Vendor Breakdown** — inspections, fraud count, and fraud rate grouped by vendor, sorted by fraud rate descending.
 - **Location Breakdown** — same, grouped by location/site.
+- **Vendor Component-Risk Breakdown** — breakdown showing which specific fraud category/component (e.g. Counterfeit Capacitors, Label Tampering) each vendor is failing on most frequently (`GROUP BY vendor_id, fraud_category`).
 - **Monthly Fraud Trend** — fraud case count per calendar month, for trend charting.
 - **Top Offenders** — the single highest-fraud-rate vendor and the single highest-fraud-rate location, surfaced explicitly rather than buried in a sorted table.
-- Aggregation runs as direct SQL queries against the Inspection table (`GROUP BY vendor`, `GROUP BY location`, `GROUP BY month`) — no separate analytics database needed at MVP scale.
+- Aggregation runs as direct SQL queries against the `inspections` & `vendors` tables (`GROUP BY vendor_id`, `GROUP BY location`, `GROUP BY month`) — no separate analytics database needed at MVP scale.
 
 **Endpoints**
 ```
+GET /vendors                    → dropdown master list of vendors & sites
 GET /analytics/summary          → total inspections, total fraud, fraud rate
 GET /analytics/by-vendor        → vendor-wise breakdown, sorted by fraud rate
 GET /analytics/by-location      → location-wise breakdown, sorted by fraud rate
+GET /analytics/vendor-risk      → vendor x fraud component/category breakdown
 GET /analytics/monthly-trend    → fraud count per month
 ```
 
@@ -346,9 +351,10 @@ GET /analytics/monthly-trend    → fraud count per month
 - Append-only — never overwrite existing evidence; preserves a complete audit trail for the report.
 
 ### LLM Client
-- Single wrapper around the chosen provider (chat + vision), used by the VLM Agent and the Judge.
-- **Primary: NVIDIA NIM free tier** (Nemotron Nano Omni for vision, DeepSeek-V3.2 for text reasoning) — request-based rate limit, no token cap, one API key covers both vision and text. **Fallback: Groq free tier** (Llama 4 Scout / Llama 3.3 70B) if NVIDIA NIM is rate-limited or down.
-- Centralizes retries, timeouts, and prompt/response logging for debugging accuracy issues.
+- Single wrapper around the chosen provider (chat + vision), used by the VLM Agent and the AI Judge.
+- **VLM Agent Model Routing**: Primary NVIDIA NIM (`nvidia/nemotron-3-nano-omni-30b-a3b-reasoning`, verified), Secondary Groq (`qwen/qwen3.6-27b`, verified).
+- **AI Judge Model Routing**: Primary Groq (`openai/gpt-oss-20b`, verified active & sub-second response), Secondary NVIDIA NIM (`nvidia/nemotron-3-super-120b-a12b`, verified 124B MoE reasoning).
+- Centralizes retries, timeouts, primary/secondary model failover, and prompt/response logging for debugging accuracy issues.
 
 ---
 

@@ -41,18 +41,21 @@ VeriVision-MVP/
 │   │   ├── models/
 │   │   │   ├── user.py
 │   │   │   ├── product.py            # GoldenReference
-│   │   │   ├── inspection.py         # includes verdict, review, vendor, location fields
+│   │   │   ├── vendor.py             # Master Vendor & Site list (name, site_name, code)
+│   │   │   ├── inspection.py         # includes verdict, review, vendor_id, location fields
 │   │   │   └── evidence.py
 │   │   │
 │   │   ├── schemas/
 │   │   │   ├── auth.py
 │   │   │   ├── inspection.py
 │   │   │   ├── product.py
+│   │   │   ├── vendor.py             # Vendor create & response schema
 │   │   │   └── report.py
 │   │   │
 │   │   ├── routers/
 │   │   │   ├── auth.py
 │   │   │   ├── products.py           # golden reference upload
+│   │   │   ├── vendors.py            # vendor master list CRUD & dropdown endpoints
 │   │   │   ├── inspections.py        # upload + trigger pipeline + approve/override
 │   │   │   ├── reports.py            # report fetch (PDF/JSON)
 │   │   │   └── analytics.py          # summary, by-vendor, by-location, monthly-trend
@@ -68,15 +71,15 @@ VeriVision-MVP/
 │   │   │   │   ├── roi_scheduler.py       # Stage 4 — pure logic, no model
 │   │   │   │   ├── evidence_execution.py  # Stage 5 — runs the 4 agents
 │   │   │   │   ├── evidence_fusion.py     # Stage 6 — pure logic, no model
-│   │   │   │   ├── judge.py               # Stage 7 — NVIDIA NIM free tier (DeepSeek-V3.2), Groq fallback
+│   │   │   │   ├── judge.py               # Stage 7 — Primary: Groq (openai/gpt-oss-20b), Secondary: NVIDIA NIM (Nemotron Super 120B)
 │   │   │   │   └── policy_engine.py       # Stage 8 — code + ReportLab
 │   │   │   │
 │   │   │   └── agents/
 │   │   │       ├── base_agent.py
-│   │   │       ├── ocr_agent.py           # EasyOCR, free/local
+│   │   │       ├── ocr_agent.py           # Primary: PaddleOCR, Secondary: EasyOCR (free/local)
 │   │   │       ├── label_agent.py         # OpenCV template matching, free/local
 │   │   │       ├── structural_agent.py    # SSIM + YOLO11n component detection
-│   │   │       └── vlm_agent.py           # NVIDIA NIM free tier (nvidia/nemotron-3-nano-omni-30b-a3b-reasoning), Groq fallback
+│   │   │       └── vlm_agent.py           # Primary: NVIDIA NIM (Nemotron Nano Omni), Secondary: Groq (qwen/qwen3.6-27b)
 │   │   │
 │   │   ├── shared/
 │   │   │   ├── memory.py             # Working Memory
@@ -160,10 +163,10 @@ VeriVision-MVP/
 
 | Day | Anil | Disha |
 |:---|:---|:---|
-| **Day 1 (Aug 17)** | Repo create, `.gitignore`, `README.md`, folder structure, `requirements.txt` | DB models: `user.py`, `inspection.py` (+ vendor, location fields), `evidence.py`, `product.py` |
+| **Day 1 (Aug 17)** | Repo create, `.gitignore`, `README.md`, folder structure, `requirements.txt` | DB models: `user.py`, `product.py`, `vendor.py` (Master Vendor & Site list), `inspection.py`, `evidence.py` |
 | **Day 2 (Aug 18)** | `core/security.py` — JWT token creation, password hashing (bcrypt) | `core/database.py` — async SQLAlchemy engine + Alembic init |
-| **Day 3 (Aug 19)** | `schemas/auth.py` + `schemas/inspection.py` | `schemas/product.py` + `schemas/report.py` |
-| **Day 4 (Aug 20)** | `routers/auth.py` (login/register/me) + `routers/products.py` (golden reference upload) | `routers/inspections.py` (skeleton) + `shared/evidence_store.py` |
+| **Day 3 (Aug 19)** | `schemas/auth.py` + `schemas/inspection.py` | `schemas/product.py` + `schemas/vendor.py` + `schemas/report.py` |
+| **Day 4 (Aug 20)** | `routers/auth.py` (login/register/me) + `routers/products.py` + `routers/vendors.py` (vendor master list CRUD & dropdowns) | `routers/inspections.py` (skeleton) + `shared/evidence_store.py` |
 | **Day 5 (Aug 21)** | `services/embedding_service.py` — CLIP + FAISS setup (local, free) | `shared/llm_client.py` — NVIDIA NIM wrapper + Groq free-tier fallback, `shared/memory.py` (working memory) |
 | **Day 6 (Aug 22)** | Dono milke: auth + golden-reference upload flow end-to-end test | |
 
@@ -175,7 +178,7 @@ VeriVision-MVP/
 |:---|:---|:---|
 | **Day 1 (Aug 24)** | Stage 1: `quality_check.py` — blur, lighting, format, resolution | Stage 2: `authenticity.py` — ELA, EXIF, basic tamper checks |
 | **Day 2 (Aug 25)** | Stage 3: `reference_match.py` — FAISS search + ROI template loading | `data/roi_templates/` sample JSONs (2–3 parts) + `utils/image_utils.py` + **start YOLO dataset: annotate 15–20 golden images (capacitors, connectors, chips) on Roboflow free tier** |
-| **Day 3 (Aug 26)** | Stage 4: `roi_scheduler.py` — ROI→agent mapping, execution plan | Stage 5: `evidence_execution.py` — runs the execution plan against the 4 agents + `agents/base_agent.py` + `agents/ocr_agent.py` |
+| **Day 3 (Aug 26)** | Stage 4: `roi_scheduler.py` — crop exact ROI bbox regions from Golden & Inspection images, map ROI type to agent, output execution plan | Stage 5: `evidence_execution.py` — pass cropped ROI image pairs to 4 agents + `agents/base_agent.py` + `agents/ocr_agent.py` |
 | **Day 4 (Aug 27)** | `agents/label_agent.py` — template matching, seals, logos | `agents/structural_agent.py` — SSIM baseline + **finish YOLO annotation, fine-tune YOLO11n on free Colab GPU (nano model, <1hr on 20 images)** |
 | **Day 5 (Aug 28)** | `agents/vlm_agent.py` — NVIDIA NIM free tier, Nemotron Nano Omni (vision+reasoning) | **Export YOLO weights to `data/yolo_weights/component_detector.pt`, integrate into `structural_agent.py`** — component count/presence comparison |
 | **Day 6 (Aug 29)** | Dono milke: test Stages 1–5 end-to-end — upload → ROI evidence, verify YOLO detections on sample crops | |
