@@ -109,6 +109,12 @@ class Settings(BaseSettings):
     NVIDIA_NIM_TEMPERATURE: float = Field(default=0.6, description="Sampling temperature")
     NVIDIA_NIM_TOP_P: float = Field(default=0.95, description="Nucleus sampling top_p")
 
+    # ── Groq Free Tier Fallback Configs (Optional) ───────────────────────────
+    GROQ_API_KEY: str = Field(default="", description="Optional Groq API key for fallback")
+    GROQ_BASE_URL: str = Field(default="https://api.groq.com/openai/v1", description="Groq API base URL")
+    GROQ_CHAT_MODEL: str = Field(default="llama-3.3-70b-versatile", description="Groq fallback text LLM model")
+    GROQ_VISION_MODEL: str = Field(default="llama-3.2-90b-vision-preview", description="Groq fallback vision LLM model")
+
     # ── Inspection Pipeline Thresholds ──────────────────────────────────────
     # Fixed thresholds jo computer vision stages decide karte hain
     QUALITY_BLUR_THRESHOLD: float = Field(default=100.0, description="OpenCV Laplacian variance blur detection threshold")
