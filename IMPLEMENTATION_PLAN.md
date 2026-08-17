@@ -3,7 +3,7 @@
 > **Team:** Anil + Disha  
 > **Start:** 17 August 2026  
 > **Target End:** 30 September 2026 (6.5 weeks)  
-> **Strategy:** Extended MVP — Full 8-stage pipeline with 4 evidence agents, YOLO fine-tuning, analytics dashboard, and robust frontend. Every tool/model remains free-tier or fully local. Focus is pipeline accuracy, explainable reports, and a polished demo-ready application.  
+> **Strategy:** Extended MVP — Full 8-stage pipeline with 4 evidence agents, YOLO fine-tuning, analytics dashboard, and a 7-page frontend (Landing, Login, Dashboard, New Inspection, Inspection Detail, Reports, Analytics). Every tool/model remains free-tier or fully local. Focus is pipeline accuracy, explainable reports, and a polished demo-ready application.  
 > **Rule:** Backend first → Frontend → Deploy  
 > **Days:** Monday–Saturday (6 days/week)
 
@@ -147,13 +147,18 @@ VeriVision-MVP/
 │       ├── index.css
 │       │
 │       ├── pages/
+│       │   ├── LandingPage.jsx       # public — hero, how-it-works, CTA
 │       │   ├── LoginPage.jsx
 │       │   ├── DashboardPage.jsx
 │       │   ├── NewInspectionPage.jsx
 │       │   ├── InspectionDetailPage.jsx
+│       │   ├── ReportsPage.jsx       # filterable archive of all reports
 │       │   └── AnalyticsPage.jsx
 │       │
 │       ├── components/
+│       │   ├── landing/
+│       │   │   ├── HeroSection.jsx
+│       │   │   └── HowItWorks.jsx
 │       │   ├── common/
 │       │   │   ├── LoadingSpinner.jsx
 │       │   │   ├── ErrorBoundary.jsx
@@ -168,9 +173,13 @@ VeriVision-MVP/
 │       │   │   ├── ROIOverlay.jsx
 │       │   │   ├── EvidenceCard.jsx
 │       │   │   └── VerdictBanner.jsx
+│       │   ├── reports/
+│       │   │   ├── ReportsTable.jsx
+│       │   │   └── ReportFilters.jsx
 │       │   └── analytics/
 │       │       ├── FraudTrendChart.jsx
 │       │       ├── VendorLocationTable.jsx
+│       │       ├── VendorRiskTable.jsx
 │       │       └── SummaryCards.jsx
 │       │
 │       ├── context/
@@ -182,6 +191,7 @@ VeriVision-MVP/
 │       │   ├── authService.js
 │       │   ├── inspectionService.js
 │       │   ├── productService.js
+│       │   ├── reportsService.js
 │       │   └── analyticsService.js
 │       │
 │       ├── hooks/
@@ -265,29 +275,29 @@ VeriVision-MVP/
 
 ---
 
-## 🗓️ Week 5 (Sep 14–19) — Frontend Core Pages + Integration
+## 🗓️ Week 5 (Sep 14–19) — Frontend Core Pages + Landing + Integration
 
 | Day | Anil | Disha |
 |:---|:---|:---|
-| **Day 1 (Sep 14)** | Frontend setup: Vite + React, package.json, routing (React Router), Tailwind CSS configuration | `services/api.js` — Axios setup with interceptors for auth, error handling; `context/AuthContext.jsx` |
-| **Day 2 (Sep 15)** | `pages/LoginPage.jsx` — Login/Register forms with validation | `pages/DashboardPage.jsx` — Inspection list with pagination, filters, status badges; `components/common/` (LoadingSpinner, ErrorBoundary) |
-| **Day 3 (Sep 16)** | `pages/NewInspectionPage.jsx` — Drag-drop upload, vendor + location dropdown selection, golden reference selection, multi-image support | `components/inspection/ImageUploader.jsx` — Drag-drop zone with previews, progress indicator |
-| **Day 4 (Sep 17)** | `pages/InspectionDetailPage.jsx` — Verdict banner, evidence cards, ROI overlays, approve/override actions | `components/inspection/ImageCompare.jsx` — Side-by-side comparison (golden vs inspection) with zoom; `components/inspection/EvidenceCard.jsx` |
-| **Day 5 (Sep 18)** | `components/inspection/ROIOverlay.jsx` — Render YOLO bounding boxes on images, crop visualization | `components/inspection/VerdictBanner.jsx` — Highlighted verdict display with fraud probability, confidence, category |
-| **Day 6 (Sep 19)** | **Integration Day** — Connect all frontend pages to backend APIs, test upload → pipeline trigger → results display flow | **Integration Day** — UI polish, responsiveness fixes, loading states, error messages |
+| **Day 1 (Sep 14)** | Frontend setup: Vite + React, package.json, routing (React Router — public routes `/`, `/login`; protected routes for the rest), Tailwind CSS configuration | `services/api.js` — Axios setup with interceptors for auth, error handling; `context/AuthContext.jsx` |
+| **Day 2 (Sep 15)** | `pages/LandingPage.jsx` + `components/landing/HeroSection.jsx` + `components/landing/HowItWorks.jsx` (4-step pipeline teaser), CTA to Login | `pages/LoginPage.jsx` — Login/Register forms with validation; `components/common/` (LoadingSpinner, ErrorBoundary, Pagination) |
+| **Day 3 (Sep 16)** | `pages/DashboardPage.jsx` — summary cards, recent inspections feed, "+ New Inspection" CTA | `pages/NewInspectionPage.jsx` — Drag-drop upload, vendor dropdown (`GET /vendors`) + inline add, location field, multi-image support |
+| **Day 4 (Sep 17)** | `pages/InspectionDetailPage.jsx` — Verdict banner, evidence cards, approve/override actions | `components/inspection/ImageUploader.jsx` + `components/inspection/ImageCompare.jsx` — drag-drop zone + side-by-side comparison with zoom |
+| **Day 5 (Sep 18)** | `components/inspection/ROIOverlay.jsx` — Render YOLO bounding boxes on images, crop visualization | `components/inspection/EvidenceCard.jsx` + `components/inspection/VerdictBanner.jsx` — fraud probability, confidence, category |
+| **Day 6 (Sep 19)** | **Integration Day** — Connect Landing → Login → Dashboard → New Inspection → Inspection Detail flow end-to-end | **Integration Day** — UI polish, responsiveness fixes, loading states, error messages |
 
 ---
 
-## 🗓️ Week 6 (Sep 21–26) — Analytics + Advanced Frontend + Polish
+## 🗓️ Week 6 (Sep 21–26) — Reports + Analytics + Polish
 
 | Day | Anil | Disha |
 |:---|:---|:---|
-| **Day 1 (Sep 21)** | `pages/AnalyticsPage.jsx` — Summary cards layout, integration with analytics endpoints | `components/analytics/SummaryCards.jsx` — Fraud rate, total inspections, fraud cases, top offender displays |
-| **Day 2 (Sep 22)** | `components/analytics/FraudTrendChart.jsx` — Monthly trend chart (Recharts/Chart.js) with interactive tooltips | `components/analytics/VendorLocationTable.jsx` — Vendor breakdown, location breakdown, vendor-component risk tables with sorting |
-| **Day 3 (Sep 23)** | **Advanced Features** — Export report as PDF from frontend, download button | **Advanced Features** — Inspection history filters (date range, vendor, verdict), search functionality |
-| **Day 4 (Sep 24)** | **Performance Optimization** — Code splitting, lazy loading, memoization for components | **Testing** — Frontend unit tests (Jest + React Testing Library), integration tests for critical paths |
-| **Day 5 (Sep 25)** | **Backend Refinements** — Add caching for analytics queries, optimize embeddings (precompute batch), improve error handling in pipeline | **Backend Refinements** — Add comprehensive logging (request IDs, pipeline steps, agent execution), improve LLM client retry logic |
-| **Day 6 (Sep 26)** | **Integration Day** — Full end-to-end test: login → upload → pipeline → report → analytics with realistic data | **Integration Day** — UI/UX final polish, dark mode toggle, mobile responsiveness, accessibility improvements |
+| **Day 1 (Sep 21)** | `pages/ReportsPage.jsx` — filterable archive of all reports, links to Inspection Detail | `components/reports/ReportFilters.jsx` (date range, vendor, location, verdict, category) + `components/reports/ReportsTable.jsx` |
+| **Day 2 (Sep 22)** | `pages/AnalyticsPage.jsx` — Summary cards layout, integration with analytics endpoints | `components/analytics/SummaryCards.jsx` — Fraud rate, total inspections, fraud cases, top offender displays |
+| **Day 3 (Sep 23)** | `components/analytics/FraudTrendChart.jsx` — Monthly trend chart (Recharts/Chart.js) with interactive tooltips | `components/analytics/VendorLocationTable.jsx` + `components/analytics/VendorRiskTable.jsx` (vendor × fraud-category breakdown, matches `/analytics/vendor-risk`) |
+| **Day 4 (Sep 24)** | **Advanced Features** — Export report as PDF/CSV from Reports page and Inspection Detail | **Testing** — Frontend unit tests (Jest + React Testing Library), integration tests for critical paths |
+| **Day 5 (Sep 25)** | **Performance Optimization** — Code splitting, lazy loading, memoization for components | **Backend Refinements** — Add comprehensive logging (request IDs, pipeline steps, agent execution), improve LLM client retry logic |
+| **Day 6 (Sep 26)** | **Integration Day** — Full end-to-end test: landing → login → upload → pipeline → report → analytics with realistic data | **Integration Day** — UI/UX final polish, dark mode toggle, mobile responsiveness, accessibility improvements |
 
 ---
 
@@ -309,8 +319,8 @@ VeriVision-MVP/
 | **Week 2: Pipeline Stages 1–3** | 6 days | Aug 24–29 | Quality check, authenticity, reference match with CLIP+FAISS, shared services |
 | **Week 3: Pipeline Stages 4–5 + Agents** | 6 days | Aug 31–Sep 5 | ROI scheduler, evidence execution, 4 agents complete, YOLO fine-tuned |
 | **Week 4: Pipeline Stages 6–8 + Testing** | 6 days | Sep 7–12 | Evidence fusion, judge, policy engine, reporting, accuracy testing |
-| **Week 5: Frontend Core Pages** | 6 days | Sep 14–19 | Login, Dashboard, New Inspection, Inspection Detail, core components |
-| **Week 6: Analytics + Polish** | 6 days | Sep 21–26 | Analytics dashboard, advanced features, optimization, testing |
+| **Week 5: Frontend Core + Landing** | 6 days | Sep 14–19 | Landing, Login, Dashboard, New Inspection, Inspection Detail, core components |
+| **Week 6: Reports + Analytics + Polish** | 6 days | Sep 21–26 | Reports archive, Analytics dashboard, PDF/CSV export, optimization, testing |
 | **Week 7: Deploy + Demo** | 3 days | Sep 28–30 | Dockerize, deploy to Vercel + Render, demo prep, final polish |
 | **Total** | **6.5 weeks** | Aug 17 – Sep 30 | **Production-ready MVP with full pipeline, analytics, and polished UI** |
 
@@ -326,8 +336,8 @@ VeriVision-MVP/
 | **Pipeline Stages** | quality_check, reference_match, roi_scheduler, evidence_fusion, policy_engine | authenticity, evidence_execution, judge |
 | **Agents** | base_agent, label, vlm | ocr, structural (+ YOLO fine-tune and integration) |
 | **Services** | embedding_service (CLIP+FAISS) | reporting_service (PDF), analytics_service (SQL) |
-| **Frontend Core** | Login, InspectionDetail, NewInspection, deploy (Vercel) | Dashboard, ImageUploader, ImageCompare, ROIOverlay, VerdictBanner |
-| **Frontend Analytics** | FraudTrendChart, SummaryCards | VendorLocationTable, AnalyticsPage |
+| **Frontend Core** | Landing, Dashboard, InspectionDetail, ROIOverlay, deploy (Vercel) | Login, NewInspection, ImageUploader, ImageCompare, EvidenceCard, VerdictBanner |
+| **Frontend Reports & Analytics** | ReportsPage, AnalyticsPage, FraudTrendChart, PDF/CSV export | ReportFilters, ReportsTable, SummaryCards, VendorLocationTable, VendorRiskTable |
 | **Testing** | Backend unit tests, integration tests, pytest suite | Frontend unit tests, accuracy test set curation, UI/UX testing |
 | **Deployment** | Backend (Render/Railway), API documentation | Frontend (Vercel), deployment guides |
 | **Documentation** | API reference, architecture doc | README, test results, demo script |
@@ -427,6 +437,8 @@ VeriVision-MVP/
 - **Fraud Knowledge Graph** — Build relationship graph across components, labels, OCR findings
 - **Continuous Learning** — Store fraud patterns and use for future detection
 - **5 Additional Evidence Agents** — Component, Material, Connector, Manufacturing, Usage
+- **Vendor Management Page** — dedicated CRUD UI, replacing the inline "add vendor" shortcut on New Inspection
+- **Human Review Queue Page** — dedicated multi-reviewer queue, replacing the single Approve/Override action
 - **Production Scaling** — Move to paid tiers, implement proper authentication, rate limiting, monitoring
 
 ---

@@ -10,10 +10,12 @@
 ┌───────────────────────────────────────────────────────────────────────────────┐
 │                                FRONTEND                                        │
 ├───────────────────────────────────────────────────────────────────────────────┤
+│ • Landing Page (public, portfolio-facing intro)                                │
 │ • Authentication                                                                │
-│ • Image Upload                                                                  │
-│ • Inspection Dashboard                                                          │
-│ • Explainable Fraud Report UI (with Approve/Override action)                   │
+│ • Dashboard (home — summary stats + recent inspections)                        │
+│ • New Inspection (upload + vendor/location + trigger pipeline)                 │
+│ • Inspection Detail (evidence, verdict, ROI overlays, Approve/Override)        │
+│ • Reports (filterable archive of every generated report)                       │
 │ • Analytics Dashboard (vendor/location fraud breakdown, monthly trend)         │
 └───────────────────────────────┬─────────────────────────────────────────────────┘
                                 │ REST API
@@ -306,7 +308,77 @@ else:
 
 ---
 
-## 5. Analytics Dashboard (Business Service)
+## 5. Frontend Architecture
+
+7 pages — enough to tell a complete story (upload → verdict → audit trail → trends) without the page bloat of the original 10-page design.
+
+### Page-by-Page
+
+| # | Page | Auth? | Purpose |
+|:---|:---|:---|:---|
+| 1 | **Landing** | Public | First impression for anyone opening the live URL — hero, "how it works" (4-step pipeline teaser), CTA to log in. This is the page an interviewer/judge sees first. |
+| 2 | **Login** | Public | Login + Register in one form (tab toggle) — keeps page count down. |
+| 3 | **Dashboard** | Protected | Home after login — summary cards (today's inspections, pending review, fraud detected this week), recent inspection activity, "+ New Inspection" CTA. Built for daily monitoring. |
+| 4 | **New Inspection** | Protected | Vendor dropdown (from `GET /vendors`, inline "add vendor" option), location field, multi-image drag-drop upload, triggers the 8-stage pipeline. |
+| 5 | **Inspection Detail** | Protected | Verdict banner, side-by-side image compare, ROI overlays (including YOLO bounding boxes), one evidence card per agent, Judge's root-cause explanation, Approve/Override action, "Download Report (PDF)" — this is the live review workspace. |
+| 6 | **Reports** | Protected | Filterable archive of every past inspection's report — filter by date range, vendor, location, verdict, fraud category; bulk export. Distinct from Inspection Detail: this is the audit/compliance view ("show me every Quarantined part from Vendor X in July"), not a live review screen. |
+| 7 | **Analytics** | Protected | Summary cards, monthly fraud trend chart, vendor breakdown, location breakdown, vendor-component-risk breakdown (matches the `/analytics/vendor-risk` endpoint). |
+
+**Deliberately not separate pages, to keep scope lean:**
+- **Vendor management** — folded into an inline "add vendor" action on New Inspection rather than a full CRUD page.
+- **Settings/Profile** — not needed to tell the pipeline story; cut for MVP.
+- **Human Review Queue** — Approve/Override lives directly on Inspection Detail, not a separate queue page (matches the backend's single-action review design in Section 4, Stage 8).
+
+### Routing
+
+```
+/                    → LandingPage          (public)
+/login               → LoginPage            (public)
+/dashboard           → DashboardPage        (protected)
+/inspections/new     → NewInspectionPage    (protected)
+/inspections/:id     → InspectionDetailPage (protected)
+/reports             → ReportsPage          (protected)
+/analytics           → AnalyticsPage        (protected)
+```
+
+### Component Map
+
+```
+components/
+├── landing/
+│   ├── HeroSection.jsx
+│   └── HowItWorks.jsx          # 4-step pipeline teaser: Upload → AI Pipeline → Verdict → Report
+├── common/
+│   ├── LoadingSpinner.jsx
+│   ├── ErrorBoundary.jsx
+│   └── Pagination.jsx           # shared by Dashboard, Reports
+├── layout/
+│   ├── Navbar.jsx
+│   ├── Sidebar.jsx               # Dashboard, New Inspection, Reports, Analytics
+│   └── Footer.jsx
+├── inspection/
+│   ├── ImageUploader.jsx
+│   ├── ImageCompare.jsx
+│   ├── ROIOverlay.jsx            # renders YOLO bounding boxes + ROI template regions
+│   ├── EvidenceCard.jsx          # one per agent: OCR, Label, Structural, VLM
+│   └── VerdictBanner.jsx
+├── reports/
+│   ├── ReportsTable.jsx          # filterable table, links to Inspection Detail
+│   └── ReportFilters.jsx         # date range, vendor, location, verdict, category
+└── analytics/
+    ├── SummaryCards.jsx
+    ├── FraudTrendChart.jsx
+    ├── VendorLocationTable.jsx
+    └── VendorRiskTable.jsx       # vendor × fraud-category breakdown
+```
+
+### Why Reports is a separate page from Inspection Detail
+
+They answer different questions. Inspection Detail answers "what happened on this one case, and do I approve it?" — a live, single-case workspace. Reports answers "show me every fraud case that matches these filters" — an archival, multi-case view for compliance and vendor accountability. Collapsing them into one page would force either a cluttered detail view or a shallow list view; keeping them separate lets each do one job well — and being able to articulate that exact distinction ("live case review" vs. "audit trail") is a good thing to have ready for an interview.
+
+---
+
+## 6. Analytics Dashboard (Business Service)
 
 *(Not a pipeline stage — reads from Inspection History after the fact, refreshed whenever the dashboard is opened. Runs independently of the per-inspection pipeline.)*
 **Tool:** SQL aggregation — free, no model.
@@ -340,7 +412,7 @@ GET /analytics/monthly-trend    → fraud count per month
 
 ---
 
-## 6. Shared Services
+## 7. Shared Services
 
 ### Working Memory
 - One shared memory object per inspection.
@@ -358,7 +430,7 @@ GET /analytics/monthly-trend    → fraud count per month
 
 ---
 
-## 7. Golden Reference Repository (Data Layer)
+## 8. Golden Reference Repository (Data Layer)
 
 ```
 Admin
@@ -382,7 +454,7 @@ Generate embedding → Search FAISS → Retrieve Golden Image + Metadata → AI 
 
 ---
 
-## 8. Deferred to Roadmap (Full 14-Stage Design)
+## 9. Deferred to Roadmap (Full 14-Stage Design)
 
 These are real, designed components — just not required to prove the core pipeline works. Cutting them was a scoping decision, not a capability gap:
 
@@ -397,7 +469,7 @@ These are real, designed components — just not required to prove the core pipe
 
 ---
 
-## 9. MVP Success Metric
+## 10. MVP Success Metric
 
 The pipeline is considered validated when, on a curated test set of golden-vs-fraud image pairs, it produces:
 - A measured precision/recall (not a guess)
