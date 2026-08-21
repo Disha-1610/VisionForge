@@ -13,6 +13,10 @@
 
 ```
 VeriVision-MVP/
+├── .github/
+│   └── workflows/
+│       ├── ci.yml                    # CI pipeline — pytest, linting & frontend build check
+│       └── cd.yml                    # CD pipeline — auto-deploy backend (Render) & frontend (Vercel)
 ├── .gitignore
 ├── README.md
 ├── docker-compose.yml
@@ -22,7 +26,7 @@ VeriVision-MVP/
 ├── backend/
 │   ├── Dockerfile
 │   ├── Dockerfile.prod
-│   ├── render.yaml
+│   ├── render.yaml                   # Render.com backend service deployment config
 │   ├── .env.example
 │   ├── requirements.txt
 │   ├── requirements-dev.txt
@@ -139,6 +143,7 @@ VeriVision-MVP/
 │   ├── package-lock.json
 │   ├── vite.config.js
 │   ├── index.html
+│   ├── vercel.json                   # Vercel deployment & SPA routing rewrites
 │   ├── .env.example
 │   │
 │   └── src/
@@ -301,13 +306,13 @@ VeriVision-MVP/
 
 ---
 
-## 🗓️ Week 7 (Sep 28–30) — Deployment + Final Polish + Demo Prep
+## 🗓️ Week 7 (Sep 28–30) — CI/CD + Cloud Deployment (Render & Vercel) + Demo Prep
 
 | Day | Anil | Disha |
 |:---|:---|:---|
-| **Day 1 (Sep 28)** | **Deployment Prep** — Dockerize backend (Dockerfile, docker-compose.yml), configure environment variables for production (NVIDIA NIM + Groq keys) | **Deployment Prep** — Dockerize frontend (nginx config), verify build process works, create .env.example for frontend |
-| **Day 2 (Sep 29)** | **Deployment** — Deploy backend to Render.com (or Railway.app), run migrations, verify health endpoints | **Deployment** — Deploy frontend to Vercel, connect to backend API, verify all features work in production |
-| **Day 3 (Sep 30)** | **Final Demo Rehearsal** — Run through demo script (4-5 key scenarios), polish README.md with setup instructions, finalize test results documentation | **MVP DONE 🎉** — Final UI polish pass, accuracy numbers finalized, demo script prepared, pitch deck updated |
+| **Day 1 (Sep 28)** | **CI/CD & Backend Deployment Setup** — Create `.github/workflows/ci.yml` (pytest, linting, frontend build) + `.github/workflows/cd.yml` (auto-deploy triggers), configure `backend/render.yaml` & Dockerfile with production env vars | **Frontend Cloud Prep** — Configure `frontend/vercel.json` (SPA routing rewrites & security headers), verify production build bundle, create `frontend/.env.example` with `VITE_API_URL` |
+| **Day 2 (Sep 29)** | **Backend Deployment (Render.com)** — Deploy backend web service on Render connected to PostgreSQL (Supabase/Neon), run Alembic migrations on startup, verify health check (`/health`) & live Swagger API docs | **Frontend Deployment (Vercel)** — Deploy React frontend on Vercel, connect to live Render API URL, configure CORS, verify live authenticated user flows (Landing → Login → Dashboard) |
+| **Day 3 (Sep 30)** | **Live Pipeline & Demo Verification** — Test complete live flow on production (Vercel + Render): Image upload → 8-stage pipeline → AI Judge verdict → PDF download → Analytics dashboard, polish README.md with live links | **MVP DONE 🎉** — End-to-end production smoke test, verify mobile responsiveness on live Vercel URL, prepare demo script walkthrough with sample inspection images |
 
 ---
 
@@ -339,7 +344,7 @@ VeriVision-MVP/
 | **Frontend Core** | Landing, Dashboard, InspectionDetail, ROIOverlay, deploy (Vercel) | Login, NewInspection, ImageUploader, ImageCompare, EvidenceCard, VerdictBanner |
 | **Frontend Reports & Analytics** | ReportsPage, AnalyticsPage, FraudTrendChart, PDF/CSV export | ReportFilters, ReportsTable, SummaryCards, VendorLocationTable, VendorRiskTable |
 | **Testing** | Backend unit tests, integration tests, pytest suite | Frontend unit tests, accuracy test set curation, UI/UX testing |
-| **Deployment** | Backend (Render/Railway), API documentation | Frontend (Vercel), deployment guides |
+| **Deployment & CI/CD** | Backend deploy (Render), GitHub Actions CI/CD workflows (`.github/workflows/`), API docs | Frontend deploy (Vercel), `vercel.json` SPA config, production smoke test |
 | **Documentation** | API reference, architecture doc | README, test results, demo script |
 
 > **Note:** Every Saturday (Day 6) both work together on code review + integration testing.
