@@ -17,11 +17,16 @@ class Settings(BaseSettings):
 
     APP_NAME: str = "VisionForge-AI"
     APP_VERSION: str = "0.1.0"
+    ENVIRONMENT: str = "development"
     DEBUG: bool = True
 
     # ---------- Database ----------
     DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/visionforge"
     DATABASE_ECHO: bool = False
+    DB_POOL_SIZE: int = 10
+    DB_MAX_OVERFLOW: int = 20
+    DB_POOL_TIMEOUT: int = 30
+    DB_POOL_RECYCLE: int = 1800
 
     # ---------- JWT ----------
     JWT_SECRET_KEY: str = "change-me-in-production"

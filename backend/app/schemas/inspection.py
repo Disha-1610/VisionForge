@@ -42,6 +42,11 @@ class InspectionUpdate(BaseModel):
     reviewer_comment: Optional[str] = None
 
 
+class InspectionReviewRequest(BaseModel):
+    review_decision: str = Field(..., description="approved or overridden")
+    reviewer_comment: Optional[str] = None
+
+
 # ── Response Schemas ──────────────────────────────────────────────────────────
 
 class InspectionResponse(BaseModel):

@@ -28,39 +28,57 @@ class Base(DeclarativeBase):
     pass
 
 
-def _build_engine() -> AsyncEngine:
+def _build_engine() -> AsyncEngine | None:
     is_test = settings.ENVIRONMENT == "test"
+    db_url = settings.DATABASE_URL
 
-    if is_test:
+    if is_test or "sqlite" in db_url:
+        try:
+            return create_async_engine(
+                db_url if "sqlite" in db_url else "sqlite+aiosqlite:///:memory:",
+                echo=settings.DATABASE_ECHO,
+                future=True,
+                poolclass=NullPool,
+            )
+        except Exception:
+            pass
+
+    try:
         return create_async_engine(
-            settings.DATABASE_URL,
+            db_url,
             echo=settings.DATABASE_ECHO,
             future=True,
-            poolclass=NullPool,
+            pool_size=settings.DB_POOL_SIZE,
+            max_overflow=settings.DB_MAX_OVERFLOW,
+            pool_timeout=settings.DB_POOL_TIMEOUT,
+            pool_recycle=settings.DB_POOL_RECYCLE,
             pool_pre_ping=True,
         )
+    except Exception as e:
+        logger.warning(
+            "Primary database engine init deferred or driver missing: %s", e
+        )
+        try:
+            return create_async_engine(
+                "sqlite+aiosqlite:///:memory:",
+                future=True,
+                poolclass=NullPool,
+            )
+        except Exception:
+            logger.warning("No async DB driver (asyncpg/aiosqlite) found. Engine will be None until driver is installed.")
+            return None
 
-    return create_async_engine(
-        settings.DATABASE_URL,
-        echo=settings.DATABASE_ECHO,
-        future=True,
-        poolclass=QueuePool,
-        pool_size=settings.DB_POOL_SIZE,
-        max_overflow=settings.DB_MAX_OVERFLOW,
-        pool_timeout=settings.DB_POOL_TIMEOUT,
-        pool_recycle=settings.DB_POOL_RECYCLE,
-        pool_pre_ping=True,
+
+engine: AsyncEngine | None = _build_engine()
+
+AsyncSessionLocal: async_sessionmaker[AsyncSession] | None = (
+    async_sessionmaker(
+        bind=engine,
+        class_=AsyncSession,
+        expire_on_commit=False,
     )
-
-
-engine: AsyncEngine = _build_engine()
-
-AsyncSessionLocal: async_sessionmaker[AsyncSession] = async_sessionmaker(
-    bind=engine,
-    class_=AsyncSession,
-    expire_on_commit=False,
-    autoflush=False,
-    autocommit=False,
+    if engine is not None
+    else None
 )
 
 

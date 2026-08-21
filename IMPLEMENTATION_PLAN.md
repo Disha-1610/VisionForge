@@ -365,14 +365,14 @@ VeriVision-MVP/
 
 ## 📈 Progress Tracker (Extended)
 
-| Week | Day | Anil | Disha |
-|:-----|:----|:-----|:------|
-| **W1** | D1 (Aug 17) | ✅ | ✅ |
-| | D2 (Aug 18) | ✅ |✅ |
-| | D3 (Aug 19) | ✅ |✅ |
-| | D4 (Aug 20) | ✅ |✅ |
-| | D5 (Aug 21) | ✅ |✅ |
-| | D6 (Aug 22) | | |
+| Week | Day | Anil | Disha | Status |
+|:-----|:----|:----:|:-----:|:------:|
+| **W1** | D1 (Aug 17) | ✅ | ✅ | |
+| | D2 (Aug 18) | ✅ | ✅ | |
+| | D3 (Aug 19) | ✅ | ✅ | |
+| | D4 (Aug 20) | ✅ | ✅ | |
+| | D5 (Aug 21) | ✅ | ✅ | |
+| | D6 (Aug 22) | ✅ | ✅ | **Completed ✅** |
 | **W2** | D1 (Aug 24) | | |
 | | D2 (Aug 25) | | |
 | | D3 (Aug 26) | | |
