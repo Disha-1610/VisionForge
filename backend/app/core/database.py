@@ -17,9 +17,10 @@ from sqlalchemy.ext.asyncio import (
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.pool import NullPool, QueuePool
 
-from app.core.config import settings
+from app.core.config import get_settings
 
 logger = logging.getLogger(__name__)
+settings = get_settings()
 
 
 class Base(DeclarativeBase):
@@ -29,13 +30,23 @@ class Base(DeclarativeBase):
 
 def _build_engine() -> AsyncEngine:
     is_test = settings.ENVIRONMENT == "test"
+
+    if is_test:
+        return create_async_engine(
+            settings.DATABASE_URL,
+            echo=settings.DATABASE_ECHO,
+            future=True,
+            poolclass=NullPool,
+            pool_pre_ping=True,
+        )
+
     return create_async_engine(
         settings.DATABASE_URL,
-        echo=settings.DB_ECHO,
+        echo=settings.DATABASE_ECHO,
         future=True,
-        poolclass=NullPool if is_test else QueuePool,
-        pool_size=settings.DB_POOL_SIZE if not is_test else None,
-        max_overflow=settings.DB_MAX_OVERFLOW if not is_test else None,
+        poolclass=QueuePool,
+        pool_size=settings.DB_POOL_SIZE,
+        max_overflow=settings.DB_MAX_OVERFLOW,
         pool_timeout=settings.DB_POOL_TIMEOUT,
         pool_recycle=settings.DB_POOL_RECYCLE,
         pool_pre_ping=True,
@@ -69,7 +80,7 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 
 @asynccontextmanager
 async def db_session_ctx() -> AsyncGenerator[AsyncSession, None]:
-    """Use outside FastAPI DI — e.g. pipeline stages, background tasks, scripts."""
+    """Use outside FastAPI DI — pipeline stages, background tasks, scripts."""
     async with AsyncSessionLocal() as session:
         try:
             yield session

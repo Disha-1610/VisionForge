@@ -4,13 +4,13 @@ from datetime import datetime, timezone
 from typing import Optional
 from uuid import UUID
 
-from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, UploadFile, status
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, UploadFile, status as http_status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import AsyncSessionLocal, get_db
 from app.core.security import get_current_user
-from app.models.inspection import Inspection
+from app.models.inspection import Inspection, InspectionStatus, ReviewDecision
 from app.models.user import User
 from app.models.vendor import Vendor
 from app.pipeline.workflow import run_inspection_pipeline
@@ -29,11 +29,15 @@ MAX_IMAGES_PER_INSPECTION = 6
 ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png"}
 
 
+def _generate_case_number() -> str:
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
+    return f"CASE-{stamp}-{uuid.uuid4().hex[:6].upper()}"
+
+
 async def _run_pipeline_background(inspection_id: UUID) -> None:
     """
-    Background task entrypoint. Owns its own DB session — never reuse
-    a session from the request scope inside a background task, it will
-    be closed before the task runs.
+    Owns its own DB session. Request-scoped session is closed before
+    background task runs — reusing it causes silent failures.
     """
     async with AsyncSessionLocal() as session:
         try:
@@ -42,18 +46,14 @@ async def _run_pipeline_background(inspection_id: UUID) -> None:
             result = await session.execute(select(Inspection).where(Inspection.id == inspection_id))
             inspection = result.scalar_one_or_none()
             if inspection is not None:
-                inspection.status = "failed"
+                inspection.status = InspectionStatus.FAILED
                 inspection.error_message = str(exc)[:2000]
                 inspection.updated_at = datetime.now(timezone.utc)
                 await session.commit()
             raise
 
 
-@router.post(
-    "",
-    response_model=InspectionCreateResponse,
-    status_code=status.HTTP_201_CREATED,
-)
+@router.post("", response_model=InspectionCreateResponse, status_code=http_status.HTTP_201_CREATED)
 async def create_inspection(
     background_tasks: BackgroundTasks,
     vendor_id: UUID = Form(...),
@@ -63,22 +63,22 @@ async def create_inspection(
     current_user: User = Depends(get_current_user),
 ) -> InspectionCreateResponse:
     if not images:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "At least one image required")
+        raise HTTPException(http_status.HTTP_400_BAD_REQUEST, "At least one image required")
     if len(images) > MAX_IMAGES_PER_INSPECTION:
         raise HTTPException(
-            status.HTTP_400_BAD_REQUEST,
+            http_status.HTTP_400_BAD_REQUEST,
             f"Max {MAX_IMAGES_PER_INSPECTION} images per inspection",
         )
 
     vendor_result = await db.execute(select(Vendor).where(Vendor.id == vendor_id))
     vendor = vendor_result.scalar_one_or_none()
     if vendor is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Vendor not found")
+        raise HTTPException(http_status.HTTP_404_NOT_FOUND, "Vendor not found")
 
     for image in images:
         if not validate_image_extension(image.filename, ALLOWED_EXTENSIONS):
             raise HTTPException(
-                status.HTTP_400_BAD_REQUEST,
+                http_status.HTTP_400_BAD_REQUEST,
                 f"Unsupported file type: {image.filename}. Allowed: {ALLOWED_EXTENSIONS}",
             )
 
@@ -92,18 +92,17 @@ async def create_inspection(
             saved_path = await save_upload_file(image, inspection_dir)
             saved_paths.append(saved_path)
     except Exception as exc:
-        raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, f"Image save failed: {exc}") from exc
+        raise HTTPException(http_status.HTTP_500_INTERNAL_SERVER_ERROR, f"Image save failed: {exc}") from exc
 
     inspection = Inspection(
         id=inspection_id,
+        case_number=_generate_case_number(),
         vendor_id=vendor_id,
         location=location,
         image_paths=saved_paths,
-        status="pending",
-        review_status="not_required",
+        image_count=len(saved_paths),
+        status=InspectionStatus.PENDING,
         created_by=current_user.id,
-        created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc),
     )
     db.add(inspection)
     await db.commit()
@@ -113,6 +112,7 @@ async def create_inspection(
 
     return InspectionCreateResponse(
         id=inspection.id,
+        case_number=inspection.case_number,
         status=inspection.status,
         message="Inspection created. Pipeline running in background.",
     )
@@ -123,12 +123,12 @@ async def list_inspections(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
     vendor_id: Optional[UUID] = None,
-    status_filter: Optional[str] = None,
+    status_filter: Optional[InspectionStatus] = None,
     page: int = 1,
     page_size: int = 20,
 ) -> InspectionListResponse:
     if page < 1 or page_size < 1 or page_size > 100:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid pagination params")
+        raise HTTPException(http_status.HTTP_400_BAD_REQUEST, "Invalid pagination params")
 
     query = select(Inspection)
     if vendor_id is not None:
@@ -158,7 +158,7 @@ async def get_inspection(
     result = await db.execute(select(Inspection).where(Inspection.id == inspection_id))
     inspection = result.scalar_one_or_none()
     if inspection is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Inspection not found")
+        raise HTTPException(http_status.HTTP_404_NOT_FOUND, "Inspection not found")
     return InspectionResponse.model_validate(inspection)
 
 
@@ -171,11 +171,10 @@ async def approve_inspection(
 ) -> InspectionResponse:
     inspection = await _get_completed_inspection_or_404(inspection_id, db)
 
-    inspection.review_status = "approved"
-    inspection.reviewer_id = current_user.id
+    inspection.review_decision = ReviewDecision.APPROVED
+    inspection.reviewed_by = current_user.id
     inspection.reviewer_comment = payload.comment
     inspection.reviewed_at = datetime.now(timezone.utc)
-    inspection.updated_at = datetime.now(timezone.utc)
 
     await db.commit()
     await db.refresh(inspection)
@@ -190,17 +189,16 @@ async def override_inspection(
     current_user: User = Depends(get_current_user),
 ) -> InspectionResponse:
     if current_user.role not in ("admin", "reviewer"):
-        raise HTTPException(status.HTTP_403_FORBIDDEN, "Insufficient role for override")
+        raise HTTPException(http_status.HTTP_403_FORBIDDEN, "Insufficient role for override")
 
     inspection = await _get_completed_inspection_or_404(inspection_id, db)
     if not payload.comment or not payload.comment.strip():
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Override requires a reviewer comment")
+        raise HTTPException(http_status.HTTP_400_BAD_REQUEST, "Override requires a reviewer comment")
 
-    inspection.review_status = "overridden"
-    inspection.reviewer_id = current_user.id
+    inspection.review_decision = ReviewDecision.OVERRIDDEN
+    inspection.reviewed_by = current_user.id
     inspection.reviewer_comment = payload.comment
     inspection.reviewed_at = datetime.now(timezone.utc)
-    inspection.updated_at = datetime.now(timezone.utc)
 
     await db.commit()
     await db.refresh(inspection)
@@ -211,10 +209,10 @@ async def _get_completed_inspection_or_404(inspection_id: UUID, db: AsyncSession
     result = await db.execute(select(Inspection).where(Inspection.id == inspection_id))
     inspection = result.scalar_one_or_none()
     if inspection is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Inspection not found")
-    if inspection.status != "completed":
+        raise HTTPException(http_status.HTTP_404_NOT_FOUND, "Inspection not found")
+    if inspection.status != InspectionStatus.COMPLETED:
         raise HTTPException(
-            status.HTTP_409_CONFLICT,
-            f"Inspection not reviewable, status={inspection.status}",
+            http_status.HTTP_409_CONFLICT,
+            f"Inspection not reviewable, status={inspection.status.value}",
         )
     return inspection
