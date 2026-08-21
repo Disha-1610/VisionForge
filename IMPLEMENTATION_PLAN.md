@@ -227,7 +227,7 @@ VeriVision-MVP/
 
 | Day | Anil | Disha |
 |:---|:---|:---|
-| **Day 1 (Aug 17)** | Repo create, `.gitignore`, `README.md`, folder structure, `requirements.txt` (include FastAPI, SQLAlchemy, Alembic, PyJWT, bcrypt, python-multipart, opencv-python, Pillow, reportlab) | DB models: `user.py`, `product.py`, `vendor.py` (Master Vendor & Site list with `id`, `name`, `site_name`, `code`), `inspection.py` (includes vendor_id, location, verdict fields), `evidence.py` |
+| **Day 1 (Aug 17)** | Repo create, `.gitignore`, `README.md`, folder structure, `requirements.txt`, `.env` + `.env.example` (all env vars: DB, JWT, NVIDIA NIM, Groq, CLIP, file paths) | DB models: `user.py`, `product.py`, `vendor.py` (Master Vendor & Site list with `id`, `name`, `site_name`, `code`), `inspection.py` (includes vendor_id, location, verdict fields), `evidence.py` |
 | **Day 2 (Aug 18)** | `core/security.py` — JWT token creation (access + refresh tokens), password hashing (bcrypt), token validation | `core/database.py` — async SQLAlchemy engine + Alembic init, connection pooling setup, session management |
 | **Day 3 (Aug 19)** | `schemas/auth.py` (Login, Register, Token, User response) + `schemas/inspection.py` (InspectionCreate, InspectionUpdate, InspectionResponse with evidence) | `schemas/product.py` (GoldenReferenceCreate, ProductResponse) + `schemas/vendor.py` (VendorCreate, VendorResponse, VendorDropdown) + `schemas/report.py` (ReportResponse) |
 | **Day 4 (Aug 20)** | `routers/auth.py` (login/register/me/refresh endpoints) + `routers/products.py` (CRUD for golden references) + `routers/vendors.py` (vendor master list CRUD & dropdown endpoints) | `routers/inspections.py` (skeleton with upload endpoint) + `shared/evidence_store.py` (in-memory store with append-only pattern) |
@@ -367,12 +367,12 @@ VeriVision-MVP/
 
 | Week | Day | Anil | Disha |
 |:-----|:----|:-----|:------|
-| **W1** | D1 (Aug 17) | | |
-| | D2 (Aug 18) | | |
-| | D3 (Aug 19) | | |
-| | D4 (Aug 20) | | |
-| | D5 (Aug 21) | | |
-| | D6 (Aug 22) | ✅ | ✅ |
+| **W1** | D1 (Aug 17) | ✅ | ✅ |
+| | D2 (Aug 18) | ✅ | |
+| | D3 (Aug 19) | ✅ | |
+| | D4 (Aug 20) | ✅ | |
+| | D5 (Aug 21) | ✅ | |
+| | D6 (Aug 22) | | |
 | **W2** | D1 (Aug 24) | | |
 | | D2 (Aug 25) | | |
 | | D3 (Aug 26) | | |
