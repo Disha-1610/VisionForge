@@ -11,6 +11,13 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.database import Base
 
 
+class InspectionStatus(str, enum.Enum):
+    PENDING = "pending"
+    PROCESSING = "processing"
+    COMPLETED = "completed"
+    FAILED = "failed"
+
+
 class InspectionVerdict(str, enum.Enum):
     ACCEPT = "accept"
     REJECT = "reject"
@@ -50,6 +57,15 @@ class Inspection(Base):
 
     image_paths: Mapped[list[str]] = mapped_column(ARRAY(String), nullable=False)
     image_count: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+
+    # Pipeline lifecycle status (separate from business verdict)
+    status: Mapped[InspectionStatus] = mapped_column(
+        Enum(InspectionStatus, name="inspection_status"),
+        default=InspectionStatus.PENDING,
+        nullable=False,
+        index=True,
+    )
+    error_message: Mapped[str | None] = mapped_column(String(2000), nullable=True)
 
     # Stage 1-2 results
     quality_passed: Mapped[bool] = mapped_column(default=False, nullable=False)
@@ -115,4 +131,4 @@ class Inspection(Base):
     )
 
     def __repr__(self) -> str:
-        return f"<Inspection id={self.id} case={self.case_number} verdict={self.verdict}>"
+        return f"<Inspection id={self.id} case={self.case_number} status={self.status} verdict={self.verdict}>"
