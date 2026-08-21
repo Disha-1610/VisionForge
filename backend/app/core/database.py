@@ -1,40 +1,108 @@
+"""
+Async SQLAlchemy engine, session management, connection pooling.
+Alembic reads Base + DATABASE_URL from here.
+"""
 from __future__ import annotations
 
-from collections.abc import AsyncGenerator
+import logging
+from contextlib import asynccontextmanager
+from typing import AsyncGenerator
 
 from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
     AsyncSession,
     async_sessionmaker,
     create_async_engine,
 )
 from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.pool import NullPool, QueuePool
 
-from app.core.config import get_settings
+from app.core.config import settings
 
-settings = get_settings()
-
-engine = create_async_engine(
-    settings.DATABASE_URL,
-    echo=settings.DATABASE_ECHO,
-    pool_pre_ping=True,
-)
-
-AsyncSessionLocal = async_sessionmaker(
-    bind=engine,
-    class_=AsyncSession,
-    expire_on_commit=False,
-)
+logger = logging.getLogger(__name__)
 
 
 class Base(DeclarativeBase):
+    """Shared declarative base for all ORM models."""
     pass
 
 
+def _build_engine() -> AsyncEngine:
+    is_test = settings.ENVIRONMENT == "test"
+    return create_async_engine(
+        settings.DATABASE_URL,
+        echo=settings.DB_ECHO,
+        future=True,
+        poolclass=NullPool if is_test else QueuePool,
+        pool_size=settings.DB_POOL_SIZE if not is_test else None,
+        max_overflow=settings.DB_MAX_OVERFLOW if not is_test else None,
+        pool_timeout=settings.DB_POOL_TIMEOUT,
+        pool_recycle=settings.DB_POOL_RECYCLE,
+        pool_pre_ping=True,
+    )
+
+
+engine: AsyncEngine = _build_engine()
+
+AsyncSessionLocal: async_sessionmaker[AsyncSession] = async_sessionmaker(
+    bind=engine,
+    class_=AsyncSession,
+    expire_on_commit=False,
+    autoflush=False,
+    autocommit=False,
+)
+
+
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
+    """FastAPI dependency. Yields session, commits on success, rolls back on error."""
     async with AsyncSessionLocal() as session:
         try:
             yield session
             await session.commit()
         except Exception:
             await session.rollback()
+            logger.exception("DB session rolled back due to exception")
             raise
+        finally:
+            await session.close()
+
+
+@asynccontextmanager
+async def db_session_ctx() -> AsyncGenerator[AsyncSession, None]:
+    """Use outside FastAPI DI — e.g. pipeline stages, background tasks, scripts."""
+    async with AsyncSessionLocal() as session:
+        try:
+            yield session
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            logger.exception("DB session (ctx manager) rolled back due to exception")
+            raise
+        finally:
+            await session.close()
+
+
+async def check_db_connection() -> bool:
+    """Health-check helper for /health endpoint."""
+    from sqlalchemy import text
+
+    try:
+        async with engine.connect() as conn:
+            await conn.execute(text("SELECT 1"))
+        return True
+    except Exception:
+        logger.exception("DB health check failed")
+        return False
+
+
+async def init_db() -> None:
+    """Create tables directly — dev/test convenience only. Prod uses Alembic migrations."""
+    import app.models  # noqa: F401  ensure model metadata registered
+
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+
+async def dispose_engine() -> None:
+    """Call on app shutdown to close pool connections cleanly."""
+    await engine.dispose()
