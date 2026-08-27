@@ -239,12 +239,17 @@ class LLMClient:
 
     def _provider_endpoint(self, provider: LLMProvider) -> tuple[str, dict[str, str]]:
         if provider == LLMProvider.NVIDIA_NIM:
-            return NIM_BASE_URL, {
+            base_url = settings.NVIDIA_NIM_BASE_URL.rstrip("/")
+            endpoint = base_url if base_url.endswith("/chat/completions") else f"{base_url}/chat/completions"
+            return endpoint, {
                 "Authorization": f"Bearer {settings.NVIDIA_NIM_API_KEY}",
                 "Content-Type": "application/json",
+                "Accept": "application/json",
             }
         if provider == LLMProvider.GROQ:
-            return GROQ_BASE_URL, {
+            base_url = settings.GROQ_BASE_URL.rstrip("/")
+            endpoint = base_url if base_url.endswith("/chat/completions") else f"{base_url}/chat/completions"
+            return endpoint, {
                 "Authorization": f"Bearer {settings.GROQ_API_KEY}",
                 "Content-Type": "application/json",
             }
