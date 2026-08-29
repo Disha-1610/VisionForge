@@ -32,7 +32,7 @@
 │                 ▼                                                              │
 │  2. Image Authenticity Verification          — OpenCV + Pillow (local)        │
 │                 ▼                                                              │
-│  3. Reference Intelligence                   — CLIP + FAISS (local)           │
+│  3. Reference Intelligence                   — Gemini Embed / CLIP + FAISS    │
 │                 ▼                                                              │
 │  4. ROI Scheduler                            — pure logic (no model)          │
 │                 ▼                                                              │
@@ -82,7 +82,7 @@ Every stage below runs on a free-tier API or a fully local/open-source library. 
 |:---|:---|:---|:---|
 | 1. Quality Validation | OpenCV (Laplacian blur, brightness histogram) | Free — local | No API, no rate limit |
 | 2. Authenticity Verification | OpenCV + Pillow (ELA, EXIF via `exifread`) | Free — local | No API, no rate limit |
-| 3. Reference Intelligence | CLIP (`open-clip-torch` or HF `clip-vit-base-patch32`) + FAISS | Free — local | Runs on CPU fine for MVP scale |
+| 3. Reference Intelligence | Primary: Google Gemini (`gemini-embedding-2`, 3072-dim)<br>Fallback: OpenCLIP (`ViT-B-32`, 512-dim) + FAISS | Free | 1-shot Gemini attempt with seamless local OpenCLIP fallback |
 | 4. ROI Scheduler | Pure Python logic | Free | No model needed |
 | 5a. OCR Agent | Primary: **PaddleOCR**, Secondary: **EasyOCR** | Free — local, open-source | High precision on tiny/stamped industrial serial numbers |
 | 5b. Label Agent | OpenCV `cv2.matchTemplate` | Free — local | |
@@ -164,12 +164,12 @@ Every stage below runs on a free-tier API or a fully local/open-source library. 
 
 ### 3. Reference Intelligence
 *(Not an agent — embedding search + retrieval)*
-**Tool:** CLIP (open-source, local) + FAISS (open-source, local) — free, no API.
+**Tool:** Primary: Google Gemini (**`gemini-embedding-2`** — 3072-dim cloud embedding, 1-shot) with automatic fallback to **OpenCLIP** (`ViT-B-32` — 512-dim local model) + **FAISS** (Vector Index with Numpy cosine fallback) — free tier.
 
 **Rules**
-- Generate a CLIP embedding for every uploaded image.
+- Generate a normalized image embedding for every uploaded image (try Google Gemini `gemini-embedding-2` 1-shot; auto-fallback to local OpenCLIP on error/timeout).
 - Search the reference database for the most similar golden image, restricted to the detected Part ID.
-- Select the highest similarity match above the minimum similarity threshold; reject pairing if below it.
+- Select the highest similarity match above the minimum similarity threshold (`SIMILARITY_THRESHOLD = 0.75`); reject pairing if below it.
 - Verify uploaded and reference images represent the same viewing angle.
 - Load the correct ROI template for the matched part (regions, expected components, checkpoints).
 - If no suitable reference exists: mark the case for manual review.

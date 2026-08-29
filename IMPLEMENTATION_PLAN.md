@@ -246,9 +246,9 @@ VeriVision-MVP/
 | Day | Anil | Disha |
 |:---|:---|:---|
 | **Day 1 (Aug 24)** | `pipeline/stages/quality_check.py` — blur detection (Laplacian variance), lighting (brightness histogram), format validation, resolution check, duplicate detection | `pipeline/stages/authenticity.py` — ELA (Error Level Analysis), EXIF validation (using exifread), basic tamper detection (noise consistency) |
-| **Day 2 (Aug 25)** | `pipeline/stages/reference_match.py` — CLIP embedding generation for uploaded image, FAISS search, golden image selection with similarity threshold | Create sample ROI templates in `data/roi_templates/` (3-5 JSON files with bounding boxes for capacitors, connectors, chips, labels) + `utils/image_utils.py` (crop, resize, conversion functions) |
+| **Day 2 (Aug 25)** | `pipeline/stages/reference_match.py` — Dual embedding generation (Gemini 1-shot -> OpenCLIP fallback) for uploaded image, FAISS/vector search, golden image selection with similarity threshold | Create sample ROI templates in `data/roi_templates/` (3-5 JSON files with bounding boxes for capacitors, connectors, chips, labels) + `utils/image_utils.py` (crop, resize, conversion functions) |
 | **Day 3 (Aug 26)** | `pipeline/state.py` — define inspection state dataclass (WorkingMemory + EvidenceStore integration) | `pipeline/workflow.py` — LangGraph foundation: define nodes, edges, compile graph with checkpointing |
-| **Day 4 (Aug 27)** | `services/embedding_service.py` — integrate CLIP model loading, embedding generation, FAISS index build/update | `shared/llm_client.py` — implement vision capabilities for VLM Agent (Gemini 3.5 Flash + Groq Qwen fallback) |
+| **Day 4 (Aug 27)** | `services/embedding_service.py` — dual embedding generation (Gemini `gemini-embedding-2` 1-shot primary + OpenCLIP `ViT-B-32` fallback), FAISS index build/update | `shared/llm_client.py` — implement vision capabilities for VLM Agent (Gemini 3.5 Flash + Groq Qwen fallback) |
 | **Day 5 (Aug 28)** | Unit tests for Stages 1–3 | Unit tests for image utils and embedding service |
 | **Day 6 (Aug 29)** | **Integration Day** — Test Stages 1–3 end-to-end with sample images, verify golden reference matching accuracy | **Integration Day** — Review and finalize ROI template format, document for Stage 4 |
 
