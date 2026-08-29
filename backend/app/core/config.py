@@ -37,11 +37,12 @@ class Settings(BaseSettings):
     # ---------- CORS ----------
     CORS_ORIGINS: list[str] = ["http://localhost:5173", "http://localhost:3000"]
 
-    # ---------- NVIDIA NIM ----------
-    NVIDIA_NIM_API_KEY: str = ""
-    NVIDIA_NIM_BASE_URL: str = "https://integrate.api.nvidia.com/v1"
-    NVIDIA_NIM_VLM_MODEL: str = "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning"
-    NVIDIA_NIM_JUDGE_MODEL: str = "nvidia/nemotron-3-super-120b-a12b"
+    # ---------- Gemini (Google AI Studio) ----------
+    GEMINI_API_KEY: str = ""
+    GEMINI_BASE_URL: str = "https://generativelanguage.googleapis.com/v1beta"
+    GEMINI_VLM_MODEL: str = "gemini-3.5-flash"
+    GEMINI_JUDGE_MODEL: str = "gemini-3.5-flash"
+    GEMINI_EMBEDDING_MODEL: str = "gemini-embedding-2"
 
     # ---------- Groq ----------
     GROQ_API_KEY: str = ""

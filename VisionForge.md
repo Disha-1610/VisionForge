@@ -36,12 +36,12 @@
 │                 ▼                                                              │
 │  4. ROI Scheduler                            — pure logic (no model)          │
 │                 ▼                                                              │
-│  5. Evidence Execution — Specialized Agents  — EasyOCR, OpenCV,               │
-│                                                  YOLO11n, NVIDIA NIM free VLM  │
+│  5. Evidence Execution — Specialized Agents  — PaddleOCR, OpenCV,             │
+│                                                  YOLO11n, Gemini free VLM      │
 │                 ▼                                                              │
 │  6. Multi-View Evidence Fusion               — pure logic (no model)          │
 │                 ▼                                                              │
-│  7. AI Judge (verdict + root-cause reasoning) — NVIDIA NIM free-tier LLM      │
+│  7. AI Judge (verdict + root-cause reasoning) — Groq / Gemini free-tier LLM    │
 │                 ▼                                                              │
 │  8. Policy Engine + Explainable Report        — code + ReportLab (local)      │
 │                 ▼                                                              │
@@ -87,15 +87,14 @@ Every stage below runs on a free-tier API or a fully local/open-source library. 
 | 5a. OCR Agent | Primary: **PaddleOCR**, Secondary: **EasyOCR** | Free — local, open-source | High precision on tiny/stamped industrial serial numbers |
 | 5b. Label Agent | OpenCV `cv2.matchTemplate` | Free — local | |
 | 5c. Structural Agent | OpenCV SSIM + **YOLO11n (Ultralytics)** | Free — AGPL-3.0 | See Section 4, Stage 5 for detail |
-| 5d. VLM Agent | Primary: NVIDIA NIM (**Nemotron Nano Omni** — `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning`, verified)<br>Secondary: Groq (**Qwen 3.6 27B Vision** — `qwen/qwen3.6-27b`, verified) | Free — rate-limited | Primary on NVIDIA NIM, auto-fallback to Groq Qwen 3.6 27B if NIM is rate-limited or down |
+| 5d. VLM Agent | Primary: Google Gemini (**Gemini 3.5 Flash** — `gemini-3.5-flash`, verified)<br>Secondary: Groq (**Qwen 3.6 27B Vision** — `qwen/qwen3.6-27b`, verified) | Free — rate-limited | Primary on Gemini 3.5 Flash, auto-fallback to Groq Qwen 3.6 27B if Gemini is rate-limited or down |
 | 6. Evidence Fusion | Pure math/logic | Free | No model needed |
-| 7. AI Judge | Primary: Groq (**GPT-OSS 20B** — `openai/gpt-oss-20b`, verified active & ultra-fast)<br>Secondary: NVIDIA NIM (**Nemotron Super 120B** — `nvidia/nemotron-3-super-120b-a12b`, verified reasoning) | Free — rate-limited | Primary on Groq for ultra-fast response, auto-fallback to NVIDIA NIM Nemotron Super 120B |
+| 7. AI Judge | Primary: Groq (**GPT-OSS 20B** — `openai/gpt-oss-20b`, verified active & ultra-fast)<br>Secondary: Google Gemini (**Gemini 3.5 Flash** — `gemini-3.5-flash`, verified reasoning & JSON mode) | Free — rate-limited | Primary on Groq for ultra-fast response, auto-fallback to Gemini 3.5 Flash |
 | 8. Policy + Report | Code + ReportLab (PDF) | Free — local | |
 | Analytics | SQL aggregation (GROUP BY) | Free | No model needed |
 
 **Two things to design around, since they're free:**
-- **Rate limits, not cost.** Groq & NVIDIA NIM free tiers are request-based. The `llm_client.py` wrapper retries with backoff and automatically handles primary/secondary failover (Groq `openai/gpt-oss-20b` primary for AI Judge, NVIDIA NIM `nvidia/nemotron-3-super-120b-a12b` fallback; NVIDIA NIM `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning` primary for VLM Agent, Groq `qwen/qwen3.6-27b` fallback).
-- **NVIDIA's trial terms** allow them to use prompts/images sent to the free endpoint to improve their models, and explicitly exclude production use. Fine for a hackathon/portfolio demo — just don't treat it as a production data-handling guarantee later.
+- **Rate limits, not cost.** Groq & Google Gemini free tiers are request-based. The `llm_client.py` wrapper retries with backoff and automatically handles primary/secondary failover (Groq `openai/gpt-oss-20b` primary for AI Judge, Google Gemini `gemini-3.5-flash` fallback; Google Gemini `gemini-3.5-flash` primary for VLM Agent, Groq `qwen/qwen3.6-27b` fallback).
 - **YOLO's AGPL-3.0 license requires the project to stay open-source** if you use it without an Ultralytics Enterprise license. Since this is already an open-source GitHub portfolio project, this is a non-issue — just don't fork it into a closed-source product later without revisiting the license.
 
 ---
@@ -234,7 +233,7 @@ This is the stage where object-level detection adds real accuracy, not just nove
 4. Pretrained COCO-weights YOLO won't help here — COCO has no "capacitor" or "connector" class. The fine-tune step is what makes it useful, not the base model.
 5. License: AGPL-3.0 is free as long as the repo stays open-source, which it already is.
 
-**5d. VLM Agent** — Primary: NVIDIA NIM **Nemotron Nano Omni** (`nvidia/nemotron-3-nano-omni-30b-a3b-reasoning`, verified active, 33B omni-modal reasoning, 262K context). Secondary / Fallback: Groq **Qwen 3.6 27B Vision** (`qwen/qwen3.6-27b`, verified active, 27B multimodal reasoning). Catches general visual anomalies the other 3 agents aren't specifically looking for; also the fallback when a region doesn't cleanly map to OCR/Label/Structural. Combined vision+reasoning means it can return a short explanation alongside the detection, not just a raw label.
+**5d. VLM Agent** — Primary: Google Gemini **Gemini 3.5 Flash** (`gemini-3.5-flash`, verified active, multimodal defect analysis & explanation). Secondary / Fallback: Groq **Qwen 3.6 27B Vision** (`qwen/qwen3.6-27b`, verified active, 27B multimodal reasoning). Catches general visual anomalies the other 3 agents aren't specifically looking for; also the fallback when a region doesn't cleanly map to OCR/Label/Structural. Combined vision+reasoning means it can return a short explanation alongside the detection, not just a raw label.
 
 ---
 
@@ -255,7 +254,7 @@ This is the stage where object-level detection adds real accuracy, not just nove
 
 ### 7. AI Judge
 *(Agent — single reasoning pass; absorbs Debate + Causal Reasoning + Judge from the full design)*
-**Tool:** Primary: Groq free tier — **`openai/gpt-oss-20b`** (verified active & ultra-fast). Secondary / Fallback: NVIDIA NIM free tier — **`nvidia/nemotron-3-super-120b-a12b`** (124B MoE high-precision reasoning).
+**Tool:** Primary: Groq free tier — **`openai/gpt-oss-20b`** (verified active & ultra-fast). Secondary / Fallback: Google Gemini free tier — **`gemini-3.5-flash`** (multi-step reasoning & structured JSON mode).
 
 **Rules**
 - Read all fused evidence in one context window, including YOLO's specific component-level findings.
@@ -424,8 +423,8 @@ GET /analytics/monthly-trend    → fraud count per month
 
 ### LLM Client
 - Single wrapper around the chosen provider (chat + vision), used by the VLM Agent and the AI Judge.
-- **VLM Agent Model Routing**: Primary NVIDIA NIM (`nvidia/nemotron-3-nano-omni-30b-a3b-reasoning`, verified), Secondary Groq (`qwen/qwen3.6-27b`, verified).
-- **AI Judge Model Routing**: Primary Groq (`openai/gpt-oss-20b`, verified active & sub-second response), Secondary NVIDIA NIM (`nvidia/nemotron-3-super-120b-a12b`, verified 124B MoE reasoning).
+- **VLM Agent Model Routing**: Primary Google Gemini (`gemini-3.5-flash`, verified), Secondary Groq (`qwen/qwen3.6-27b`, verified).
+- **AI Judge Model Routing**: Primary Groq (`openai/gpt-oss-20b`, verified active & sub-second response), Secondary Google Gemini (`gemini-3.5-flash`, verified JSON mode).
 - Centralizes retries, timeouts, primary/secondary model failover, and prompt/response logging for debugging accuracy issues.
 
 ---

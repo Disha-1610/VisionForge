@@ -21,7 +21,7 @@ class LLMRole(str, Enum):
 
 
 class LLMProvider(str, Enum):
-    NVIDIA_NIM = "nvidia_nim"
+    GEMINI = "gemini"
     GROQ = "groq"
 
 
@@ -60,23 +60,33 @@ class ModelRoute(BaseModel):
     is_vision: bool = False
 
 
+# Primary & Fallback Route Hierarchy:
+# VLM (Vision): Primary = Gemini 3.5 Flash -> Fallback = Groq Qwen 3.6 27B
+# Judge (Reasoning): Primary = Groq GPT-OSS 20B -> Fallback = Gemini 3.5 Flash
 ROUTES: dict[LLMRole, list[ModelRoute]] = {
-    LLMRole.JUDGE: [
-        ModelRoute(provider=LLMProvider.GROQ, model="openai/gpt-oss-20b"),
-        ModelRoute(provider=LLMProvider.NVIDIA_NIM, model="nvidia/nemotron-3-super-120b-a12b"),
-    ],
     LLMRole.VLM: [
         ModelRoute(
-            provider=LLMProvider.NVIDIA_NIM,
-            model="nvidia/nemotron-3-nano-omni-30b-a3b-reasoning",
+            provider=LLMProvider.GEMINI,
+            model=settings.GEMINI_VLM_MODEL,
             is_vision=True,
         ),
-        ModelRoute(provider=LLMProvider.GROQ, model="qwen/qwen3.6-27b", is_vision=True),
+        ModelRoute(
+            provider=LLMProvider.GROQ,
+            model=settings.GROQ_VLM_MODEL,
+            is_vision=True,
+        ),
+    ],
+    LLMRole.JUDGE: [
+        ModelRoute(
+            provider=LLMProvider.GROQ,
+            model=settings.GROQ_JUDGE_MODEL,
+        ),
+        ModelRoute(
+            provider=LLMProvider.GEMINI,
+            model=settings.GEMINI_JUDGE_MODEL,
+        ),
     ],
 }
-
-NIM_BASE_URL = "https://integrate.api.nvidia.com/v1/chat/completions"
-GROQ_BASE_URL = "https://api.groq.com/openai/v1/chat/completions"
 
 MAX_RETRIES_PER_PROVIDER = 3
 BASE_BACKOFF_SECONDS = 1.0
@@ -86,7 +96,7 @@ RETRYABLE_STATUS_CODES = {408, 409, 425, 429, 500, 502, 503, 504}
 
 
 class LLMClient:
-    """Unified async client for NVIDIA NIM + Groq with retry/backoff and failover."""
+    """Unified async client for Google Gemini + Groq with retry/backoff and failover."""
 
     def __init__(self, http_client: httpx.AsyncClient | None = None) -> None:
         self._client = http_client or httpx.AsyncClient(timeout=REQUEST_TIMEOUT_SECONDS)
@@ -190,19 +200,72 @@ class LLMClient:
         image_media_type: str,
         response_format_json: bool,
     ) -> LLMResponse:
-        url, headers = self._provider_endpoint(route.provider)
-        payload_messages = self._build_messages(messages, image_base64, image_media_type)
-
-        body: dict[str, Any] = {
-            "model": route.model,
-            "messages": payload_messages,
-            "temperature": temperature,
-            "max_tokens": max_tokens,
-        }
-        if response_format_json:
-            body["response_format"] = {"type": "json_object"}
-
         start = asyncio.get_event_loop().time()
+
+        if route.provider == LLMProvider.GEMINI:
+            url = f"{settings.GEMINI_BASE_URL.rstrip('/')}/models/{route.model}:generateContent?key={settings.GEMINI_API_KEY}"
+            headers = {"Content-Type": "application/json"}
+            
+            # Format Gemini payload
+            contents = []
+            for msg in messages:
+                role = "model" if msg.get("role") in ("assistant", "model") else "user"
+                parts = []
+                content = msg.get("content")
+                if isinstance(content, str):
+                    parts.append({"text": content})
+                elif isinstance(content, list):
+                    for item in content:
+                        if item.get("type") == "text":
+                            parts.append({"text": item.get("text", "")})
+                        elif item.get("type") == "image_url":
+                            data_url = item.get("image_url", {}).get("url", "")
+                            if ";base64," in data_url:
+                                h, b64 = data_url.split(";base64,")
+                                m_type = h.replace("data:", "")
+                                parts.append({"inline_data": {"mime_type": m_type, "data": b64}})
+                contents.append({"role": role, "parts": parts})
+
+            if image_base64:
+                if contents and contents[-1]["role"] == "user":
+                    contents[-1]["parts"].append({
+                        "inline_data": {"mime_type": image_media_type, "data": image_base64}
+                    })
+                else:
+                    contents.append({
+                        "role": "user",
+                        "parts": [{"inline_data": {"mime_type": image_media_type, "data": image_base64}}]
+                    })
+
+            body: dict[str, Any] = {
+                "contents": contents,
+                "generationConfig": {
+                    "temperature": temperature,
+                    "maxOutputTokens": max_tokens,
+                },
+            }
+            if response_format_json:
+                body["generationConfig"]["responseMimeType"] = "application/json"
+
+        elif route.provider == LLMProvider.GROQ:
+            base_url = settings.GROQ_BASE_URL.rstrip("/")
+            url = base_url if base_url.endswith("/chat/completions") else f"{base_url}/chat/completions"
+            headers = {
+                "Authorization": f"Bearer {settings.GROQ_API_KEY}",
+                "Content-Type": "application/json",
+            }
+            payload_messages = self._build_messages(messages, image_base64, image_media_type)
+            body = {
+                "model": route.model,
+                "messages": payload_messages,
+                "temperature": temperature,
+                "max_tokens": max_tokens,
+            }
+            if response_format_json:
+                body["response_format"] = {"type": "json_object"}
+        else:
+            raise ValueError(f"unknown provider: {route.provider}")
+
         try:
             resp = await self._client.post(url, headers=headers, json=body)
         except httpx.RequestError as exc:
@@ -219,8 +282,22 @@ class LLMClient:
 
         try:
             data = resp.json()
-            content = data["choices"][0]["message"]["content"]
-            usage_raw = data.get("usage", {})
+            if route.provider == LLMProvider.GEMINI:
+                candidate = data.get("candidates", [{}])[0]
+                parts = candidate.get("content", {}).get("parts", [])
+                text_chunks = [p.get("text", "") for p in parts if isinstance(p, dict) and "text" in p]
+                content = "\n".join(text_chunks) if text_chunks else ""
+                usage_meta = data.get("usageMetadata", {})
+                prompt_tokens = usage_meta.get("promptTokenCount", 0)
+                completion_tokens = usage_meta.get("candidatesTokenCount", 0)
+                total_tokens = usage_meta.get("totalTokenCount", 0)
+            else:  # GROQ
+                choices = data.get("choices", [{}])
+                content = choices[0].get("message", {}).get("content", "") if choices else ""
+                usage_raw = data.get("usage", {})
+                prompt_tokens = usage_raw.get("prompt_tokens", 0)
+                completion_tokens = usage_raw.get("completion_tokens", 0)
+                total_tokens = usage_raw.get("total_tokens", 0)
         except (KeyError, IndexError, ValueError) as exc:
             raise LLMCallError(f"malformed response: {exc}", provider=route.provider) from exc
 
@@ -230,30 +307,12 @@ class LLMClient:
             model_used=route.model,
             latency_ms=latency_ms,
             usage=LLMUsage(
-                prompt_tokens=usage_raw.get("prompt_tokens", 0),
-                completion_tokens=usage_raw.get("completion_tokens", 0),
-                total_tokens=usage_raw.get("total_tokens", 0),
+                prompt_tokens=prompt_tokens,
+                completion_tokens=completion_tokens,
+                total_tokens=total_tokens,
             ),
             raw=data,
         )
-
-    def _provider_endpoint(self, provider: LLMProvider) -> tuple[str, dict[str, str]]:
-        if provider == LLMProvider.NVIDIA_NIM:
-            base_url = settings.NVIDIA_NIM_BASE_URL.rstrip("/")
-            endpoint = base_url if base_url.endswith("/chat/completions") else f"{base_url}/chat/completions"
-            return endpoint, {
-                "Authorization": f"Bearer {settings.NVIDIA_NIM_API_KEY}",
-                "Content-Type": "application/json",
-                "Accept": "application/json",
-            }
-        if provider == LLMProvider.GROQ:
-            base_url = settings.GROQ_BASE_URL.rstrip("/")
-            endpoint = base_url if base_url.endswith("/chat/completions") else f"{base_url}/chat/completions"
-            return endpoint, {
-                "Authorization": f"Bearer {settings.GROQ_API_KEY}",
-                "Content-Type": "application/json",
-            }
-        raise ValueError(f"unknown provider: {provider}")
 
     def _build_messages(
         self,

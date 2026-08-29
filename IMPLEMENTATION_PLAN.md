@@ -232,11 +232,11 @@ VeriVision-MVP/
 
 | Day | Anil | Disha |
 |:---|:---|:---|
-| **Day 1 (Aug 17)** | Repo create, `.gitignore`, `README.md`, folder structure, `requirements.txt`, `.env` + `.env.example` (all env vars: DB, JWT, NVIDIA NIM, Groq, CLIP, file paths) | DB models: `user.py`, `product.py`, `vendor.py` (Master Vendor & Site list with `id`, `name`, `site_name`, `code`), `inspection.py` (includes vendor_id, location, verdict fields), `evidence.py` |
+| **Day 1 (Aug 17)** | Repo create, `.gitignore`, `README.md`, folder structure, `requirements.txt`, `.env` + `.env.example` (all env vars: DB, JWT, Gemini, Groq, CLIP, file paths) | DB models: `user.py`, `product.py`, `vendor.py` (Master Vendor & Site list with `id`, `name`, `site_name`, `code`), `inspection.py` (includes vendor_id, location, verdict fields), `evidence.py` |
 | **Day 2 (Aug 18)** | `core/security.py` — JWT token creation (access + refresh tokens), password hashing (bcrypt), token validation | `core/database.py` — async SQLAlchemy engine + Alembic init, connection pooling setup, session management |
 | **Day 3 (Aug 19)** | `schemas/auth.py` (Login, Register, Token, User response) + `schemas/inspection.py` (InspectionCreate, InspectionUpdate, InspectionResponse with evidence) | `schemas/product.py` (GoldenReferenceCreate, ProductResponse) + `schemas/vendor.py` (VendorCreate, VendorResponse, VendorDropdown) + `schemas/report.py` (ReportResponse) |
 | **Day 4 (Aug 20)** | `routers/auth.py` (login/register/me/refresh endpoints) + `routers/products.py` (CRUD for golden references) + `routers/vendors.py` (vendor master list CRUD & dropdown endpoints) | `routers/inspections.py` (skeleton with upload endpoint) + `shared/evidence_store.py` (in-memory store with append-only pattern) |
-| **Day 5 (Aug 21)** | `services/embedding_service.py` — CLIP + FAISS setup (local, free) — test with sample images | `shared/llm_client.py` — NVIDIA NIM wrapper + Groq free-tier fallback (with retry logic), `shared/memory.py` (working memory per inspection) |
+| **Day 5 (Aug 21)** | `services/embedding_service.py` — CLIP + FAISS setup (local, free) — test with sample images | `shared/llm_client.py` — Gemini + Groq wrapper (with retry & failover logic), `shared/memory.py` (working memory per inspection) |
 | **Day 6 (Aug 22)** | **Integration Day** — Auth + golden-reference upload flow end-to-end test. Write tests for auth endpoints. | **Integration Day** — Vendor CRUD + evidence store tests. Finalize DB migrations. |
 
 ---
@@ -248,7 +248,7 @@ VeriVision-MVP/
 | **Day 1 (Aug 24)** | `pipeline/stages/quality_check.py` — blur detection (Laplacian variance), lighting (brightness histogram), format validation, resolution check, duplicate detection | `pipeline/stages/authenticity.py` — ELA (Error Level Analysis), EXIF validation (using exifread), basic tamper detection (noise consistency) |
 | **Day 2 (Aug 25)** | `pipeline/stages/reference_match.py` — CLIP embedding generation for uploaded image, FAISS search, golden image selection with similarity threshold | Create sample ROI templates in `data/roi_templates/` (3-5 JSON files with bounding boxes for capacitors, connectors, chips, labels) + `utils/image_utils.py` (crop, resize, conversion functions) |
 | **Day 3 (Aug 26)** | `pipeline/state.py` — define inspection state dataclass (WorkingMemory + EvidenceStore integration) | `pipeline/workflow.py` — LangGraph foundation: define nodes, edges, compile graph with checkpointing |
-| **Day 4 (Aug 27)** | `services/embedding_service.py` — integrate CLIP model loading, embedding generation, FAISS index build/update | `shared/llm_client.py` — implement vision capabilities for VLM Agent (NVIDIA NIM Nemotron Nano Omni + Groq Qwen fallback) |
+| **Day 4 (Aug 27)** | `services/embedding_service.py` — integrate CLIP model loading, embedding generation, FAISS index build/update | `shared/llm_client.py` — implement vision capabilities for VLM Agent (Gemini 3.5 Flash + Groq Qwen fallback) |
 | **Day 5 (Aug 28)** | Unit tests for Stages 1–3 | Unit tests for image utils and embedding service |
 | **Day 6 (Aug 29)** | **Integration Day** — Test Stages 1–3 end-to-end with sample images, verify golden reference matching accuracy | **Integration Day** — Review and finalize ROI template format, document for Stage 4 |
 
@@ -262,7 +262,7 @@ VeriVision-MVP/
 | **Day 2 (Sep 1)** | `agents/base_agent.py` — Abstract base class with run() method, confidence standardization | `agents/ocr_agent.py` — Primary: PaddleOCR, Secondary: EasyOCR integration for text extraction and comparison |
 | **Day 3 (Sep 2)** | `agents/label_agent.py` — OpenCV template matching for labels, seals, logos (using golden template) | `agents/structural_agent.py` — SSIM calculation (OpenCV) foundation |
 | **Day 4 (Sep 3)** | **YOLO Dataset Preparation** — Annotate 15-20 golden images on Roboflow (capacitors, connectors, chips) with bounding boxes | **YOLO Fine-Tune** — Set up Google Colab notebook, fine-tune YOLO11n on annotated dataset (T4 GPU, ~1 hour), export weights |
-| **Day 5 (Sep 4)** | `agents/structural_agent.py` — Integrate YOLO component detection, compare golden vs inspection component counts | `agents/vlm_agent.py` — Primary: NVIDIA NIM Nemotron Nano Omni, fallback: Groq Qwen 3.6 27B, prompt engineering for visual anomaly detection |
+| **Day 5 (Sep 4)** | `agents/structural_agent.py` — Integrate YOLO component detection, compare golden vs inspection component counts | `agents/vlm_agent.py` — Primary: Gemini 3.5 Flash, fallback: Groq Qwen 3.6 27B, prompt engineering for visual anomaly detection |
 | **Day 6 (Sep 5)** | **Integration Day** — Test Stages 4–5 end-to-end: ROI scheduling → evidence execution → agents → verify YOLO detections on sample crops | **Integration Day** — Test all 4 agents independently with ROI crops, log results, fix issues |
 
 ---
@@ -355,9 +355,9 @@ VeriVision-MVP/
 
 | Need | Use | Not |
 |:---|:---|:---|
-| Text reasoning (Judge) | Primary: Groq — `openai/gpt-oss-20b` (verified), Secondary: NVIDIA NIM — `nvidia/nemotron-3-super-120b-a12b` | Paid OpenAI/Anthropic API |
-| Vision reasoning (VLM Agent) | Primary: NVIDIA NIM — `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning`, Secondary: Groq — `qwen/qwen3.6-27b` | Paid GPT-4V / Claude vision |
-| Image embeddings | Open-source CLIP (HuggingFace `openai/clip-vit-base-patch32`), local | Paid embedding APIs |
+| Text reasoning (Judge) | Primary: Groq — `openai/gpt-oss-20b` (verified), Secondary: Google Gemini — `gemini-3.5-flash` | Paid OpenAI/Anthropic API |
+| Vision reasoning (VLM Agent) | Primary: Google Gemini — `gemini-3.5-flash`, Secondary: Groq — `qwen/qwen3.6-27b` | Paid GPT-4V / Claude vision |
+| Image embeddings | Open-source CLIP (`openai/clip-vit-base-patch32`) local / `gemini-embedding-2` | Paid embedding APIs |
 | Object detection (Structural Agent) | YOLO11n, self fine-tuned, AGPL-3.0 (free — repo stays open-source) | Ultralytics Enterprise license |
 | Dataset annotation | Roboflow free tier | Paid annotation tools |
 | Model training | Google Colab free GPU (T4) | Paid Colab Pro / cloud GPU |
