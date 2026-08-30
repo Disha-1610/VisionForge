@@ -1,4 +1,4 @@
-# 📋 VeriVision AI — Extended MVP+ Implementation Plan
+# 📋 VisionForge AI — Extended MVP+ Implementation Plan
 
 > **Team:** Anil + Disha  
 > **Start:** 17 August 2026  
@@ -12,7 +12,7 @@
 ## 📁 Project Structure
 
 ```
-VeriVision-MVP/
+VisionForge-MVP/
 ├── .github/
 │   └── workflows/
 │       ├── ci.yml                    # CI pipeline — pytest, linting & frontend build check
@@ -163,21 +163,33 @@ VeriVision-MVP/
 │       ├── components/
 │       │   ├── landing/
 │       │   │   ├── HeroSection.jsx
-│       │   │   └── HowItWorks.jsx
+│       │   │   ├── HowItWorks.jsx
+│       │   │   ├── FeatureGrid.jsx
+│       │   │   └── SocialProof.jsx
 │       │   ├── common/
 │       │   │   ├── LoadingSpinner.jsx
 │       │   │   ├── ErrorBoundary.jsx
-│       │   │   └── Pagination.jsx
+│       │   │   ├── Pagination.jsx
+│       │   │   ├── StatCard.jsx
+│       │   │   ├── StatusChip.jsx
+│       │   │   ├── EmptyState.jsx
+│       │   │   ├── SkeletonLoader.jsx
+│       │   │   ├── Toast.jsx
+│       │   │   └── ConfirmDialog.jsx
 │       │   ├── layout/
 │       │   │   ├── Navbar.jsx
 │       │   │   ├── Sidebar.jsx
-│       │   │   └── Footer.jsx
+│       │   │   ├── Footer.jsx
+│       │   │   └── Breadcrumbs.jsx
 │       │   ├── inspection/
 │       │   │   ├── ImageUploader.jsx
 │       │   │   ├── ImageCompare.jsx
+│       │   │   ├── PipelineProgress.jsx  # SSE-driven live 8-stage progress (EventSource on /inspections/{id}/events, polling fallback)
 │       │   │   ├── ROIOverlay.jsx
 │       │   │   ├── EvidenceCard.jsx
 │       │   │   └── VerdictBanner.jsx
+│       │   ├── products/
+│       │   │   └── GoldenReferenceUploader.jsx  # admin upload → products CRUD + FAISS index
 │       │   ├── reports/
 │       │   │   ├── ReportsTable.jsx
 │       │   │   └── ReportFilters.jsx
@@ -219,7 +231,7 @@ VeriVision-MVP/
 │       └── fraud_set/
 │
 └── docs/
-    ├── VeriVision-AI-Pipeline-Architecture.md
+    ├── VisionForge-AI-Pipeline-Architecture.md
     ├── api_reference.md
     ├── deployment_guide.md
     ├── test_results.md
@@ -261,7 +273,7 @@ VeriVision-MVP/
 | **Day 1 (Aug 31)** | `pipeline/stages/roi_scheduler.py` — read ROI template, map ROI types to agents, produce execution plan, handle priority ordering | Stage 5: `pipeline/stages/evidence_execution.py` — dispatch framework for parallel agent execution, cropping ROI pairs from golden & inspection images |
 | **Day 2 (Sep 1)** | `agents/base_agent.py` — Abstract base class with run() method, confidence standardization | `agents/ocr_agent.py` — Primary: PaddleOCR, Secondary: EasyOCR integration for text extraction and comparison |
 | **Day 3 (Sep 2)** | `agents/label_agent.py` — OpenCV template matching for labels, seals, logos (using golden template) | `agents/structural_agent.py` — SSIM calculation (OpenCV) foundation |
-| **Day 4 (Sep 3)** | **YOLO Dataset Preparation** — Annotate 15-20 golden images on Roboflow (capacitors, connectors, chips) with bounding boxes | **YOLO Fine-Tune** — Set up Google Colab notebook, fine-tune YOLO11n on annotated dataset (T4 GPU, ~1 hour), export weights |
+| **Day 4 (Sep 3)** | **YOLO Dataset Preparation** — Merge public PCB-component datasets from Roboflow Universe (`https://universe.roboflow.com/search?q=pcb+components`, `?q=electronic+component+detection`; DeepPCB reference: `https://github.com/tangsanli5201/DeepPCB`) + self-shot battery/RAM photos; unify to the 10-class single shared model (Motherboard: capacitor, resistor, ic_chip, connector, screw • Battery: terminal, seal, battery_cell • RAM: ram_ic_chip, gold_pin_connector) on Roboflow free tier, export YOLO format | **YOLO Fine-Tune** — Set up Google Colab notebook, fine-tune YOLO11n on merged dataset (~300 images, 10 classes, T4 GPU, ~1-2 hours), export weights |
 | **Day 5 (Sep 4)** | `agents/structural_agent.py` — Integrate YOLO component detection, compare golden vs inspection component counts | `agents/vlm_agent.py` — Primary: Gemini 3.5 Flash, fallback: Groq Qwen 3.6 27B, prompt engineering for visual anomaly detection |
 | **Day 6 (Sep 5)** | **Integration Day** — Test Stages 4–5 end-to-end: ROI scheduling → evidence execution → agents → verify YOLO detections on sample crops | **Integration Day** — Test all 4 agents independently with ROI crops, log results, fix issues |
 
@@ -274,7 +286,7 @@ VeriVision-MVP/
 | **Day 1 (Sep 7)** | `pipeline/stages/evidence_fusion.py` — Multi-angle merge, weighing SSIM vs YOLO signal, duplicate removal, confidence aggregation | `pipeline/stages/judge.py` — Prompt design for verdict + root cause reasoning with evidence weighting |
 | **Day 2 (Sep 8)** | `pipeline/stages/policy_engine.py` — Hardcoded rules: fraud score thresholds → action mapping (Accept/Retake/Quarantine/Verification) | `services/reporting_service.py` — Report generation with ReportLab (PDF), evidence summary, ROI overlays |
 | **Day 3 (Sep 9)** | `pipeline/workflow.py` — Wire all 8 stages via LangGraph, add error handling and state persistence | `routers/reports.py` — Report fetch endpoints (PDF/JSON), report schema integration |
-| **Day 4 (Sep 10)** | `routers/analytics.py` + `services/analytics_service.py` — Summary queries, vendor/location breakdown, monthly trend, vendor-risk breakdown | `routers/inspections.py` — Complete upload → trigger pipeline → approve/override endpoints, background task for pipeline execution |
+| **Day 4 (Sep 10)** | `routers/analytics.py` + `services/analytics_service.py` — Summary queries, vendor/location breakdown, monthly trend, vendor-risk breakdown. **RBAC on analytics: operator sees only own activity (`created_by = current_user.id`), admin sees everything; plus admin-only `GET /analytics/by-operator` (per-operator inspection & fraud breakdown)** | `routers/inspections.py` — Complete upload → trigger pipeline → approve/override endpoints, background task for pipeline execution. **Real-time pipeline progress via SSE: `GET /inspections/{id}/events` — FastAPI StreamingResponse (`text/event-stream`) emitting an event on every stage start/complete/fail (stage, stage_name, status, n/8, detail) sourced from Working Memory / LangGraph state; final `verdict` event then closes the stream. Also keep lightweight `GET /inspections/{id}/status` as the polling fallback endpoint.** |
 | **Day 5 (Sep 11)** | **Curate Test Dataset** — 30-40 golden-vs-fraud image pairs (include challenging cases: lighting variations, angle changes, subtle tampering) | **Accuracy Testing** — Run full pipeline on test set, log results, calculate precision/recall, document failure cases |
 | **Day 6 (Sep 12)** | **Integration Day** — Fix bugs from accuracy run, write unit tests for all pipeline stages | **Integration Day** — Write unit tests for all agents, finalize test results documentation |
 
@@ -284,10 +296,10 @@ VeriVision-MVP/
 
 | Day | Anil | Disha |
 |:---|:---|:---|
-| **Day 1 (Sep 14)** | Frontend setup: Vite + React, package.json, routing (React Router — public routes `/`, `/login`; protected routes for the rest), Tailwind CSS configuration | `services/api.js` — Axios setup with interceptors for auth, error handling; `context/AuthContext.jsx` |
-| **Day 2 (Sep 15)** | `pages/LandingPage.jsx` + `components/landing/HeroSection.jsx` + `components/landing/HowItWorks.jsx` (4-step pipeline teaser), CTA to Login | `pages/LoginPage.jsx` — Login/Register forms with validation; `components/common/` (LoadingSpinner, ErrorBoundary, Pagination) |
-| **Day 3 (Sep 16)** | `pages/DashboardPage.jsx` — summary cards, recent inspections feed, "+ New Inspection" CTA | `pages/NewInspectionPage.jsx` — Drag-drop upload, vendor dropdown (`GET /vendors`) + inline add, location field, multi-image support |
-| **Day 4 (Sep 17)** | `pages/InspectionDetailPage.jsx` — Verdict banner, evidence cards, approve/override actions | `components/inspection/ImageUploader.jsx` + `components/inspection/ImageCompare.jsx` — drag-drop zone + side-by-side comparison with zoom |
+| **Day 1 (Sep 14)** | Frontend setup: Vite + React, package.json, routing (React Router — public routes `/`, `/login`; protected routes for the rest, plus a `*` → NotFoundPage), Tailwind CSS configuration **+ SaaS Design System tokens: status color palette (Accept/emerald, Quarantine/red, Review/amber, Processing/blue), dark mode via `ThemeContext`, typography scale (Inter), spacing & radius tokens, sidebar layout shell** | `services/api.js` — Axios setup with interceptors for auth, error handling; `context/AuthContext.jsx`; global `Toast` provider (success/error/info toasts on every mutation) |
+| **Day 2 (Sep 15)** | `pages/LandingPage.jsx` + `components/landing/HeroSection.jsx` + `HowItWorks.jsx` (4-step pipeline teaser) + `FeatureGrid.jsx` (agent/product feature cards) + `SocialProof.jsx` (metrics strip — "X parts inspected, Y fraud cases caught"), CTA to Login | `pages/LoginPage.jsx` — Login/Register forms with validation (split-card SaaS layout: form left, product value props right); `components/common/` (LoadingSpinner, ErrorBoundary, Pagination, EmptyState, SkeletonLoader, StatusChip) |
+| **Day 3 (Sep 16)** | `pages/DashboardPage.jsx` — `StatCard` summary row (today's inspections, pending review, fraud detected this week, fraud rate), recent inspections feed with `StatusChip` badges, `GoldenReferenceUploader` panel (admin: upload golden images per product — Motherboard/Battery/RAM → `POST /products`), "+ New Inspection" CTA | `pages/NewInspectionPage.jsx` — Drag-drop upload with multi-image thumbnails, vendor dropdown (`GET /vendors`) + inline add, location field, product-type selector (Motherboard/Battery/RAM), triggers the 8-stage pipeline → redirects to Inspection Detail |
+| **Day 4 (Sep 17)** | `pages/InspectionDetailPage.jsx` — Verdict banner, evidence cards, approve/override actions | `components/inspection/ImageUploader.jsx` + `components/inspection/ImageCompare.jsx` — drag-drop zone + side-by-side comparison with zoom; `components/inspection/PipelineProgress.jsx` — **SSE-driven live 8-stage stepper: native `EventSource` on `/inspections/{id}/events`, animated stage transitions on each `stage` event, verdict banner renders on the final `verdict` event; automatic fallback to `GET /inspections/{id}/status` polling (2-3s) if the SSE connection errors, plus auto-reconnect on transient drops** |
 | **Day 5 (Sep 18)** | `components/inspection/ROIOverlay.jsx` — Render YOLO bounding boxes on images, crop visualization | `components/inspection/EvidenceCard.jsx` + `components/inspection/VerdictBanner.jsx` — fraud probability, confidence, category |
 | **Day 6 (Sep 19)** | **Integration Day** — Connect Landing → Login → Dashboard → New Inspection → Inspection Detail flow end-to-end | **Integration Day** — UI polish, responsiveness fixes, loading states, error messages |
 
@@ -428,7 +440,7 @@ VeriVision-MVP/
 
 | Risk | Mitigation |
 |:---|:---|
-| YOLO fine-tune fails on limited data | Use SSIM as fallback, annotate more images (20-25) for better accuracy |
+| YOLO fine-tune fails on limited data | Use SSIM as fallback, expand with more public Roboflow Universe datasets or annotate more self-shot images for better accuracy |
 | LLM rate limits exceeded | Implement exponential backoff, use fallback models aggressively, cache common prompts |
 | Deployment issues | Early Docker setup, test on free tiers (Render, Vercel) with staging environment |
 | Frontend-backend integration delays | Start frontend after Week 4, use mock data initially, integrated testing every Saturday |

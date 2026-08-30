@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import enum
 import uuid
 from datetime import datetime
@@ -10,11 +12,14 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
 
+if TYPE_CHECKING:
+    from app.models.inspection import Inspection
+
 
 class UserRole(str, enum.Enum):
-    ADMIN = "admin"
-    REVIEWER = "reviewer"
-    VIEWER = "viewer"
+    ADMIN = "admin"          # everything an operator can do + golden image upload,
+                             # pipeline tuning, and full cross-operator analytics
+    OPERATOR = "operator"    # run inspections, review verdicts, view own analytics
 
 
 class User(Base):
@@ -27,7 +32,7 @@ class User(Base):
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
     full_name: Mapped[str] = mapped_column(String(255), nullable=False)
     role: Mapped[UserRole] = mapped_column(
-        Enum(UserRole, name="user_role"), default=UserRole.VIEWER, nullable=False
+        Enum(UserRole, name="user_role"), default=UserRole.OPERATOR, nullable=False
     )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
@@ -38,7 +43,9 @@ class User(Base):
     )
 
     inspections: Mapped[list["Inspection"]] = relationship(
-        "Inspection", back_populates="created_by_user"
+        "Inspection",
+        back_populates="created_by_user",
+        foreign_keys="Inspection.created_by",
     )
     reviews: Mapped[list["Inspection"]] = relationship(
         "Inspection", back_populates="reviewed_by_user", foreign_keys="Inspection.reviewed_by"

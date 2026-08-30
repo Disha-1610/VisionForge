@@ -1,15 +1,15 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.security import get_current_user
+from app.core.security import get_current_user, require_roles
 from app.models.product import GoldenReference
-from app.models.user import User
+from app.models.user import UserRole
 from app.schemas.product import GoldenReferenceCreate, GoldenReferenceResponse
 
 router = APIRouter(prefix="/products", tags=["Products"])
@@ -20,7 +20,7 @@ async def list_golden_references(
     skip: int = 0,
     limit: int = 50,
     db: AsyncSession = Depends(get_db),
-    _user: User = Depends(get_current_user),
+    _user=Depends(get_current_user),
 ):
     result = await db.execute(
         select(GoldenReference).offset(skip).limit(limit)
@@ -32,7 +32,7 @@ async def list_golden_references(
 async def get_golden_reference(
     reference_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    _user: User = Depends(get_current_user),
+    _user=Depends(get_current_user),
 ):
     result = await db.execute(
         select(GoldenReference).where(GoldenReference.id == reference_id)
@@ -47,7 +47,7 @@ async def get_golden_reference(
 async def create_golden_reference(
     body: GoldenReferenceCreate,
     db: AsyncSession = Depends(get_db),
-    _user: User = Depends(get_current_user),
+    _user=Depends(require_roles(UserRole.ADMIN)),
 ):
     ref = GoldenReference(
         part_id=body.part_id,
@@ -66,7 +66,7 @@ async def create_golden_reference(
 async def delete_golden_reference(
     reference_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    _user: User = Depends(get_current_user),
+    _user=Depends(require_roles(UserRole.ADMIN)),
 ):
     result = await db.execute(
         select(GoldenReference).where(GoldenReference.id == reference_id)

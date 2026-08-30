@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import enum
 import uuid
 from datetime import datetime
@@ -9,6 +11,12 @@ from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
+
+if TYPE_CHECKING:
+    from app.models.evidence import Evidence
+    from app.models.product import GoldenReference
+    from app.models.user import User
+    from app.models.vendor import Vendor
 
 
 class InspectionStatus(str, enum.Enum):

@@ -2,12 +2,10 @@ import uuid
 import pytest
 from pydantic import ValidationError
 
-from app.schemas.auth import UserRegister, UserLogin
+from app.schemas.auth import UserRegister
 from app.schemas.vendor import VendorCreate, VendorDropdown
 from app.schemas.product import GoldenReferenceCreate
 from app.schemas.inspection import InspectionCreate, InspectionReviewRequest
-from app.models.user import UserRole
-from app.models.inspection import InspectionVerdict, PolicyAction, ReviewDecision
 
 
 def test_user_schemas_validation():
@@ -33,7 +31,7 @@ def test_product_schemas_validation():
         part_id="PCB-MCU-V2",
         part_name="Microcontroller Board V2",
         vendor_id=uuid.uuid4(),
-        viewing_angle="front",
+        view_angle="front",
         image_path="/data/golden_images/mcu_v2_front.jpg",
         description="Master golden reference",
     )

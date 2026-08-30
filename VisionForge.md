@@ -1,4 +1,4 @@
-# VeriVision AI — MVP Pipeline Architecture
+# VisionForge AI — MVP Pipeline Architecture
 
 > Scoped MVP — 8 stages (Disha's split of ROI Scheduler vs. Evidence Execution adopted), 4 evidence agents, every tool/model on the free tier. Focus this round: **pipeline accuracy**, not feature breadth. The full 14-stage design remains the long-term roadmap.
 
@@ -226,12 +226,35 @@ This is the stage where object-level detection adds real accuracy, not just nove
 - YOLO adds a structured, per-object signal: it detects and counts individual components (capacitors, connectors, chips) in both the golden ROI and the inspection ROI, and reports **which specific component is missing, extra, or misplaced** — this is both more accurate (object presence/count is a stronger fraud signal than pixel similarity) and more explainable (the Judge and the final report can say "capacitor at position 3 is missing" instead of "structural similarity: 0.71").
 - Combine both signals: SSIM catches general structural drift, YOLO catches discrete component-level tampering. Fusion (Stage 6) weighs them together.
 
+**MVP Product Scope (Dell hackathon focus) — 3 products: Motherboard, Battery, RAM**
+
+These are the 3 **product types** (Golden Reference level) supported in MVP. YOLO uses a **single shared model** with all classes combined — Stage 3 (Reference Intelligence) already knows the product type before Structural Agent runs, so the agent filters/counts only the classes relevant to the matched product.
+
+**YOLO classes — single shared model, 10 classes (`component_detector.pt`):**
+
+| # | Class | Product | Fraud signal |
+|:---|:---|:---|:---|
+| 0 | `capacitor` | Motherboard | Missing/extra electrolytic or SMD cap |
+| 1 | `resistor` | Motherboard | Missing/extra SMD resistor |
+| 2 | `ic_chip` | Motherboard | Pirated/re-marked chips, missing IC |
+| 3 | `connector` | Motherboard | Missing/bent connector |
+| 4 | `screw` | Motherboard | Assembly completeness |
+| 5 | `terminal` | Battery | Missing/damaged terminals |
+| 6 | `seal` | Battery | Broken/counterfeit seal |
+| 7 | `battery_cell` | Battery | Counterfeit cell count/pack structure |
+| 8 | `ram_ic_chip` | RAM | Missing/downgraded memory chips |
+| 9 | `gold_pin_connector` | RAM | Damaged pins, re-marked modules |
+
 **Getting a usable YOLO model without a paid dataset or paid compute:**
-1. Annotate 15–20 of your own golden reference images with bounding boxes for the components that matter (capacitors, connectors, chips) — Roboflow's free tier covers annotation for a project this size.
-2. Fine-tune `YOLO11n` (the nano variant — smallest, fastest, fits free compute) on that annotated set using a free Google Colab GPU session. A nano model on ~20 images trains in well under an hour.
-3. Export the weights to `data/yolo_weights/component_detector.pt` and load them locally in `structural_agent.py` — no inference API, no ongoing cost.
-4. Pretrained COCO-weights YOLO won't help here — COCO has no "capacitor" or "connector" class. The fine-tune step is what makes it useful, not the base model.
-5. License: AGPL-3.0 is free as long as the repo stays open-source, which it already is.
+1. **Start from public datasets, re-fine-tune on your own golden images.** Merge Roboflow Universe PCB-component datasets (~150-200 motherboard images, classes capacitor/resistor/IC/connector), then add ~50-80 battery + ~50-80 RAM images (Roboflow Universe or self-photographed parts annotated on Roboflow free tier). Dataset search links:
+   - Roboflow Universe search: `https://universe.roboflow.com/search?q=pcb+components` and `?q=electronic+component+detection` (pick datasets whose classes map cleanly to the 10 classes above, export YOLOv11 format)
+   - **DeepPCB** (verified, MIT, 1,500 template/tested image pairs — defect classes, use as supplementary/reference data): `https://github.com/tangsanli5201/DeepPCB`
+   - Kaggle search for supplementary parts images: `https://www.kaggle.com/search?q=pcb+component+detection`
+2. Re-annotate/merge on **Roboflow free tier** so all sources share the exact 10-class label space, and export in YOLO format.
+3. Fine-tune `YOLO11n` (the nano variant — smallest, fastest, fits free compute) on the merged set (~300 images, 10 classes) using a free Google Colab GPU session (T4, ~1-2 hours).
+4. Export the weights to `data/yolo_weights/component_detector.pt` and load them locally in `structural_agent.py` — no inference API, no ongoing cost.
+5. Pretrained COCO-weights YOLO won't help here — COCO has no "capacitor" or "connector" class. The fine-tune step is what makes it useful, not the base model.
+6. License: AGPL-3.0 is free as long as the repo stays open-source, which it already is.
 
 **5d. VLM Agent** — Primary: Google Gemini **Gemini 3.5 Flash** (`gemini-3.5-flash`, verified active, multimodal defect analysis & explanation). Secondary / Fallback: Groq **Qwen 3.6 27B Vision** (`qwen/qwen3.6-27b`, verified active, 27B multimodal reasoning). Catches general visual anomalies the other 3 agents aren't specifically looking for; also the fallback when a region doesn't cleanly map to OCR/Label/Structural. Combined vision+reasoning means it can return a short explanation alongside the detection, not just a raw label.
 
@@ -276,6 +299,33 @@ Root Cause = YOLO detected capacitor missing at ROI position 3 (golden: 4 detect
 
 ---
 
+### 7b. Real-Time Pipeline Progress (SSE — Backend ↔ Frontend contract)
+
+The pipeline runs as a background task; the frontend sees every stage **live** via Server-Sent Events instead of blind polling.
+
+**Endpoint:** `GET /inspections/{id}/events` — FastAPI `StreamingResponse`, media type `text/event-stream`. As each LangGraph stage node transitions, the router emits an event sourced from Working Memory / pipeline state:
+
+```
+event: stage
+data: {"stage": 4, "stage_name": "roi_scheduler", "status": "started",  "progress": 4, "detail": "Planning 6 ROIs across 4 agents"}
+
+event: stage
+data: {"stage": 5, "stage_name": "evidence_execution", "status": "completed", "progress": 5, "detail": "YOLO: 3/4 capacitors detected in ROI 3"}
+
+event: verdict
+data: {"verdict": "REJECT", "fraud_probability": 92, "confidence": 96, "category": "Counterfeit Component"}
+```
+
+**Rules**
+- One event per stage transition: `status ∈ {started, completed, failed}` with `detail` (human-readable, surfaced in the UI stepper).
+- The final `verdict` event carries the Judge's decision, then the server closes the stream.
+- SSE also fires a `stage.failed` event with the failing stage + reason — the UI shows it immediately instead of a silent hang.
+- Auth via the existing JWT (token passed as a query param or header on the EventSource request).
+- **Fallback:** `GET /inspections/{id}/status` stays as a plain polling endpoint — the frontend's `PipelineProgress` degrades to 2-3s polling automatically if `EventSource` errors (proxies, corporate firewalls, Render free-tier idle timeouts).
+- `EventSource` handles auto-reconnect natively; on reconnect the server replays current state (current stage + progress) so the stepper never shows stale data.
+
+---
+
 ### 8. Policy Engine + Explainable Report
 *(Policy is deterministic code; report generation reads the Judge's output)*
 **Tool:** Plain code + ReportLab (PDF) — free, local.
@@ -309,6 +359,28 @@ else:
 
 ## 5. Frontend Architecture
 
+### Roles & Permissions (2-role model — RBAC)
+
+The platform has exactly **two roles**: `OPERATOR` (default on registration) and `ADMIN`. An admin can do everything an operator can, plus the extras below.
+
+| Capability | OPERATOR | ADMIN |
+|:---|:---:|:---:|
+| Run inspections (upload images, trigger pipeline) | ✅ | ✅ |
+| View inspection results, evidence, verdicts | ✅ | ✅ |
+| Approve / Override verdicts | ✅ | ✅ |
+| Analytics — **own** activity (their inspections, their verdicts) | ✅ | ✅ |
+| **Golden image upload** (Golden Reference management) | ❌ | ✅ |
+| **Pipeline tuning** (fraud-score thresholds, similarity threshold, agent/model routing — admin UI on top of config) | ❌ | ✅ |
+| **Full analytics** — all operators' inspection counts, verdicts, fraud cases, vendor/location breakdowns, per-operator activity | ❌ | ✅ |
+| Vendor master create/update/delete | ❌ | ✅ |
+
+**Backend enforcement** — `require_roles()` dependency factory in `core/security.py`:
+- `require_roles(UserRole.ADMIN)` on product create/delete and vendor create/update/delete
+- `require_roles(UserRole.OPERATOR, UserRole.ADMIN)` on inspection create, approve/override
+- Analytics endpoints: operator gets results filtered to `created_by = current_user.id`; admin gets the full aggregation. `GET /analytics/by-operator` (admin-only) adds the per-operator breakdown.
+- Role is embedded in the JWT (`role` claim) at login/refresh; frontend reads it from `AuthContext` to show/hide admin-only UI (GoldenReferenceUploader, pipeline tuning panel, full-analytics toggle).
+
+
 7 pages — enough to tell a complete story (upload → verdict → audit trail → trends) without the page bloat of the original 10-page design.
 
 ### Page-by-Page
@@ -318,10 +390,12 @@ else:
 | 1 | **Landing** | Public | First impression for anyone opening the live URL — hero, "how it works" (4-step pipeline teaser), CTA to log in. This is the page an interviewer/judge sees first. |
 | 2 | **Login** | Public | Login + Register in one form (tab toggle) — keeps page count down. |
 | 3 | **Dashboard** | Protected | Home after login — summary cards (today's inspections, pending review, fraud detected this week), recent inspection activity, "+ New Inspection" CTA. Built for daily monitoring. |
-| 4 | **New Inspection** | Protected | Vendor dropdown (from `GET /vendors`, inline "add vendor" option), location field, multi-image drag-drop upload, triggers the 8-stage pipeline. |
-| 5 | **Inspection Detail** | Protected | Verdict banner, side-by-side image compare, ROI overlays (including YOLO bounding boxes), one evidence card per agent, Judge's root-cause explanation, Approve/Override action, "Download Report (PDF)" — this is the live review workspace. |
+| 4 | **New Inspection** | Protected | Vendor dropdown (from `GET /vendors`, inline "add vendor" option), location field, product-type selector (Motherboard / Battery / RAM), multi-image drag-drop upload, triggers the 8-stage pipeline → redirects to Inspection Detail. |
+| 5 | **Inspection Detail** | Protected | Live **8-stage `PipelineProgress` over SSE** (subscribes to `GET /inspections/{id}/events` — every stage start/complete/fail pushes an event instantly; polling fallback via `/status`), verdict banner, side-by-side image compare, ROI overlays (including YOLO bounding boxes), one evidence card per agent, Judge's root-cause explanation, Approve/Override action, "Download Report (PDF)" — this is the live review workspace. |
 | 6 | **Reports** | Protected | Filterable archive of every past inspection's report — filter by date range, vendor, location, verdict, fraud category; bulk export. Distinct from Inspection Detail: this is the audit/compliance view ("show me every Quarantined part from Vendor X in July"), not a live review screen. |
 | 7 | **Analytics** | Protected | Summary cards, monthly fraud trend chart, vendor breakdown, location breakdown, vendor-component-risk breakdown (matches the `/analytics/vendor-risk` endpoint). |
+
+Plus a **404 NotFoundPage** for any unmatched route (with a link back to Dashboard) — no bare white screens in a demo.
 
 **Deliberately not separate pages, to keep scope lean:**
 - **Vendor management** — folded into an inline "add vendor" action on New Inspection rather than a full CRUD page.
@@ -338,7 +412,57 @@ else:
 /inspections/:id     → InspectionDetailPage (protected)
 /reports             → ReportsPage          (protected)
 /analytics           → AnalyticsPage        (protected)
+*                    → NotFoundPage         (any unmatched route)
 ```
+
+### Frontend ↔ Backend Coverage Checklist
+
+Every backend capability must have a visible frontend surface — this is the acceptance check before calling the frontend "done":
+
+| Backend capability | Endpoint(s) | Frontend surface |
+|:---|:---|:---|
+| Auth (login/register/refresh/me) | `/auth/*` | LoginPage, `AuthContext`, Axios interceptor auto-refresh + redirect to `/login` on 401 |
+| Golden Reference upload (admin) | `POST/GET/DELETE /products` | `GoldenReferenceUploader` panel on Dashboard (product-type selector: Motherboard/Battery/RAM, multi-image upload, shows FAISS indexing status) |
+| Vendor master list | `GET/POST /vendors` | New Inspection vendor dropdown + inline "add vendor" modal |
+| Trigger pipeline | `POST /inspections` | New Inspection upload form |
+| **Live pipeline progress** | **`GET /inspections/{id}/events` (SSE) + `GET /inspections/{id}/status` (fallback)** | **`PipelineProgress` — real-time 8-stage stepper over Server-Sent Events: native `EventSource` subscribes on mount, each stage emits a `stage` event (started/completed/failed + n/8 + detail) the moment it happens, final `verdict` event renders the VerdictBanner and closes the stream; EventSource auto-reconnects on transient drops, and if SSE is unavailable (proxy/firewall) it degrades to 2-3s polling of the status endpoint** |
+| Verdict + evidence + root cause | `GET /inspections/{id}` | Inspection Detail: VerdictBanner, EvidenceCard × 4, ImageCompare, ROIOverlay |
+| Approve/Override | `POST /inspections/{id}/review` | Approve / Override buttons with `ConfirmDialog` + required comment on override |
+| Report download | `GET /reports/{id}` (PDF/JSON) | "Download Report" button on Inspection Detail; CSV/PDF bulk export on Reports |
+| Report archive + filters | `GET /reports` | ReportsTable + ReportFilters (date range, vendor, location, verdict, category) + Pagination |
+| Analytics | `GET /analytics/*` | AnalyticsPage: SummaryCards, FraudTrendChart, VendorLocationTable, VendorRiskTable |
+| Dashboard summary | `GET /analytics/summary` + recent inspections | Dashboard `StatCard` row + recent activity feed with `StatusChip` badges |
+
+### UI/UX Design System — SaaS-Grade Standard
+
+The UI must read as a **business platform**, not a college project. These are the non-negotiables every page follows:
+
+**Design tokens (Tailwind config, defined Day 1 of Week 5):**
+- **Typography:** Inter (or system fallback) — 12/14/16/20/24/32px scale; tabular numerals for scores and tables so numbers align.
+- **Color semantics (consistent everywhere — chips, banners, charts):**
+  - `Accept` → emerald/green · `Quarantine`/`Reject` → red · `Review`/pending → amber · `Processing` → blue · Neutral info → slate
+  - Fraud score displayed as a colored gauge/progress ring (green → amber → red by threshold) — never a raw number alone.
+- **Dark mode** first-class via `ThemeContext` toggle (persisted in localStorage) — both modes must pass contrast checks.
+- **Radius/spacing:** consistent 8px grid, rounded-xl cards, subtle shadows — no mixed border styles.
+
+**Layout:**
+- **Persistent left Sidebar** (Dashboard, New Inspection, Reports, Analytics) + top **Navbar** (user menu, theme toggle) on all protected pages; content in a max-width container with **Breadcrumbs** on detail pages.
+- **StatCard row** pattern on Dashboard and Analytics — same visual language on both pages.
+- Landing page: hero with product screenshot/preview, FeatureGrid (one card per evidence agent + analytics), SocialProof metrics strip, clear single CTA.
+
+**Every state designed (no blank boxes):**
+- **Loading** → SkeletonLoaders matching final layout (not spinners on empty screens)
+- **Empty** → EmptyState with icon + explanation + CTA ("No inspections yet — run your first inspection")
+- **Error** → inline error cards + retry; global ErrorBoundary page for crashes; **Toasts** on every mutation (upload started, verdict ready, report downloaded, override saved)
+- **Destructive/risky actions** (Override, delete golden reference) → `ConfirmDialog` with reason field
+
+**Micro-interactions & polish:**
+- Pipeline progress animates stage-by-stage while polling; verdict banner animates in with the score ring.
+- Hover states on all interactive elements; focus-visible rings for keyboard nav.
+- Responsive: sidebar collapses to icon rail on tablet, bottom nav/drawer on mobile; tables become stacked cards on small screens.
+
+**Accessibility (AA):**
+- Semantic HTML + labels on all inputs, ARIA on the progress stepper and toasts, 4.5:1 contrast minimum, full keyboard operability.
 
 ### Component Map
 
@@ -346,21 +470,33 @@ else:
 components/
 ├── landing/
 │   ├── HeroSection.jsx
-│   └── HowItWorks.jsx          # 4-step pipeline teaser: Upload → AI Pipeline → Verdict → Report
+│   ├── HowItWorks.jsx          # 4-step pipeline teaser: Upload → AI Pipeline → Verdict → Report
+│   ├── FeatureGrid.jsx         # one card per evidence agent + analytics + 3 supported products
+│   └── SocialProof.jsx         # metrics strip: parts inspected, fraud cases caught
 ├── common/
 │   ├── LoadingSpinner.jsx
 │   ├── ErrorBoundary.jsx
-│   └── Pagination.jsx           # shared by Dashboard, Reports
+│   ├── Pagination.jsx           # shared by Dashboard, Reports
+│   ├── StatCard.jsx             # KPI cards (Dashboard, Analytics)
+│   ├── StatusChip.jsx           # verdict/status badge — color semantics from design system
+│   ├── EmptyState.jsx           # icon + explanation + CTA for empty lists
+│   ├── SkeletonLoader.jsx       # layout-matching loading placeholders
+│   ├── Toast.jsx                # global toast provider — every mutation gives feedback
+│   └── ConfirmDialog.jsx        # Override / delete-golden-reference confirmations
 ├── layout/
-│   ├── Navbar.jsx
-│   ├── Sidebar.jsx               # Dashboard, New Inspection, Reports, Analytics
+│   ├── Navbar.jsx               # user menu, theme toggle
+│   ├── Sidebar.jsx              # Dashboard, New Inspection, Reports, Analytics (collapsible)
+│   ├── Breadcrumbs.jsx          # detail pages
 │   └── Footer.jsx
 ├── inspection/
 │   ├── ImageUploader.jsx
 │   ├── ImageCompare.jsx
+│   ├── PipelineProgress.jsx     # SSE-driven live 8-stage stepper: EventSource on /inspections/{id}/events, polling fallback to /status
 │   ├── ROIOverlay.jsx            # renders YOLO bounding boxes + ROI template regions
 │   ├── EvidenceCard.jsx          # one per agent: OCR, Label, Structural, VLM
 │   └── VerdictBanner.jsx
+├── products/
+│   └── GoldenReferenceUploader.jsx  # admin golden image upload per product type → /products CRUD
 ├── reports/
 │   ├── ReportsTable.jsx          # filterable table, links to Inspection Detail
 │   └── ReportFilters.jsx         # date range, vendor, location, verdict, category
@@ -400,11 +536,12 @@ They answer different questions. Inspection Detail answers "what happened on thi
 **Endpoints**
 ```
 GET /vendors                    → dropdown master list of vendors & sites
-GET /analytics/summary          → total inspections, total fraud, fraud rate
+GET /analytics/summary          → total inspections, total fraud, fraud rate (operator: own only; admin: all)
 GET /analytics/by-vendor        → vendor-wise breakdown, sorted by fraud rate
 GET /analytics/by-location      → location-wise breakdown, sorted by fraud rate
 GET /analytics/vendor-risk      → vendor x fraud component/category breakdown
 GET /analytics/monthly-trend    → fraud count per month
+GET /analytics/by-operator      → per-operator inspection & fraud breakdown (ADMIN only)
 ```
 
 **Still deferred (roadmap, not MVP):** detector-level accuracy tracking, human-override rate, tampering-trend-vs-physical-fraud split — these need history across model versions and aren't meaningful until the pipeline has been running a while.

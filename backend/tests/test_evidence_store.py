@@ -1,11 +1,10 @@
-import uuid
+﻿import uuid
 import pytest
 from app.shared.evidence_store import (
     EvidenceStore,
     AgentType,
     EvidenceImmutableError,
     EvidenceStoreError,
-    EvidenceNotFoundError,
 )
 
 

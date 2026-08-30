@@ -9,9 +9,9 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import AsyncSessionLocal, get_db
-from app.core.security import get_current_user
+from app.core.security import get_current_user, require_roles
 from app.models.inspection import Inspection, InspectionStatus, ReviewDecision
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.models.vendor import Vendor
 from app.pipeline.workflow import run_inspection_pipeline
 from app.schemas.inspection import (
@@ -167,7 +167,7 @@ async def approve_inspection(
     inspection_id: UUID,
     payload: InspectionReviewRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_roles(UserRole.ADMIN, UserRole.OPERATOR)),
 ) -> InspectionResponse:
     inspection = await _get_completed_inspection_or_404(inspection_id, db)
 
@@ -186,11 +186,8 @@ async def override_inspection(
     inspection_id: UUID,
     payload: InspectionReviewRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_roles(UserRole.ADMIN, UserRole.OPERATOR)),
 ) -> InspectionResponse:
-    if current_user.role not in ("admin", "reviewer"):
-        raise HTTPException(http_status.HTTP_403_FORBIDDEN, "Insufficient role for override")
-
     inspection = await _get_completed_inspection_or_404(inspection_id, db)
     if not payload.comment or not payload.comment.strip():
         raise HTTPException(http_status.HTTP_400_BAD_REQUEST, "Override requires a reviewer comment")

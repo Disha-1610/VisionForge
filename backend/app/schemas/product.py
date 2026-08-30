@@ -10,8 +10,8 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 class GoldenReferenceBase(BaseModel):
     part_id: str = Field(..., min_length=1, max_length=100)
     part_name: str = Field(..., min_length=1, max_length=255)
-    vendor_id: UUID
-    viewing_angle: str = Field(..., min_length=1, max_length=50)
+    vendor_id: Optional[UUID] = None
+    view_angle: str = Field(..., min_length=1, max_length=50)
     description: Optional[str] = Field(default=None, max_length=2000)
 
     @field_validator("part_id")
@@ -40,15 +40,18 @@ class ProductResponse(GoldenReferenceBase):
 
     id: UUID
     image_path: str
+    thumbnail_path: Optional[str] = None
     roi_template_path: Optional[str] = None
-    faiss_index_id: Optional[int] = Field(
+    embedding_id: Optional[str] = Field(
         default=None,
-        description="Position of this reference's embedding in the FAISS index",
+        description="ID of this reference's embedding in the FAISS index",
     )
-    embedding_generated: bool = False
-    is_active: bool = True
     created_at: datetime
     updated_at: datetime
+
+
+# Routers reference this name — same schema, kept as an alias.
+GoldenReferenceResponse = ProductResponse
 
 
 class ProductListResponse(BaseModel):

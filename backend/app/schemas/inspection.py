@@ -46,6 +46,11 @@ class InspectionReviewRequest(BaseModel):
     review_decision: str = Field(..., description="approved or overridden")
     reviewer_comment: Optional[str] = None
 
+    @property
+    def comment(self) -> Optional[str]:
+        """Alias used by the routers."""
+        return self.reviewer_comment
+
 
 # ── Response Schemas ──────────────────────────────────────────────────────────
 
@@ -81,3 +86,17 @@ class InspectionResponse(BaseModel):
 
 class InspectionDetailResponse(InspectionResponse):
     evidence_records: list[EvidenceResponse] = []
+
+
+class InspectionCreateResponse(BaseModel):
+    """Returned immediately after upload — pipeline runs in background."""
+    id: uuid.UUID
+    case_number: str
+    status: str
+    message: str
+
+
+class InspectionListResponse(BaseModel):
+    items: list[InspectionResponse]
+    page: int
+    page_size: int

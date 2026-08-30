@@ -1,8 +1,7 @@
-import base64
+﻿import base64
 import logging
 from io import BytesIO
 from pathlib import Path
-from typing import Any
 
 import numpy as np
 import requests
@@ -172,7 +171,7 @@ class EmbeddingService:
     def save_index(self, path: str | Path) -> None:
         """Persist the FAISS index and ID map to disk."""
         if self._index is None:
-            raise RuntimeError("No index to save — call build_index first")
+            raise RuntimeError("No index to save â€” call build_index first")
 
         path = Path(path)
         path.parent.mkdir(parents=True, exist_ok=True)

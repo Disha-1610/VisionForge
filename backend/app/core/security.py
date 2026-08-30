@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
+from typing import TYPE_CHECKING
 
 import bcrypt
 import jwt
@@ -11,6 +12,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.core.database import get_db
+
+if TYPE_CHECKING:
+    from app.models.user import UserRole
 
 settings = get_settings()
 
@@ -101,3 +105,37 @@ async def get_current_user(
             detail="Inactive user",
         )
     return user
+
+
+# ── RBAC — Role-Based Access Control ─────────────────────────────────────────
+#
+# Usage on a router endpoint:
+#     from app.models.user import UserRole
+#     from app.core.security import require_roles
+#
+#     @router.post("/", dependencies=[Depends(require_roles(UserRole.ADMIN))])
+#     async def create_thing(...): ...
+#
+# Or combined with the current user when the handler also needs it:
+#     current_user: User = Depends(require_roles(UserRole.ADMIN, UserRole.OPERATOR))
+
+def require_roles(*allowed_roles: UserRole):
+    """
+    Dependency factory: endpoint access is allowed only for the given roles.
+    Pass no arguments to allow any authenticated, active user.
+    """
+    from app.models.user import User, UserRole as _UR
+
+    allowed = set(allowed_roles) or set(_UR)
+
+    async def role_checker(
+        current_user: User = Depends(get_current_user),
+    ) -> User:
+        if current_user.role not in allowed:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Requires one of: {', '.join(r.value for r in allowed)}",
+            )
+        return current_user
+
+    return role_checker
