@@ -396,6 +396,38 @@ VisionForge-MVP/
 
 ---
 
+## 👥 Roles & Ownership — Kaun kya karega
+
+**Dono full-stack hain** — ye silo nahi hai, sirf ownership hai. Jo bhi stuck ho, doosra pair karta hai.
+
+### 👤 Anil — Backend Lead + AI/CV Pipeline + Infra
+*(fraud-detection engine ka owner)*
+- **Backend core:** `core/security.py` (JWT, bcrypt, RBAC), `main.py`, `config.py`, Docker setup
+- **Models & schemas:** `user.py`, `inspection.py` + auth/inspection schemas
+- **Routers:** `auth.py`, `products.py`, `reports.py`, `analytics.py`
+- **Pipeline stages:** `quality_check`, `reference_match`, `roi_scheduler`, `evidence_fusion`, `policy_engine`
+- **Agents:** `base_agent`, `label_agent`, `vlm_agent`
+- **Service:** `embedding_service` (CLIP + FAISS — Stage 3 ka dil)
+- **CI/CD & Deploy:** GitHub Actions, backend deploy (Render)
+- **Docs:** API reference, architecture doc
+
+### 👤 Disha — Frontend Lead + Agents/YOLO + Backend Support
+*(YOLO/agents + engine ke upar jo bhi hai, uska owner)*
+- **Frontend (W5-W6 main focus):** `LoginPage`, `NewInspectionPage`, `ImageUploader`, `ImageCompare`, `EvidenceCard`, `VerdictBanner`, ReportFilters/Table, SummaryCards, VendorLocation/VendorRisk tables, frontend deploy (Vercel)
+- **Backend support:** `core/database.py` (async engine, Alembic, migrations), `exceptions.py`, docker-compose
+- **Models & schemas:** `product.py`, `vendor.py`, `evidence.py` + product/vendor/report schemas
+- **Routers:** `vendors.py`, `inspections.py` (SSE progress wala)
+- **Pipeline stages:** `authenticity`, `evidence_execution`, `judge`
+- **Agents:** `ocr_agent`, `structural_agent` — **YOLO fine-tune + integration Disha ka exclusive kaam hai**
+- **Services:** `reporting_service` (ReportLab PDF), `analytics_service` (SQL)
+- **Docs:** README, test results, demo script
+
+### 🔗 Shared
+- Har **Saturday (Day 6):** code review + integration testing — dono saath
+- Story for judges: *"dono full-stack developers hain, ownership alag hai"* — not "backend dev + frontend dev" silo
+
+---
+
 ## 🧠 Free-Tier Cheat Sheet (Updated)
 
 | Need | Use | Not |
