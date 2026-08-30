@@ -9,7 +9,40 @@
 
 ---
 
-## 📁 Project Structure
+## 🏁 Implementation Status — VisionForge.md ↔ Code (verified Sep 2026)
+
+`VisionForge.md` is the **design source of truth**; this plan maps its features to schedule. Status below reflects the actual codebase (verified via tests/imports):
+
+| VisionForge.md feature | Plan slot | Status |
+|:---|:---|:---:|
+| Async SQLAlchemy + pooling + session ctx | W1 D2 | ✅ Done |
+| Models: user, vendor, product, inspection, evidence (incl. YOLO count fields) | W1 D1 | ✅ Done |
+| JWT access/refresh + bcrypt + token-type check | W1 D2 | ✅ Done |
+| Schemas (auth, inspection, product, vendor, report) | W1 D3 | ✅ Done |
+| Routers: auth, products, vendors, inspections (+ background task, case numbers) | W1 D4 | ✅ Done |
+| Evidence Store (append-only, immutable, thread-safe) | W1 D4 | ✅ Done |
+| Working Memory (per-stage StageResult tracking — SSE-ready) | W1 D5 | ✅ Done |
+| LLM Client (Groq/Gemini primary→fallback routing) | W1 D5 | ✅ Done |
+| Embedding Service (Gemini 1-shot → OpenCLIP fallback + FAISS) | W1/W2 | ✅ Done |
+| Alembic migration 001 (5 tables, 2-role enum) | W1 D6 | ✅ Done |
+| Test suite (16 passing: auth, RBAC, evidence store, memory, schemas) | W1 D6 | ✅ Done |
+| file_utils (safe upload), workflow stub | W2 D1 | ✅ Done |
+| **RBAC — 2 roles (OPERATOR/ADMIN), `require_roles()` factory** | W1 (added) | ✅ Done |
+| Pipeline stages 1–3 (quality_check, authenticity, reference_match) | W2 | 🔲 Planned |
+| ROI templates + image_utils | W2 D2 | 🔲 Planned |
+| LangGraph workflow (replace stub) | W2 D3/W4 D3 | 🔲 Planned |
+| Pipeline stages 4–5 + 4 agents | W3 | 🔲 Planned |
+| YOLO dataset merge (10 classes) + fine-tune | W3 D4 | 🔲 Planned |
+| Stages 6–8, reporting, analytics + by-operator RBAC | W4 | 🔲 Planned |
+| SSE endpoint `GET /inspections/{id}/events` + status fallback | W4 D4 | 🔲 Planned (contract documented) |
+| Frontend (7 pages + design system + components) | W5–W6 | 🔲 Planned |
+| CI/CD + Render/Vercel deploy | W7 | 🔲 Planned |
+
+> **Rule:** when a VisionForge.md feature lands in code, update this table in the same commit.
+
+---
+
+
 
 ```
 VisionForge-MVP/
