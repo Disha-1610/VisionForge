@@ -1,347 +1,804 @@
+# backend/app/shared/llm_client.py
+"""
+Shared LLM Client — provider-agnostic text/vision generation with
+primary -> fallback routing, retry/backoff, and structured JSON output.
+
+Used exclusively by:
+  - pipeline/agents/vlm_agent.py      (generate_vision)
+  - pipeline/stages/judge.py          (generate_json / generate_text)
+
+Routing (fixed per VisionForge MVP architecture):
+  judge -> primary: groq/openai/gpt-oss-20b   | fallback: gemini/gemini-3.5-flash
+  vlm   -> primary: gemini/gemini-3.5-flash   | fallback: groq/qwen/qwen3.6-27b
+"""
+
 from __future__ import annotations
 
 import asyncio
-import base64
+import json
 import logging
 import random
+import time
+from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any
+from typing import Any, Generic, Optional, Protocol, TypeVar
 
 import httpx
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
 
 from app.core.config import settings
 
-logger = logging.getLogger("app.shared.llm_client")
+logger = logging.getLogger("visionforge.llm_client")
+
+T = TypeVar("T", bound=BaseModel)
 
 
-class LLMRole(str, Enum):
+# --------------------------------------------------------------------------- #
+# Enums
+# --------------------------------------------------------------------------- #
+
+
+class LLMProvider(str, Enum):
+    GROQ = "groq"
+    GEMINI = "gemini"
+
+
+class LLMCapability(str, Enum):
+    TEXT = "text"
+    VISION = "vision"
+
+
+class LLMTask(str, Enum):
     JUDGE = "judge"
     VLM = "vlm"
 
 
-class LLMProvider(str, Enum):
-    GEMINI = "gemini"
-    GROQ = "groq"
+class FinishReason(str, Enum):
+    STOP = "stop"
+    LENGTH = "length"
+    CONTENT_FILTER = "content_filter"
+    ERROR = "error"
+    UNKNOWN = "unknown"
 
 
-class LLMCallError(Exception):
-    def __init__(self, message: str, provider: LLMProvider, status_code: int | None = None) -> None:
+class ResponseFormat(str, Enum):
+    TEXT = "text"
+    JSON = "json"
+
+
+# --------------------------------------------------------------------------- #
+# Data models
+# --------------------------------------------------------------------------- #
+
+
+class ImageInput(BaseModel):
+    source: str = Field(..., description="Local file path or base64-encoded payload")
+    mime_type: str = Field(..., description="e.g. image/jpeg, image/png")
+
+
+class LLMMessage(BaseModel):
+    role: str = Field(..., pattern="^(system|user|assistant)$")
+    content: str
+
+
+class LLMRequest(BaseModel):
+    task: LLMTask
+    capability: LLMCapability
+    messages: list[LLMMessage]
+    images: Optional[list[ImageInput]] = None
+    model: Optional[str] = None
+    temperature: float = 0.2
+    max_tokens: int = 2048
+    response_format: ResponseFormat = ResponseFormat.TEXT
+    inspection_id: Optional[str] = None
+    stage_name: Optional[str] = None
+
+
+class LLMResponse(BaseModel, Generic[T]):
+    provider: LLMProvider
+    model: str
+    content: str
+    parsed: Optional[dict[str, Any]] = None
+    finish_reason: FinishReason
+    latency_ms: float
+    attempt: int
+    used_fallback: bool
+
+
+class LLMErrorInfo(BaseModel):
+    provider: LLMProvider
+    model: str
+    code: str
+    message: str
+    retryable: bool
+    attempt: int
+    failover_available: bool
+
+
+class LLMClientError(Exception):
+    """Raised when all configured providers/models are exhausted."""
+
+    def __init__(self, message: str, errors: list[LLMErrorInfo]) -> None:
+        super().__init__(message)
+        self.errors = errors
+
+
+# --------------------------------------------------------------------------- #
+# Provider configuration
+# --------------------------------------------------------------------------- #
+
+
+@dataclass(frozen=True)
+class ProviderConfig:
+    provider: LLMProvider
+    api_key: str
+    base_url: str
+    text_model: str
+    vision_model: str
+    timeout_seconds: float = 30.0
+    max_retries: int = 3
+    initial_backoff_seconds: float = 1.0
+    max_backoff_seconds: float = 8.0
+
+
+@dataclass(frozen=True)
+class ModelRoute:
+    provider: LLMProvider
+    model: str
+
+
+@dataclass(frozen=True)
+class TaskRouting:
+    primary: ModelRoute
+    fallback: ModelRoute
+
+
+@dataclass(frozen=True)
+class ModelRouting:
+    judge: TaskRouting
+    vlm: TaskRouting
+
+
+DEFAULT_ROUTING = ModelRouting(
+    judge=TaskRouting(
+        primary=ModelRoute(provider=LLMProvider.GROQ, model="openai/gpt-oss-20b"),
+        fallback=ModelRoute(provider=LLMProvider.GEMINI, model="gemini-3.5-flash"),
+    ),
+    vlm=TaskRouting(
+        primary=ModelRoute(provider=LLMProvider.GEMINI, model="gemini-3.5-flash"),
+        fallback=ModelRoute(provider=LLMProvider.GROQ, model="qwen/qwen3.6-27b"),
+    ),
+)
+
+
+@dataclass(frozen=True)
+class LLMClientConfig:
+    groq: ProviderConfig
+    gemini: ProviderConfig
+    max_retries: int = 3
+    request_timeout_seconds: float = 30.0
+    initial_backoff_seconds: float = 1.0
+    max_backoff_seconds: float = 8.0
+    routing: ModelRouting = field(default_factory=lambda: DEFAULT_ROUTING)
+
+
+def build_default_config() -> LLMClientConfig:
+    """Build provider config from environment/settings (no secrets logged)."""
+    groq_cfg = ProviderConfig(
+        provider=LLMProvider.GROQ,
+        api_key=settings.GROQ_API_KEY,
+        base_url=settings.GROQ_BASE_URL or "https://api.groq.com/openai/v1",
+        text_model="openai/gpt-oss-20b",
+        vision_model="qwen/qwen3.6-27b",
+        timeout_seconds=settings.LLM_TIMEOUT_SECONDS or 30.0,
+        max_retries=settings.LLM_MAX_RETRIES or 3,
+        initial_backoff_seconds=settings.LLM_INITIAL_BACKOFF_SECONDS or 1.0,
+        max_backoff_seconds=settings.LLM_MAX_BACKOFF_SECONDS or 8.0,
+    )
+    gemini_cfg = ProviderConfig(
+        provider=LLMProvider.GEMINI,
+        api_key=settings.GEMINI_API_KEY,
+        base_url=settings.GEMINI_BASE_URL
+        or "https://generativelanguage.googleapis.com/v1beta",
+        text_model="gemini-3.5-flash",
+        vision_model="gemini-3.5-flash",
+        timeout_seconds=settings.LLM_TIMEOUT_SECONDS or 30.0,
+        max_retries=settings.LLM_MAX_RETRIES or 3,
+        initial_backoff_seconds=settings.LLM_INITIAL_BACKOFF_SECONDS or 1.0,
+        max_backoff_seconds=settings.LLM_MAX_BACKOFF_SECONDS or 8.0,
+    )
+    return LLMClientConfig(
+        groq=groq_cfg,
+        gemini=gemini_cfg,
+        max_retries=settings.LLM_MAX_RETRIES or 3,
+        request_timeout_seconds=settings.LLM_TIMEOUT_SECONDS or 30.0,
+        initial_backoff_seconds=settings.LLM_INITIAL_BACKOFF_SECONDS or 1.0,
+        max_backoff_seconds=settings.LLM_MAX_BACKOFF_SECONDS or 8.0,
+        routing=DEFAULT_ROUTING,
+    )
+
+
+# --------------------------------------------------------------------------- #
+# Provider client protocol + implementations
+# --------------------------------------------------------------------------- #
+
+
+class LLMProviderClient(Protocol):
+    provider: LLMProvider
+
+    async def generate_text(self, request: LLMRequest, model: str) -> LLMResponse: ...
+
+    async def generate_vision(self, request: LLMRequest, model: str) -> LLMResponse: ...
+
+    async def health_check(self) -> bool: ...
+
+
+def _extract_retryable(status_code: int) -> bool:
+    return status_code == 429 or status_code >= 500
+
+
+class BaseProviderClient:
+    """Shared HTTP plumbing for provider clients."""
+
+    provider: LLMProvider
+
+    def __init__(self, config: ProviderConfig, client: httpx.AsyncClient) -> None:
+        self._config = config
+        self._client = client
+
+    async def _post_with_retry(
+        self,
+        url: str,
+        headers: dict[str, str],
+        json_body: dict[str, Any],
+    ) -> tuple[dict[str, Any], int, float]:
+        """POST with exponential backoff + jitter. Returns (body, attempt, latency_ms)."""
+        attempt = 0
+        last_exc: Exception | None = None
+        backoff = self._config.initial_backoff_seconds
+
+        while attempt < self._config.max_retries:
+            attempt += 1
+            start = time.perf_counter()
+            try:
+                response = await self._client.post(
+                    url,
+                    headers=headers,
+                    json=json_body,
+                    timeout=self._config.timeout_seconds,
+                )
+                latency_ms = (time.perf_counter() - start) * 1000.0
+
+                if response.status_code == 200:
+                    return response.json(), attempt, latency_ms
+
+                retryable = _extract_retryable(response.status_code)
+                body_text = response.text[:500]
+                logger.warning(
+                    "provider=%s status=%s attempt=%s retryable=%s body=%s",
+                    self.provider.value,
+                    response.status_code,
+                    attempt,
+                    retryable,
+                    body_text,
+                )
+                if not retryable or attempt >= self._config.max_retries:
+                    raise LLMProviderHTTPError(
+                        provider=self.provider,
+                        status_code=response.status_code,
+                        message=body_text,
+                        retryable=retryable,
+                        attempt=attempt,
+                    )
+
+            except (httpx.TimeoutException, httpx.TransportError) as exc:
+                last_exc = exc
+                logger.warning(
+                    "provider=%s transport_error=%s attempt=%s",
+                    self.provider.value,
+                    str(exc),
+                    attempt,
+                )
+                if attempt >= self._config.max_retries:
+                    raise LLMProviderHTTPError(
+                        provider=self.provider,
+                        status_code=0,
+                        message=f"transport error: {exc}",
+                        retryable=True,
+                        attempt=attempt,
+                    ) from exc
+
+            sleep_for = min(
+                backoff + random.uniform(0, backoff * 0.25),
+                self._config.max_backoff_seconds,
+            )
+            await asyncio.sleep(sleep_for)
+            backoff = min(backoff * 2, self._config.max_backoff_seconds)
+
+        # Should be unreachable, but guards against falling through the loop.
+        raise LLMProviderHTTPError(
+            provider=self.provider,
+            status_code=0,
+            message=f"exhausted retries: {last_exc}",
+            retryable=False,
+            attempt=attempt,
+        )
+
+
+class LLMProviderHTTPError(Exception):
+    def __init__(
+        self,
+        provider: LLMProvider,
+        status_code: int,
+        message: str,
+        retryable: bool,
+        attempt: int,
+    ) -> None:
         super().__init__(message)
         self.provider = provider
         self.status_code = status_code
+        self.message = message
+        self.retryable = retryable
+        self.attempt = attempt
 
 
-class AllProvidersFailedError(Exception):
-    def __init__(self, errors: list[LLMCallError]) -> None:
-        self.errors = errors
-        msg = "; ".join(f"{e.provider.value}: {e}" for e in errors)
-        super().__init__(f"all providers failed -> {msg}")
+class GroqProviderClient(BaseProviderClient):
+    provider = LLMProvider.GROQ
 
+    async def generate_text(self, request: LLMRequest, model: str) -> LLMResponse:
+        url = f"{self._config.base_url}/chat/completions"
+        headers = {
+            "Authorization": f"Bearer {self._config.api_key}",
+            "Content-Type": "application/json",
+        }
+        body: dict[str, Any] = {
+            "model": model,
+            "messages": [m.model_dump() for m in request.messages],
+            "temperature": request.temperature,
+            "max_tokens": request.max_tokens,
+        }
+        if request.response_format == ResponseFormat.JSON:
+            body["response_format"] = {"type": "json_object"}
 
-class LLMUsage(BaseModel):
-    prompt_tokens: int = 0
-    completion_tokens: int = 0
-    total_tokens: int = 0
+        raw, attempt, latency_ms = await self._post_with_retry(url, headers, body)
+        return self._parse_openai_style(raw, model, attempt, latency_ms, request)
 
+    async def generate_vision(self, request: LLMRequest, model: str) -> LLMResponse:
+        url = f"{self._config.base_url}/chat/completions"
+        headers = {
+            "Authorization": f"Bearer {self._config.api_key}",
+            "Content-Type": "application/json",
+        }
+        content_blocks: list[dict[str, Any]] = []
+        text_parts = "\n".join(m.content for m in request.messages if m.role == "user")
+        if text_parts:
+            content_blocks.append({"type": "text", "text": text_parts})
+        for img in request.images or []:
+            content_blocks.append(
+                {
+                    "type": "image_url",
+                    "image_url": {"url": self._to_data_url(img)},
+                }
+            )
 
-class LLMResponse(BaseModel):
-    content: str
-    provider_used: LLMProvider
-    model_used: str
-    latency_ms: int
-    usage: LLMUsage = Field(default_factory=LLMUsage)
-    raw: dict[str, Any] = Field(default_factory=dict)
+        system_messages = [m.model_dump() for m in request.messages if m.role == "system"]
+        body: dict[str, Any] = {
+            "model": model,
+            "messages": [
+                *system_messages,
+                {"role": "user", "content": content_blocks},
+            ],
+            "temperature": request.temperature,
+            "max_tokens": request.max_tokens,
+        }
+        if request.response_format == ResponseFormat.JSON:
+            body["response_format"] = {"type": "json_object"}
 
+        raw, attempt, latency_ms = await self._post_with_retry(url, headers, body)
+        return self._parse_openai_style(raw, model, attempt, latency_ms, request)
 
-class ModelRoute(BaseModel):
-    provider: LLMProvider
-    model: str
-    is_vision: bool = False
+    async def health_check(self) -> bool:
+        url = f"{self._config.base_url}/models"
+        headers = {"Authorization": f"Bearer {self._config.api_key}"}
+        try:
+            response = await self._client.get(
+                url, headers=headers, timeout=self._config.timeout_seconds
+            )
+            return response.status_code == 200
+        except (httpx.TimeoutException, httpx.TransportError) as exc:
+            logger.warning("groq health_check failed: %s", exc)
+            return False
 
+    @staticmethod
+    def _to_data_url(image: ImageInput) -> str:
+        if image.source.startswith("http://") or image.source.startswith("https://"):
+            return image.source
+        return f"data:{image.mime_type};base64,{image.source}"
 
-# Primary & Fallback Route Hierarchy:
-# VLM (Vision): Primary = Gemini 3.5 Flash -> Fallback = Groq Qwen 3.6 27B
-# Judge (Reasoning): Primary = Groq GPT-OSS 20B -> Fallback = Gemini 3.5 Flash
-ROUTES: dict[LLMRole, list[ModelRoute]] = {
-    LLMRole.VLM: [
-        ModelRoute(
-            provider=LLMProvider.GEMINI,
-            model=settings.GEMINI_VLM_MODEL,
-            is_vision=True,
-        ),
-        ModelRoute(
+    @staticmethod
+    def _parse_openai_style(
+        raw: dict[str, Any],
+        model: str,
+        attempt: int,
+        latency_ms: float,
+        request: LLMRequest,
+    ) -> LLMResponse:
+        choices = raw.get("choices") or []
+        if not choices:
+            raise LLMProviderHTTPError(
+                provider=LLMProvider.GROQ,
+                status_code=200,
+                message="empty choices array in response",
+                retryable=False,
+                attempt=attempt,
+            )
+        choice = choices[0]
+        content = choice.get("message", {}).get("content", "") or ""
+        finish_reason_raw = choice.get("finish_reason", "stop")
+        finish_reason = _map_finish_reason(finish_reason_raw)
+
+        parsed = None
+        if request.response_format == ResponseFormat.JSON:
+            parsed = _safe_json_loads(content)
+
+        return LLMResponse(
             provider=LLMProvider.GROQ,
-            model=settings.GROQ_VLM_MODEL,
-            is_vision=True,
-        ),
-    ],
-    LLMRole.JUDGE: [
-        ModelRoute(
-            provider=LLMProvider.GROQ,
-            model=settings.GROQ_JUDGE_MODEL,
-        ),
-        ModelRoute(
-            provider=LLMProvider.GEMINI,
-            model=settings.GEMINI_JUDGE_MODEL,
-        ),
-    ],
-}
+            model=model,
+            content=content,
+            parsed=parsed,
+            finish_reason=finish_reason,
+            latency_ms=latency_ms,
+            attempt=attempt,
+            used_fallback=False,
+        )
 
-MAX_RETRIES_PER_PROVIDER = 3
-BASE_BACKOFF_SECONDS = 1.0
-MAX_BACKOFF_SECONDS = 20.0
-REQUEST_TIMEOUT_SECONDS = 60.0
-RETRYABLE_STATUS_CODES = {408, 409, 425, 429, 500, 502, 503, 504}
+
+class GeminiProviderClient(BaseProviderClient):
+    provider = LLMProvider.GEMINI
+
+    async def generate_text(self, request: LLMRequest, model: str) -> LLMResponse:
+        return await self._generate(request, model, images=None)
+
+    async def generate_vision(self, request: LLMRequest, model: str) -> LLMResponse:
+        return await self._generate(request, model, images=request.images)
+
+    async def _generate(
+        self,
+        request: LLMRequest,
+        model: str,
+        images: Optional[list[ImageInput]],
+    ) -> LLMResponse:
+        url = (
+            f"{self._config.base_url}/models/{model}:generateContent"
+            f"?key={self._config.api_key}"
+        )
+        headers = {"Content-Type": "application/json"}
+
+        parts: list[dict[str, Any]] = []
+        user_text = "\n".join(m.content for m in request.messages if m.role != "system")
+        if user_text:
+            parts.append({"text": user_text})
+        for img in images or []:
+            parts.append(
+                {
+                    "inline_data": {
+                        "mime_type": img.mime_type,
+                        "data": img.source,
+                    }
+                }
+            )
+
+        system_text = "\n".join(m.content for m in request.messages if m.role == "system")
+
+        body: dict[str, Any] = {
+            "contents": [{"role": "user", "parts": parts}],
+            "generationConfig": {
+                "temperature": request.temperature,
+                "maxOutputTokens": request.max_tokens,
+            },
+        }
+        if system_text:
+            body["systemInstruction"] = {"parts": [{"text": system_text}]}
+        if request.response_format == ResponseFormat.JSON:
+            body["generationConfig"]["responseMimeType"] = "application/json"
+
+        raw, attempt, latency_ms = await self._post_with_retry(url, headers, body)
+        return self._parse_gemini_response(raw, model, attempt, latency_ms, request)
+
+    async def health_check(self) -> bool:
+        url = f"{self._config.base_url}/models?key={self._config.api_key}"
+        try:
+            response = await self._client.get(url, timeout=self._config.timeout_seconds)
+            return response.status_code == 200
+        except (httpx.TimeoutException, httpx.TransportError) as exc:
+            logger.warning("gemini health_check failed: %s", exc)
+            return False
+
+    @staticmethod
+    def _parse_gemini_response(
+        raw: dict[str, Any],
+        model: str,
+        attempt: int,
+        latency_ms: float,
+        request: LLMRequest,
+    ) -> LLMResponse:
+        candidates = raw.get("candidates") or []
+        if not candidates:
+            block_reason = raw.get("promptFeedback", {}).get("blockReason")
+            raise LLMProviderHTTPError(
+                provider=LLMProvider.GEMINI,
+                status_code=200,
+                message=f"no candidates returned (blockReason={block_reason})",
+                retryable=False,
+                attempt=attempt,
+            )
+        candidate = candidates[0]
+        content_parts = candidate.get("content", {}).get("parts", [])
+        content = "".join(p.get("text", "") for p in content_parts)
+        finish_reason_raw = candidate.get("finishReason", "STOP")
+        finish_reason = _map_finish_reason(finish_reason_raw.lower())
+
+        parsed = None
+        if request.response_format == ResponseFormat.JSON:
+            parsed = _safe_json_loads(content)
+
+        return LLMResponse(
+            provider=LLMProvider.GEMINI,
+            model=model,
+            content=content,
+            parsed=parsed,
+            finish_reason=finish_reason,
+            latency_ms=latency_ms,
+            attempt=attempt,
+            used_fallback=False,
+        )
+
+
+def _map_finish_reason(raw: str) -> FinishReason:
+    mapping = {
+        "stop": FinishReason.STOP,
+        "length": FinishReason.LENGTH,
+        "max_tokens": FinishReason.LENGTH,
+        "content_filter": FinishReason.CONTENT_FILTER,
+        "safety": FinishReason.CONTENT_FILTER,
+    }
+    return mapping.get(raw, FinishReason.UNKNOWN)
+
+
+def _safe_json_loads(content: str) -> Optional[dict[str, Any]]:
+    cleaned = content.strip()
+    if cleaned.startswith("```"):
+        cleaned = cleaned.strip("`")
+        if cleaned.lower().startswith("json"):
+            cleaned = cleaned[4:].strip()
+    try:
+        result = json.loads(cleaned)
+        if isinstance(result, dict):
+            return result
+        logger.warning("parsed JSON is not an object: %s", type(result))
+        return None
+    except json.JSONDecodeError as exc:
+        logger.warning("failed to parse JSON content: %s", exc)
+        return None
+
+
+# --------------------------------------------------------------------------- #
+# LLMClient — public shared-service interface
+# --------------------------------------------------------------------------- #
 
 
 class LLMClient:
-    """Unified async client for Google Gemini + Groq with retry/backoff and failover."""
+    """
+    Provider-agnostic LLM/VLM client with task-based primary -> fallback
+    routing, retry/backoff, and structured JSON parsing.
 
-    def __init__(self, http_client: httpx.AsyncClient | None = None) -> None:
-        self._client = http_client or httpx.AsyncClient(timeout=REQUEST_TIMEOUT_SECONDS)
-        self._owns_client = http_client is None
+    This is the ONLY place provider/API-specific logic should live.
+    Agents and pipeline stages must call this client rather than
+    talking to Groq/Gemini directly.
+    """
+
+    def __init__(
+        self,
+        config: Optional[LLMClientConfig] = None,
+        http_client: Optional[httpx.AsyncClient] = None,
+    ) -> None:
+        self._config = config or build_default_config()
+        self._owns_http_client = http_client is None
+        self._http_client = http_client or httpx.AsyncClient()
+
+        self._providers: dict[LLMProvider, LLMProviderClient] = {
+            LLMProvider.GROQ: GroqProviderClient(self._config.groq, self._http_client),
+            LLMProvider.GEMINI: GeminiProviderClient(self._config.gemini, self._http_client),
+        }
 
     async def aclose(self) -> None:
-        if self._owns_client:
-            await self._client.aclose()
+        if self._owns_http_client:
+            await self._http_client.aclose()
 
-    async def chat(
+    async def __aenter__(self) -> "LLMClient":
+        return self
+
+    async def __aexit__(self, *_exc_info: object) -> None:
+        await self.aclose()
+
+    def _route_for(self, task: LLMTask) -> TaskRouting:
+        if task == LLMTask.JUDGE:
+            return self._config.routing.judge
+        if task == LLMTask.VLM:
+            return self._config.routing.vlm
+        raise ValueError(f"Unknown task for routing: {task}")
+
+    async def _dispatch(
         self,
-        role: LLMRole,
-        messages: list[dict[str, Any]],
-        *,
-        temperature: float = 0.2,
-        max_tokens: int = 1024,
-        image_base64: str | None = None,
-        image_media_type: str = "image/jpeg",
-        response_format_json: bool = False,
+        request: LLMRequest,
+        capability: LLMCapability,
     ) -> LLMResponse:
-        """Run chat completion for given role, failing over across routed providers."""
-        routes = ROUTES[role]
-        errors: list[LLMCallError] = []
+        routing = self._route_for(request.task)
+        candidates: list[tuple[ModelRoute, bool]] = [
+            (routing.primary, False),
+            (routing.fallback, True),
+        ]
+        errors: list[LLMErrorInfo] = []
 
-        for route in routes:
-            if image_base64 and not route.is_vision:
-                continue
+        for route, is_fallback in candidates:
+            model = request.model if (request.model and not is_fallback) else route.model
+            client = self._providers[route.provider]
+
             try:
-                return await self._call_with_retry(
-                    route=route,
-                    messages=messages,
-                    temperature=temperature,
-                    max_tokens=max_tokens,
-                    image_base64=image_base64,
-                    image_media_type=image_media_type,
-                    response_format_json=response_format_json,
-                )
-            except LLMCallError as exc:
-                logger.warning(
-                    "provider_failed role=%s provider=%s model=%s error=%s",
-                    role.value,
-                    route.provider.value,
-                    route.model,
-                    exc,
-                )
-                errors.append(exc)
-                continue
-
-        raise AllProvidersFailedError(errors)
-
-    async def _call_with_retry(
-        self,
-        route: ModelRoute,
-        messages: list[dict[str, Any]],
-        temperature: float,
-        max_tokens: int,
-        image_base64: str | None,
-        image_media_type: str,
-        response_format_json: bool,
-    ) -> LLMResponse:
-        last_error: LLMCallError | None = None
-
-        for attempt in range(1, MAX_RETRIES_PER_PROVIDER + 1):
-            try:
-                return await self._single_call(
-                    route=route,
-                    messages=messages,
-                    temperature=temperature,
-                    max_tokens=max_tokens,
-                    image_base64=image_base64,
-                    image_media_type=image_media_type,
-                    response_format_json=response_format_json,
-                )
-            except LLMCallError as exc:
-                last_error = exc
-                retryable = exc.status_code is None or exc.status_code in RETRYABLE_STATUS_CODES
-                if not retryable or attempt == MAX_RETRIES_PER_PROVIDER:
-                    raise
-                backoff = min(BASE_BACKOFF_SECONDS * (2 ** (attempt - 1)), MAX_BACKOFF_SECONDS)
-                jitter = random.uniform(0, backoff * 0.25)
-                sleep_for = backoff + jitter
                 logger.info(
-                    "retrying provider=%s model=%s attempt=%s sleep=%.2fs",
+                    "llm_dispatch task=%s capability=%s provider=%s model=%s "
+                    "fallback=%s inspection_id=%s stage=%s",
+                    request.task.value,
+                    capability.value,
                     route.provider.value,
-                    route.model,
-                    attempt,
-                    sleep_for,
+                    model,
+                    is_fallback,
+                    request.inspection_id,
+                    request.stage_name,
                 )
-                await asyncio.sleep(sleep_for)
-
-        assert last_error is not None
-        raise last_error
-
-    async def _single_call(
-        self,
-        route: ModelRoute,
-        messages: list[dict[str, Any]],
-        temperature: float,
-        max_tokens: int,
-        image_base64: str | None,
-        image_media_type: str,
-        response_format_json: bool,
-    ) -> LLMResponse:
-        start = asyncio.get_event_loop().time()
-
-        if route.provider == LLMProvider.GEMINI:
-            url = f"{settings.GEMINI_BASE_URL.rstrip('/')}/models/{route.model}:generateContent?key={settings.GEMINI_API_KEY}"
-            headers = {"Content-Type": "application/json"}
-            
-            # Format Gemini payload
-            contents = []
-            for msg in messages:
-                role = "model" if msg.get("role") in ("assistant", "model") else "user"
-                parts = []
-                content = msg.get("content")
-                if isinstance(content, str):
-                    parts.append({"text": content})
-                elif isinstance(content, list):
-                    for item in content:
-                        if item.get("type") == "text":
-                            parts.append({"text": item.get("text", "")})
-                        elif item.get("type") == "image_url":
-                            data_url = item.get("image_url", {}).get("url", "")
-                            if ";base64," in data_url:
-                                h, b64 = data_url.split(";base64,")
-                                m_type = h.replace("data:", "")
-                                parts.append({"inline_data": {"mime_type": m_type, "data": b64}})
-                contents.append({"role": role, "parts": parts})
-
-            if image_base64:
-                if contents and contents[-1]["role"] == "user":
-                    contents[-1]["parts"].append({
-                        "inline_data": {"mime_type": image_media_type, "data": image_base64}
-                    })
+                if capability == LLMCapability.VISION:
+                    response = await client.generate_vision(request, model)
                 else:
-                    contents.append({
-                        "role": "user",
-                        "parts": [{"inline_data": {"mime_type": image_media_type, "data": image_base64}}]
-                    })
+                    response = await client.generate_text(request, model)
 
-            body: dict[str, Any] = {
-                "contents": contents,
-                "generationConfig": {
-                    "temperature": temperature,
-                    "maxOutputTokens": max_tokens,
-                },
-            }
-            if response_format_json:
-                body["generationConfig"]["responseMimeType"] = "application/json"
+                return response.model_copy(update={"used_fallback": is_fallback})
 
-        elif route.provider == LLMProvider.GROQ:
-            base_url = settings.GROQ_BASE_URL.rstrip("/")
-            url = base_url if base_url.endswith("/chat/completions") else f"{base_url}/chat/completions"
-            headers = {
-                "Authorization": f"Bearer {settings.GROQ_API_KEY}",
-                "Content-Type": "application/json",
-            }
-            payload_messages = self._build_messages(messages, image_base64, image_media_type)
-            body = {
-                "model": route.model,
-                "messages": payload_messages,
-                "temperature": temperature,
-                "max_tokens": max_tokens,
-            }
-            if response_format_json:
-                body["response_format"] = {"type": "json_object"}
-        else:
-            raise ValueError(f"unknown provider: {route.provider}")
+            except LLMProviderHTTPError as exc:
+                failover_available = not is_fallback
+                errors.append(
+                    LLMErrorInfo(
+                        provider=exc.provider,
+                        model=model,
+                        code=str(exc.status_code) if exc.status_code else "transport_error",
+                        message=exc.message,
+                        retryable=exc.retryable,
+                        attempt=exc.attempt,
+                        failover_available=failover_available,
+                    )
+                )
+                logger.error(
+                    "llm_provider_failed provider=%s model=%s code=%s "
+                    "message=%s failover_available=%s",
+                    exc.provider.value,
+                    model,
+                    exc.status_code,
+                    exc.message,
+                    failover_available,
+                )
+                continue
 
-        try:
-            resp = await self._client.post(url, headers=headers, json=body)
-        except httpx.RequestError as exc:
-            raise LLMCallError(f"network error: {exc}", provider=route.provider) from exc
-
-        latency_ms = int((asyncio.get_event_loop().time() - start) * 1000)
-
-        if resp.status_code >= 400:
-            raise LLMCallError(
-                f"http {resp.status_code}: {resp.text[:500]}",
-                provider=route.provider,
-                status_code=resp.status_code,
-            )
-
-        try:
-            data = resp.json()
-            if route.provider == LLMProvider.GEMINI:
-                candidate = data.get("candidates", [{}])[0]
-                parts = candidate.get("content", {}).get("parts", [])
-                text_chunks = [p.get("text", "") for p in parts if isinstance(p, dict) and "text" in p]
-                content = "\n".join(text_chunks) if text_chunks else ""
-                usage_meta = data.get("usageMetadata", {})
-                prompt_tokens = usage_meta.get("promptTokenCount", 0)
-                completion_tokens = usage_meta.get("candidatesTokenCount", 0)
-                total_tokens = usage_meta.get("totalTokenCount", 0)
-            else:  # GROQ
-                choices = data.get("choices", [{}])
-                content = choices[0].get("message", {}).get("content", "") if choices else ""
-                usage_raw = data.get("usage", {})
-                prompt_tokens = usage_raw.get("prompt_tokens", 0)
-                completion_tokens = usage_raw.get("completion_tokens", 0)
-                total_tokens = usage_raw.get("total_tokens", 0)
-        except (KeyError, IndexError, ValueError) as exc:
-            raise LLMCallError(f"malformed response: {exc}", provider=route.provider) from exc
-
-        return LLMResponse(
-            content=content,
-            provider_used=route.provider,
-            model_used=route.model,
-            latency_ms=latency_ms,
-            usage=LLMUsage(
-                prompt_tokens=prompt_tokens,
-                completion_tokens=completion_tokens,
-                total_tokens=total_tokens,
+        raise LLMClientError(
+            message=(
+                f"All providers exhausted for task={request.task.value} "
+                f"capability={capability.value}"
             ),
-            raw=data,
+            errors=errors,
         )
 
-    def _build_messages(
+    async def generate_text(self, request: LLMRequest) -> LLMResponse:
+        """Text generation with task-based routing (primarily used by AI Judge)."""
+        if request.capability != LLMCapability.TEXT:
+            request = request.model_copy(update={"capability": LLMCapability.TEXT})
+        return await self._dispatch(request, LLMCapability.TEXT)
+
+    async def generate_vision(self, request: LLMRequest) -> LLMResponse:
+        """Multimodal generation with task-based routing (used by VLM Agent)."""
+        if request.capability != LLMCapability.VISION:
+            request = request.model_copy(update={"capability": LLMCapability.VISION})
+        if not request.images:
+            raise ValueError("generate_vision requires at least one image in request.images")
+        return await self._dispatch(request, LLMCapability.VISION)
+
+    async def generate_json(
         self,
-        messages: list[dict[str, Any]],
-        image_base64: str | None,
-        image_media_type: str,
-    ) -> list[dict[str, Any]]:
-        if not image_base64:
-            return messages
+        request: LLMRequest,
+        response_model: type[T],
+    ) -> tuple[LLMResponse, T]:
+        """
+        Generate a response and validate it against `response_model`.
+        Returns (raw LLMResponse, validated Pydantic instance).
+        Raises LLMClientError if all providers fail, or ValidationError
+        if the final successful response cannot be parsed into response_model.
+        """
+        json_request = request.model_copy(update={"response_format": ResponseFormat.JSON})
 
-        out = [m for m in messages if m.get("role") != "user"]
-        user_messages = [m for m in messages if m.get("role") == "user"]
-        text_prompt = user_messages[-1]["content"] if user_messages else ""
+        if json_request.capability == LLMCapability.VISION:
+            response = await self.generate_vision(json_request)
+        else:
+            response = await self.generate_text(json_request)
 
-        image_url = f"data:{image_media_type};base64,{image_base64}"
-        out.append(
-            {
-                "role": "user",
-                "content": [
-                    {"type": "text", "text": text_prompt},
-                    {"type": "image_url", "image_url": {"url": image_url}},
-                ],
-            }
+        if response.parsed is None:
+            # One repair attempt: re-parse raw content defensively.
+            repaired = _safe_json_loads(response.content)
+            if repaired is None:
+                raise LLMClientError(
+                    message="Model response was not valid JSON",
+                    errors=[
+                        LLMErrorInfo(
+                            provider=response.provider,
+                            model=response.model,
+                            code="invalid_json",
+                            message="response content could not be parsed as JSON",
+                            retryable=False,
+                            attempt=response.attempt,
+                            failover_available=False,
+                        )
+                    ],
+                )
+            response = response.model_copy(update={"parsed": repaired})
+
+        try:
+            validated = response_model.model_validate(response.parsed)
+        except ValidationError:
+            logger.error(
+                "llm_json_schema_validation_failed provider=%s model=%s parsed=%s",
+                response.provider.value,
+                response.model,
+                response.parsed,
+            )
+            raise
+
+        return response, validated
+
+    async def health_check(
+        self, provider: Optional[LLMProvider] = None
+    ) -> dict[LLMProvider, bool]:
+        """Check connectivity for one or all configured providers."""
+        targets = [provider] if provider else list(self._providers.keys())
+        results: dict[LLMProvider, bool] = {}
+
+        checks = await asyncio.gather(
+            *(self._providers[p].health_check() for p in targets),
+            return_exceptions=True,
         )
-        return out
+        for p, result in zip(targets, checks):
+            if isinstance(result, Exception):
+                logger.error("health_check_error provider=%s error=%s", p.value, result)
+                results[p] = False
+            else:
+                results[p] = bool(result)
 
-    @staticmethod
-    def encode_image(image_bytes: bytes) -> str:
-        return base64.b64encode(image_bytes).decode("utf-8")
+        return results
 
 
-llm_client = LLMClient()
+# --------------------------------------------------------------------------- #
+# Singleton accessor (FastAPI dependency-friendly)
+# --------------------------------------------------------------------------- #
+
+_client_singleton: Optional[LLMClient] = None
+
+
+def get_llm_client() -> LLMClient:
+    """FastAPI dependency: returns a process-wide shared LLMClient instance."""
+    global _client_singleton
+    if _client_singleton is None:
+        _client_singleton = LLMClient()
+    return _client_singleton
+
+
+async def shutdown_llm_client() -> None:
+    """Call on app shutdown to release the shared httpx client."""
+    global _client_singleton
+    if _client_singleton is not None:
+        await _client_singleton.aclose()
+        _client_singleton = None
