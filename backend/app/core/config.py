@@ -63,6 +63,14 @@ class Settings(BaseSettings):
     FAISS_INDEX_PATH: str = str(BASE_DIR / "data" / "faiss_index" / "golden.index")
     SIMILARITY_THRESHOLD: float = 0.75
 
+    # ---------- Pipeline Stage 1: Quality Validation (admin-tunable) ----------
+    MIN_BLUR_VARIANCE: float = 100.0      # Laplacian variance below this = too blurry
+    MIN_BRIGHTNESS: float = 40.0          # mean pixel brightness below this = too dark
+    MAX_BRIGHTNESS: float = 220.0         # mean pixel brightness above this = overexposed
+    MIN_IMAGE_WIDTH: int = 640            # minimum usable resolution
+    MIN_IMAGE_HEIGHT: int = 480
+    DUPLICATE_HASH_MAX_DISTANCE: int = 4  # hamming distance <= this => duplicate image
+
 
 @lru_cache
 def get_settings() -> Settings:

@@ -28,9 +28,9 @@
 | Test suite (16 passing: auth, RBAC, evidence store, memory, schemas) | W1 D6 | ✅ Done |
 | file_utils (safe upload), workflow stub | W2 D1 | ✅ Done |
 | **RBAC — 2 roles (OPERATOR/ADMIN), `require_roles()` factory** | W1 (added) | ✅ Done |
-| Pipeline stages 1–3 (quality_check, authenticity, reference_match) | W2 | 🔲 Planned |
-| ROI templates + image_utils | W2 D2 | 🔲 Planned |
-| LangGraph workflow (replace stub) | W2 D3/W4 D3 | 🔲 Planned |
+| Pipeline stages 1–3 (quality_check, authenticity, reference_match) | W2 | 🟡 Anil's stages done (quality_check ✅, reference_match ✅); authenticity (Disha) pending |
+| ROI templates + image_utils | W2 D2 | 🟡 load_pil_image helper done; ROI templates (Disha) pending |
+| LangGraph workflow (replace stub) | W2 D3/W4 D3 | 🔲 Planned (InspectionState bridge done ✅) |
 | Pipeline stages 4–5 + 4 agents | W3 | 🔲 Planned |
 | YOLO dataset merge (10 classes) + fine-tune | W3 D4 | 🔲 Planned |
 | Stages 6–8, reporting, analytics + by-operator RBAC | W4 | 🔲 Planned |
@@ -455,9 +455,9 @@ VisionForge-MVP/
 | | D4 (Aug 20) | ✅ | ✅ | |
 | | D5 (Aug 21) | ✅ | ✅ | |
 | | D6 (Aug 22) | ✅ | ✅ | **Completed ✅** |
-| **W2** | D1 (Aug 24) | | |
-| | D2 (Aug 25) | | |
-| | D3 (Aug 26) | | |
+| **W2** | D1 (Aug 24) | ✅ | |
+| | D2 (Aug 25) | ✅ | |
+| | D3 (Aug 26) | ✅ | |
 | | D4 (Aug 27) | | |
 | | D5 (Aug 28) | | |
 | | D6 (Aug 29) | ✅ | ✅ |
