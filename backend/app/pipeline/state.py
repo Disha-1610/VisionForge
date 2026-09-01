@@ -12,7 +12,7 @@ Also exposes progress() which powers the SSE stage events
 from __future__ import annotations
 
 import asyncio
-from typing import Any
+from typing import Any, TypedDict
 
 from app.shared.evidence_store import AgentType, EvidenceRecord, EvidenceStore, evidence_store
 from app.shared.memory import (
@@ -22,6 +22,16 @@ from app.shared.memory import (
     WorkingMemoryRegistry,
     working_memory_registry,
 )
+
+
+class PipelineError(TypedDict):
+    stage_number: int
+    stage_name: str
+    code: str
+    message: str
+    recoverable: bool
+    occurred_at: str
+
 
 # Ordered list of the 8 pipeline stages — drives progress() for SSE.
 STAGE_ORDER: list[PipelineStageName] = [

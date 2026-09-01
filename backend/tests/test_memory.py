@@ -1,4 +1,4 @@
-﻿import uuid
+import uuid
 import pytest
 from app.shared.memory import (
     WorkingMemory,

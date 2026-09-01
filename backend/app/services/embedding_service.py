@@ -1,4 +1,4 @@
-﻿import base64
+import base64
 import logging
 from io import BytesIO
 from pathlib import Path

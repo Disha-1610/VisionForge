@@ -25,6 +25,20 @@ class DuplicateException(AppException):
         super().__init__(detail=detail, status_code=status.HTTP_409_CONFLICT)
 
 
+class PipelineStageError(AppException):
+    def __init__(
+        self,
+        detail: str,
+        code: str = "STAGE_ERROR",
+        recoverable: bool = False,
+        status_code: int = 500,
+    ):
+        super().__init__(detail=detail, status_code=status_code)
+        self.code = code
+        self.recoverable = recoverable
+
+
+
 def register_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(AppException)
     async def app_exception_handler(request: Request, exc: AppException):
