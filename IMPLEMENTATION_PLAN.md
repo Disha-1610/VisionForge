@@ -307,7 +307,7 @@ VisionForge-MVP/
 | **Day 2 (Sep 1)** | `agents/base_agent.py` — Abstract base class with run() method, confidence standardization | `agents/ocr_agent.py` — Primary: PaddleOCR, Secondary: EasyOCR integration for text extraction and comparison |
 | **Day 3 (Sep 2)** | `agents/label_agent.py` — OpenCV template matching for labels, seals, logos (using golden template) | `agents/structural_agent.py` — SSIM calculation (OpenCV) foundation |
 | **Day 4 (Sep 3)** | **YOLO Dataset Preparation** — Merge public PCB-component datasets from Roboflow Universe (`https://universe.roboflow.com/search?q=pcb+components`, `?q=electronic+component+detection`; DeepPCB reference: `https://github.com/tangsanli5201/DeepPCB`) + self-shot battery/RAM photos; unify to the 10-class single shared model (Motherboard: capacitor, resistor, ic_chip, connector, screw • Battery: terminal, seal, battery_cell • RAM: ram_ic_chip, gold_pin_connector) on Roboflow free tier, export YOLO format | **YOLO Fine-Tune** — Set up Google Colab notebook, fine-tune YOLO11n on merged dataset (~300 images, 10 classes, T4 GPU, ~1-2 hours), export weights |
-| **Day 5 (Sep 4)** | `agents/structural_agent.py` — Integrate YOLO component detection, compare golden vs inspection component counts | `agents/vlm_agent.py` — Primary: Gemini 3.5 Flash, fallback: Groq Qwen 3.6 27B, prompt engineering for visual anomaly detection |
+| **Day 5 (Sep 4)** | `agents/structural_agent.py` — Integrate YOLO component detection, compare golden vs inspection component counts | `agents/vlm_agent.py` — Primary: Gemini 3.5 Flash, fallback: Groq Qwen 3.8 27B, prompt engineering for visual anomaly detection |
 | **Day 6 (Sep 5)** | **Integration Day** — Test Stages 4–5 end-to-end: ROI scheduling → evidence execution → agents → verify YOLO detections on sample crops | **Integration Day** — Test all 4 agents independently with ROI crops, log results, fix issues |
 
 ---
@@ -433,7 +433,7 @@ VisionForge-MVP/
 | Need | Use | Not |
 |:---|:---|:---|
 | Text reasoning (Judge) | Primary: Groq — `openai/gpt-oss-20b` (verified), Secondary: Google Gemini — `gemini-3.5-flash` | Paid OpenAI/Anthropic API |
-| Vision reasoning (VLM Agent) | Primary: Google Gemini — `gemini-3.5-flash`, Secondary: Groq — `qwen/qwen3.6-27b` | Paid GPT-4V / Claude vision |
+| Vision reasoning (VLM Agent) | Primary: Google Gemini — `gemini-3.5-flash`, Secondary: Groq — `qwen/qwen3.8-27b` | Paid GPT-4V / Claude vision |
 | Image embeddings | Open-source CLIP (`openai/clip-vit-base-patch32`) local / `gemini-embedding-2` | Paid embedding APIs |
 | Object detection (Structural Agent) | YOLO11n, self fine-tuned, AGPL-3.0 (free — repo stays open-source) | Ultralytics Enterprise license |
 | Dataset annotation | Roboflow free tier | Paid annotation tools |

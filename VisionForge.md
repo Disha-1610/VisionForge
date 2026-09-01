@@ -87,14 +87,14 @@ Every stage below runs on a free-tier API or a fully local/open-source library. 
 | 5a. OCR Agent | Primary: **PaddleOCR**, Secondary: **EasyOCR** | Free — local, open-source | High precision on tiny/stamped industrial serial numbers |
 | 5b. Label Agent | OpenCV `cv2.matchTemplate` | Free — local | |
 | 5c. Structural Agent | OpenCV SSIM + **YOLO11n (Ultralytics)** | Free — AGPL-3.0 | See Section 4, Stage 5 for detail |
-| 5d. VLM Agent | Primary: Google Gemini (**Gemini 3.5 Flash** — `gemini-3.5-flash`, verified)<br>Secondary: Groq (**Qwen 3.6 27B Vision** — `qwen/qwen3.6-27b`, verified) | Free — rate-limited | Primary on Gemini 3.5 Flash, auto-fallback to Groq Qwen 3.6 27B if Gemini is rate-limited or down |
+| 5d. VLM Agent | Primary: Google Gemini (**Gemini 3.5 Flash** — `gemini-3.5-flash`, verified)<br>Secondary: Groq (**Qwen 3.8 27B Vision** — `qwen/qwen3.8-27b`, verified) | Free — rate-limited | Primary on Gemini 3.5 Flash, auto-fallback to Groq Qwen 3.8 27B if Gemini is rate-limited or down |
 | 6. Evidence Fusion | Pure math/logic | Free | No model needed |
 | 7. AI Judge | Primary: Groq (**GPT-OSS 20B** — `openai/gpt-oss-20b`, verified active & ultra-fast)<br>Secondary: Google Gemini (**Gemini 3.5 Flash** — `gemini-3.5-flash`, verified reasoning & JSON mode) | Free — rate-limited | Primary on Groq for ultra-fast response, auto-fallback to Gemini 3.5 Flash |
 | 8. Policy + Report | Code + ReportLab (PDF) | Free — local | |
 | Analytics | SQL aggregation (GROUP BY) | Free | No model needed |
 
 **Two things to design around, since they're free:**
-- **Rate limits, not cost.** Groq & Google Gemini free tiers are request-based. The `llm_client.py` wrapper retries with backoff and automatically handles primary/secondary failover (Groq `openai/gpt-oss-20b` primary for AI Judge, Google Gemini `gemini-3.5-flash` fallback; Google Gemini `gemini-3.5-flash` primary for VLM Agent, Groq `qwen/qwen3.6-27b` fallback).
+- **Rate limits, not cost.** Groq & Google Gemini free tiers are request-based. The `llm_client.py` wrapper retries with backoff and automatically handles primary/secondary failover (Groq `openai/gpt-oss-20b` primary for AI Judge, Google Gemini `gemini-3.5-flash` fallback; Google Gemini `gemini-3.5-flash` primary for VLM Agent, Groq `qwen/qwen3.8-27b` fallback).
 - **YOLO's AGPL-3.0 license requires the project to stay open-source** if you use it without an Ultralytics Enterprise license. Since this is already an open-source GitHub portfolio project, this is a non-issue — just don't fork it into a closed-source product later without revisiting the license.
 
 ---
@@ -256,7 +256,7 @@ These are the 3 **product types** (Golden Reference level) supported in MVP. YOL
 5. Pretrained COCO-weights YOLO won't help here — COCO has no "capacitor" or "connector" class. The fine-tune step is what makes it useful, not the base model.
 6. License: AGPL-3.0 is free as long as the repo stays open-source, which it already is.
 
-**5d. VLM Agent** — Primary: Google Gemini **Gemini 3.5 Flash** (`gemini-3.5-flash`, verified active, multimodal defect analysis & explanation). Secondary / Fallback: Groq **Qwen 3.6 27B Vision** (`qwen/qwen3.6-27b`, verified active, 27B multimodal reasoning). Catches general visual anomalies the other 3 agents aren't specifically looking for; also the fallback when a region doesn't cleanly map to OCR/Label/Structural. Combined vision+reasoning means it can return a short explanation alongside the detection, not just a raw label.
+**5d. VLM Agent** — Primary: Google Gemini **Gemini 3.5 Flash** (`gemini-3.5-flash`, verified active, multimodal defect analysis & explanation). Secondary / Fallback: Groq **Qwen 3.8 27B Vision** (`qwen/qwen3.8-27b`, verified active, 27B multimodal reasoning). Catches general visual anomalies the other 3 agents aren't specifically looking for; also the fallback when a region doesn't cleanly map to OCR/Label/Structural. Combined vision+reasoning means it can return a short explanation alongside the detection, not just a raw label.
 
 ---
 
@@ -560,7 +560,7 @@ GET /analytics/by-operator      → per-operator inspection & fraud breakdown (A
 
 ### LLM Client
 - Single wrapper around the chosen provider (chat + vision), used by the VLM Agent and the AI Judge.
-- **VLM Agent Model Routing**: Primary Google Gemini (`gemini-3.5-flash`, verified), Secondary Groq (`qwen/qwen3.6-27b`, verified).
+- **VLM Agent Model Routing**: Primary Google Gemini (`gemini-3.5-flash`, verified), Secondary Groq (`qwen/qwen3.8-27b`, verified).
 - **AI Judge Model Routing**: Primary Groq (`openai/gpt-oss-20b`, verified active & sub-second response), Secondary Google Gemini (`gemini-3.5-flash`, verified JSON mode).
 - Centralizes retries, timeouts, primary/secondary model failover, and prompt/response logging for debugging accuracy issues.
 

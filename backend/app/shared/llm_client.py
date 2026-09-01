@@ -9,7 +9,7 @@ Used exclusively by:
 
 Routing (fixed per VisionForge MVP architecture):
   judge -> primary: groq/openai/gpt-oss-20b   | fallback: gemini/gemini-3.5-flash
-  vlm   -> primary: gemini/gemini-3.5-flash   | fallback: groq/qwen/qwen3.6-27b
+  vlm   -> primary: gemini/gemini-3.5-flash   | fallback: groq/qwen/qwen3.8-27b
 """
 
 from __future__ import annotations
@@ -161,12 +161,24 @@ class ModelRouting:
 
 DEFAULT_ROUTING = ModelRouting(
     judge=TaskRouting(
-        primary=ModelRoute(provider=LLMProvider.GROQ, model="openai/gpt-oss-20b"),
-        fallback=ModelRoute(provider=LLMProvider.GEMINI, model="gemini-3.5-flash"),
+        primary=ModelRoute(
+            provider=LLMProvider.GROQ,
+            model=getattr(settings, "GROQ_JUDGE_MODEL", "openai/gpt-oss-20b"),
+        ),
+        fallback=ModelRoute(
+            provider=LLMProvider.GEMINI,
+            model=getattr(settings, "GEMINI_JUDGE_MODEL", "gemini-3.5-flash"),
+        ),
     ),
     vlm=TaskRouting(
-        primary=ModelRoute(provider=LLMProvider.GEMINI, model="gemini-3.5-flash"),
-        fallback=ModelRoute(provider=LLMProvider.GROQ, model="qwen/qwen3.6-27b"),
+        primary=ModelRoute(
+            provider=LLMProvider.GEMINI,
+            model=getattr(settings, "GEMINI_VLM_MODEL", "gemini-3.5-flash"),
+        ),
+        fallback=ModelRoute(
+            provider=LLMProvider.GROQ,
+            model=getattr(settings, "GROQ_VLM_MODEL", "qwen/qwen3.8-27b"),
+        ),
     ),
 )
 
@@ -188,32 +200,32 @@ def build_default_config() -> LLMClientConfig:
         provider=LLMProvider.GROQ,
         api_key=settings.GROQ_API_KEY,
         base_url=settings.GROQ_BASE_URL or "https://api.groq.com/openai/v1",
-        text_model="openai/gpt-oss-20b",
-        vision_model="qwen/qwen3.6-27b",
-        timeout_seconds=settings.LLM_TIMEOUT_SECONDS or 30.0,
-        max_retries=settings.LLM_MAX_RETRIES or 3,
-        initial_backoff_seconds=settings.LLM_INITIAL_BACKOFF_SECONDS or 1.0,
-        max_backoff_seconds=settings.LLM_MAX_BACKOFF_SECONDS or 8.0,
+        text_model=settings.GROQ_JUDGE_MODEL or "openai/gpt-oss-20b",
+        vision_model=settings.GROQ_VLM_MODEL or "qwen/qwen3.8-27b",
+        timeout_seconds=getattr(settings, "LLM_TIMEOUT_SECONDS", 30.0),
+        max_retries=getattr(settings, "LLM_MAX_RETRIES", 3),
+        initial_backoff_seconds=getattr(settings, "LLM_INITIAL_BACKOFF_SECONDS", 1.0),
+        max_backoff_seconds=getattr(settings, "LLM_MAX_BACKOFF_SECONDS", 8.0),
     )
     gemini_cfg = ProviderConfig(
         provider=LLMProvider.GEMINI,
         api_key=settings.GEMINI_API_KEY,
         base_url=settings.GEMINI_BASE_URL
         or "https://generativelanguage.googleapis.com/v1beta",
-        text_model="gemini-3.5-flash",
-        vision_model="gemini-3.5-flash",
-        timeout_seconds=settings.LLM_TIMEOUT_SECONDS or 30.0,
-        max_retries=settings.LLM_MAX_RETRIES or 3,
-        initial_backoff_seconds=settings.LLM_INITIAL_BACKOFF_SECONDS or 1.0,
-        max_backoff_seconds=settings.LLM_MAX_BACKOFF_SECONDS or 8.0,
+        text_model=settings.GEMINI_JUDGE_MODEL or "gemini-3.5-flash",
+        vision_model=settings.GEMINI_VLM_MODEL or "gemini-3.5-flash",
+        timeout_seconds=getattr(settings, "LLM_TIMEOUT_SECONDS", 30.0),
+        max_retries=getattr(settings, "LLM_MAX_RETRIES", 3),
+        initial_backoff_seconds=getattr(settings, "LLM_INITIAL_BACKOFF_SECONDS", 1.0),
+        max_backoff_seconds=getattr(settings, "LLM_MAX_BACKOFF_SECONDS", 8.0),
     )
     return LLMClientConfig(
         groq=groq_cfg,
         gemini=gemini_cfg,
-        max_retries=settings.LLM_MAX_RETRIES or 3,
-        request_timeout_seconds=settings.LLM_TIMEOUT_SECONDS or 30.0,
-        initial_backoff_seconds=settings.LLM_INITIAL_BACKOFF_SECONDS or 1.0,
-        max_backoff_seconds=settings.LLM_MAX_BACKOFF_SECONDS or 8.0,
+        max_retries=getattr(settings, "LLM_MAX_RETRIES", 3),
+        request_timeout_seconds=getattr(settings, "LLM_TIMEOUT_SECONDS", 30.0),
+        initial_backoff_seconds=getattr(settings, "LLM_INITIAL_BACKOFF_SECONDS", 1.0),
+        max_backoff_seconds=getattr(settings, "LLM_MAX_BACKOFF_SECONDS", 8.0),
         routing=DEFAULT_ROUTING,
     )
 

@@ -47,8 +47,14 @@ class Settings(BaseSettings):
     # ---------- Groq ----------
     GROQ_API_KEY: str = ""
     GROQ_BASE_URL: str = "https://api.groq.com/openai/v1"
-    GROQ_VLM_MODEL: str = "qwen/qwen3.6-27b"
+    GROQ_VLM_MODEL: str = "qwen/qwen3.8-27b"
     GROQ_JUDGE_MODEL: str = "openai/gpt-oss-20b"
+
+    # ---------- LLM Common Settings ----------
+    LLM_TIMEOUT_SECONDS: float = 30.0
+    LLM_MAX_RETRIES: int = 3
+    LLM_INITIAL_BACKOFF_SECONDS: float = 1.0
+    LLM_MAX_BACKOFF_SECONDS: float = 8.0
 
     # ---------- File Storage ----------
     UPLOAD_DIR: str = str(BASE_DIR / "data" / "inspection_uploads")
