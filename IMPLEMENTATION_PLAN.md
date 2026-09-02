@@ -23,7 +23,8 @@
 | Evidence Store (append-only, immutable, thread-safe) | W1 D4 | ✅ Done |
 | Working Memory (per-stage StageResult tracking — SSE-ready) | W1 D5 | ✅ Done |
 | LLM Client (Groq/Gemini primary→fallback routing) | W1 D5 | ✅ Done |
-| Embedding Service (Gemini 1-shot → OpenCLIP fallback + FAISS) | W1/W2 | ✅ Done |
+| Embedding Service - dual embedding (Gemini 1-shot -> OpenCLIP fallback) + FAISS index build/update, provider-dimension tracking, index_golden_reference, rebuild_index, remove_from_index, persistence roundtrip | W2 D4 | Done |
+| Unit tests Stages 1-3 + embedding service (43 passing: QC, state, reference match, embedding build/search/remove/save/load/dimension guards) | W2 D5 | Done |
 | Alembic migration 001 (5 tables, 2-role enum) | W1 D6 | ✅ Done |
 | Test suite (16 passing: auth, RBAC, evidence store, memory, schemas) | W1 D6 | ✅ Done |
 | file_utils (safe upload), workflow stub | W2 D1 | ✅ Done |
@@ -458,8 +459,8 @@ VisionForge-MVP/
 | **W2** | D1 (Aug 24) | ✅ | ✅ |
 | | D2 (Aug 25) | ✅ | ✅ |
 | | D3 (Aug 26) | ✅ | ✅ |
-| | D4 (Aug 27) | | |
-| | D5 (Aug 28) | | |
+| | D4 (Aug 27) | ✅ | |
+| | D5 (Aug 28) | ✅ | |
 | | D6 (Aug 29) | ✅ | ✅ |
 | **W3** | D1 (Aug 31) | | |
 | | D2 (Sep 1) | | |
