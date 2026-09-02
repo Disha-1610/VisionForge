@@ -184,7 +184,11 @@ def test_stage_fails_with_no_images():
 def test_stage_passes_when_score_above_flag_threshold(tmp_path, monkeypatch):
     monkeypatch.setattr(auth.settings, "AUTHENTICITY_FLAG_THRESHOLD", 0.6)
     monkeypatch.setattr(auth.settings, "AUTHENTICITY_HARD_BLOCK_THRESHOLD", 0.3)
-    monkeypatch.setattr(auth, "_analyze_image", lambda insp_id, path: _fake_result(0.95, insp_id))
+
+    async def fake_analyze(insp_id, path):
+        return _fake_result(0.95, insp_id)
+
+    monkeypatch.setattr(auth, "_analyze_image", fake_analyze)
 
     p = make_image(tmp_path / "a.jpg")
     state = make_ready_state([p])
@@ -198,7 +202,11 @@ def test_stage_passes_when_score_above_flag_threshold(tmp_path, monkeypatch):
 def test_stage_flags_when_score_between_thresholds(tmp_path, monkeypatch):
     monkeypatch.setattr(auth.settings, "AUTHENTICITY_FLAG_THRESHOLD", 0.6)
     monkeypatch.setattr(auth.settings, "AUTHENTICITY_HARD_BLOCK_THRESHOLD", 0.3)
-    monkeypatch.setattr(auth, "_analyze_image", lambda insp_id, path: _fake_result(0.45, insp_id))
+
+    async def fake_analyze(insp_id, path):
+        return _fake_result(0.45, insp_id)
+
+    monkeypatch.setattr(auth, "_analyze_image", fake_analyze)
 
     p = make_image(tmp_path / "a.jpg")
     state = make_ready_state([p])
@@ -212,7 +220,11 @@ def test_stage_flags_when_score_between_thresholds(tmp_path, monkeypatch):
 def test_stage_hard_blocks_when_score_below_hard_block_threshold(tmp_path, monkeypatch):
     monkeypatch.setattr(auth.settings, "AUTHENTICITY_FLAG_THRESHOLD", 0.6)
     monkeypatch.setattr(auth.settings, "AUTHENTICITY_HARD_BLOCK_THRESHOLD", 0.3)
-    monkeypatch.setattr(auth, "_analyze_image", lambda insp_id, path: _fake_result(0.1, insp_id))
+
+    async def fake_analyze(insp_id, path):
+        return _fake_result(0.1, insp_id)
+
+    monkeypatch.setattr(auth, "_analyze_image", fake_analyze)
 
     p = make_image(tmp_path / "a.jpg")
     state = make_ready_state([p])
@@ -223,7 +235,7 @@ def test_stage_hard_blocks_when_score_below_hard_block_threshold(tmp_path, monke
     assert state.memory.authenticity_flagged is True
 
 def test_stage_fails_when_analyze_image_raises(tmp_path, monkeypatch):
-    def _boom(insp_id, path):
+    async def _boom(insp_id, path):
         raise RuntimeError("cv2 exploded")
 
     monkeypatch.setattr(auth, "_analyze_image", _boom)
@@ -239,9 +251,11 @@ def test_stage_averages_score_across_multiple_images(tmp_path, monkeypatch):
     monkeypatch.setattr(auth.settings, "AUTHENTICITY_HARD_BLOCK_THRESHOLD", 0.3)
 
     scores = iter([0.9, 0.7])
-    monkeypatch.setattr(
-        auth, "_analyze_image", lambda insp_id, path: _fake_result(next(scores), insp_id)
-    )
+
+    async def fake_analyze(insp_id, path):
+        return _fake_result(next(scores), insp_id)
+
+    monkeypatch.setattr(auth, "_analyze_image", fake_analyze)
 
     a = make_image(tmp_path / "a.jpg")
     b = make_image(tmp_path / "b.jpg", brightness=90)
