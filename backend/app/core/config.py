@@ -75,6 +75,16 @@ class Settings(BaseSettings):
     MAX_BRIGHTNESS: float = 220.0         # mean pixel brightness above this = overexposed
     MIN_IMAGE_WIDTH: int = 640            # minimum usable resolution
     MIN_IMAGE_HEIGHT: int = 480
+        # ---------- Pipeline Stage 2: Authenticity Verification (admin-tunable) ----------
+    AUTHENTICITY_HARD_BLOCK_THRESHOLD: float = 0.35
+    AUTHENTICITY_FLAG_THRESHOLD: float = 0.60
+    ELA_RESAVE_QUALITY: int = 90
+    ELA_ANOMALY_STD_THRESHOLD: float = 15.0
+    NOISE_PATCH_GRID: int = 4
+    NOISE_INCONSISTENCY_RATIO: float = 2.5
+    COPY_MOVE_BLOCK_SIZE: int = 16
+    COPY_MOVE_MATCH_THRESHOLD: int = 8
+    SCREENSHOT_UNIFORMITY_THRESHOLD: float = 0.92
     DUPLICATE_HASH_MAX_DISTANCE: int = 4  # hamming distance <= this => duplicate image
 
 
