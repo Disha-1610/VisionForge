@@ -1,0 +1,62 @@
+{
+  "part_id": "BAT-STD-V1",
+  "product_type": "battery",
+  "rois": [
+    {
+      "roi_id": "serial_label",
+      "name": "Serial Number",
+      "type": "text",
+      "bbox": [30, 20, 180, 50],
+      "critical": true,
+      "expected": {"text": "BAT-STD-V1-SN"}
+    },
+    {
+      "roi_id": "brand_logo",
+      "name": "Brand Logo",
+      "type": "label",
+      "bbox": [220, 20, 120, 60],
+      "critical": false,
+      "expected": {"template_image": "data/golden_images/battery/brand_logo_ref.png"}
+    },
+    {
+      "roi_id": "tamper_seal",
+      "name": "Tamper/Security Seal",
+      "type": "label",
+      "bbox": [40, 90, 300, 40],
+      "critical": true,
+      "expected": {"template_image": "data/golden_images/battery/tamper_seal_ref.png"}
+    },
+    {
+      "roi_id": "terminal_pair",
+      "name": "Terminal Pair",
+      "type": "structural",
+      "bbox": [60, 140, 260, 80],
+      "critical": true,
+      "expected": {"classes": ["terminal"], "expected_count": 2}
+    },
+    {
+      "roi_id": "cell_pack",
+      "name": "Battery Cell Pack",
+      "type": "structural",
+      "bbox": [40, 230, 320, 200],
+      "critical": true,
+      "expected": {"classes": ["battery_cell"], "expected_count": 4}
+    },
+    {
+      "roi_id": "outer_seal_ring",
+      "name": "Outer Seal Ring",
+      "type": "structural",
+      "bbox": [20, 90, 360, 360],
+      "critical": false,
+      "expected": {"classes": ["seal"], "expected_count": 1}
+    },
+    {
+      "roi_id": "general_casing_check",
+      "name": "General Casing Surface",
+      "type": "visual",
+      "bbox": [0, 0, 400, 450],
+      "critical": false,
+      "expected": {}
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "part_id": "RAM-DDR4-V1",
+  "product_type": "ram",
+  "rois": [
+    {
+      "roi_id": "serial_label",
+      "name": "Serial Number",
+      "type": "text",
+      "bbox": [40, 15, 200, 35],
+      "critical": true,
+      "expected": {"text": "RAM-DDR4-V1-SN"}
+    },
+    {
+      "roi_id": "spec_label",
+      "name": "Spec/Vendor Label",
+      "type": "label",
+      "bbox": [260, 15, 160, 45],
+      "critical": false,
+      "expected": {"template_image": "data/golden_images/ram/spec_label_ref.png"}
+    },
+    {
+      "roi_id": "memory_chip_bank",
+      "name": "Memory Chip Bank",
+      "type": "structural",
+      "bbox": [30, 70, 460, 90],
+      "critical": true,
+      "expected": {"classes": ["ram_ic_chip"], "expected_count": 8}
+    },
+    {
+      "roi_id": "gold_pin_edge_connector",
+      "name": "Gold Pin Edge Connector",
+      "type": "structural",
+      "bbox": [20, 250, 480, 40],
+      "critical": true,
+      "expected": {"classes": ["gold_pin_connector"], "expected_count": 1}
+    },
+    {
+      "roi_id": "general_module_check",
+      "name": "General Module Surface",
+      "type": "visual",
+      "bbox": [0, 0, 520, 300],
+      "critical": false,
+      "expected": {}
+    }
+  ]
+}

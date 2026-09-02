@@ -1,0 +1,70 @@
+{
+  "part_id": "PCB-MCU-V2",
+  "product_type": "motherboard",
+  "rois": [
+    {
+      "roi_id": "serial_label",
+      "name": "Serial Number",
+      "type": "text",
+      "bbox": [120, 40, 220, 60],
+      "critical": true,
+      "expected": {"text": "PCB-MCU-V2-SN"}
+    },
+    {
+      "roi_id": "qc_seal",
+      "name": "QC Seal",
+      "type": "label",
+      "bbox": [400, 40, 100, 100],
+      "critical": true,
+      "expected": {"template_image": "data/golden_images/motherboard/qc_seal_ref.png"}
+    },
+    {
+      "roi_id": "capacitor_bank_1",
+      "name": "Capacitor Bank 1",
+      "type": "structural",
+      "bbox": [180, 160, 260, 180],
+      "critical": true,
+      "expected": {"classes": ["capacitor"], "expected_count": 4}
+    },
+    {
+      "roi_id": "resistor_array",
+      "name": "Resistor Array",
+      "type": "structural",
+      "bbox": [460, 160, 200, 120],
+      "critical": false,
+      "expected": {"classes": ["resistor"], "expected_count": 6}
+    },
+    {
+      "roi_id": "ic_chip_main",
+      "name": "Main IC Chip",
+      "type": "structural",
+      "bbox": [220, 360, 160, 160],
+      "critical": true,
+      "expected": {"classes": ["ic_chip"], "expected_count": 1}
+    },
+    {
+      "roi_id": "io_connector_bank",
+      "name": "I/O Connector Bank",
+      "type": "structural",
+      "bbox": [40, 520, 300, 90],
+      "critical": false,
+      "expected": {"classes": ["connector"], "expected_count": 3}
+    },
+    {
+      "roi_id": "mounting_screws",
+      "name": "Mounting Screws",
+      "type": "structural",
+      "bbox": [20, 20, 560, 600],
+      "critical": false,
+      "expected": {"classes": ["screw"], "expected_count": 4}
+    },
+    {
+      "roi_id": "general_surface_check",
+      "name": "General Board Surface",
+      "type": "visual",
+      "bbox": [0, 0, 600, 620],
+      "critical": false,
+      "expected": {}
+    }
+  ]
+}
