@@ -1,62 +1,86 @@
 {
-  "part_id": "BAT-STD-V1",
-  "product_type": "battery",
-  "rois": [
+  "id": "roi-battery-bat-std-v1",
+  "productType": "battery",
+  "partCode": "BAT-STD-V1",
+  "version": 1,
+  "coordinateSystem": "pixel",
+  "referenceImageWidth": 400,
+  "referenceImageHeight": 450,
+  "regions": [
     {
-      "roi_id": "serial_label",
+      "id": "serial_label",
       "name": "Serial Number",
       "type": "text",
-      "bbox": [30, 20, 180, 50],
-      "critical": true,
-      "expected": {"text": "BAT-STD-V1-SN"}
+      "bbox": {"x": 30, "y": 20, "width": 180, "height": 50},
+      "agent": "ocr",
+      "priority": "critical",
+      "expectedComponents": [],
+      "checkpoints": [
+        {
+          "id": "serial_match",
+          "description": "Serial number text must match golden reference",
+          "expectedValue": "BAT-STD-V1-SN"
+        }
+      ]
     },
     {
-      "roi_id": "brand_logo",
+      "id": "brand_logo",
       "name": "Brand Logo",
       "type": "label",
-      "bbox": [220, 20, 120, 60],
-      "critical": false,
-      "expected": {"template_image": "data/golden_images/battery/brand_logo_ref.png"}
+      "bbox": {"x": 220, "y": 20, "width": 120, "height": 60},
+      "agent": "label",
+      "priority": "high",
+      "expectedComponents": []
     },
     {
-      "roi_id": "tamper_seal",
+      "id": "tamper_seal",
       "name": "Tamper/Security Seal",
       "type": "label",
-      "bbox": [40, 90, 300, 40],
-      "critical": true,
-      "expected": {"template_image": "data/golden_images/battery/tamper_seal_ref.png"}
+      "bbox": {"x": 40, "y": 90, "width": 300, "height": 40},
+      "agent": "label",
+      "priority": "critical",
+      "expectedComponents": []
     },
     {
-      "roi_id": "terminal_pair",
+      "id": "terminal_pair",
       "name": "Terminal Pair",
       "type": "structural",
-      "bbox": [60, 140, 260, 80],
-      "critical": true,
-      "expected": {"classes": ["terminal"], "expected_count": 2}
+      "bbox": {"x": 60, "y": 140, "width": 260, "height": 80},
+      "agent": "structural",
+      "priority": "critical",
+      "expectedComponents": [
+        {"className": "terminal", "expectedCount": 2, "required": true}
+      ]
     },
     {
-      "roi_id": "cell_pack",
+      "id": "cell_pack",
       "name": "Battery Cell Pack",
       "type": "structural",
-      "bbox": [40, 230, 320, 200],
-      "critical": true,
-      "expected": {"classes": ["battery_cell"], "expected_count": 4}
+      "bbox": {"x": 40, "y": 230, "width": 320, "height": 200},
+      "agent": "structural",
+      "priority": "critical",
+      "expectedComponents": [
+        {"className": "battery_cell", "expectedCount": 4, "required": true}
+      ]
     },
     {
-      "roi_id": "outer_seal_ring",
+      "id": "outer_seal_ring",
       "name": "Outer Seal Ring",
       "type": "structural",
-      "bbox": [20, 90, 360, 360],
-      "critical": false,
-      "expected": {"classes": ["seal"], "expected_count": 1}
+      "bbox": {"x": 20, "y": 90, "width": 360, "height": 360},
+      "agent": "structural",
+      "priority": "high",
+      "expectedComponents": [
+        {"className": "seal", "expectedCount": 1, "required": false}
+      ]
     },
     {
-      "roi_id": "general_casing_check",
+      "id": "general_casing_check",
       "name": "General Casing Surface",
       "type": "visual",
-      "bbox": [0, 0, 400, 450],
-      "critical": false,
-      "expected": {}
+      "bbox": {"x": 0, "y": 0, "width": 400, "height": 450},
+      "agent": "vlm",
+      "priority": "normal"
     }
   ]
 }

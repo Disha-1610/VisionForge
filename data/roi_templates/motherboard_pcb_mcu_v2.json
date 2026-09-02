@@ -1,70 +1,99 @@
 {
-  "part_id": "PCB-MCU-V2",
-  "product_type": "motherboard",
-  "rois": [
+  "id": "roi-motherboard-pcb-mcu-v2",
+  "productType": "motherboard",
+  "partCode": "PCB-MCU-V2",
+  "version": 1,
+  "coordinateSystem": "pixel",
+  "referenceImageWidth": 800,
+  "referenceImageHeight": 620,
+  "regions": [
     {
-      "roi_id": "serial_label",
+      "id": "serial_label",
       "name": "Serial Number",
       "type": "text",
-      "bbox": [120, 40, 220, 60],
-      "critical": true,
-      "expected": {"text": "PCB-MCU-V2-SN"}
+      "bbox": {"x": 120, "y": 40, "width": 220, "height": 60},
+      "agent": "ocr",
+      "priority": "critical",
+      "expectedComponents": [],
+      "checkpoints": [
+        {
+          "id": "serial_match",
+          "description": "Serial number text must match golden reference",
+          "expectedValue": "PCB-MCU-V2-SN"
+        }
+      ]
     },
     {
-      "roi_id": "qc_seal",
+      "id": "qc_seal",
       "name": "QC Seal",
       "type": "label",
-      "bbox": [400, 40, 100, 100],
-      "critical": true,
-      "expected": {"template_image": "data/golden_images/motherboard/qc_seal_ref.png"}
+      "bbox": {"x": 400, "y": 40, "width": 100, "height": 100},
+      "agent": "label",
+      "priority": "critical",
+      "expectedComponents": []
     },
     {
-      "roi_id": "capacitor_bank_1",
+      "id": "capacitor_bank_1",
       "name": "Capacitor Bank 1",
       "type": "structural",
-      "bbox": [180, 160, 260, 180],
-      "critical": true,
-      "expected": {"classes": ["capacitor"], "expected_count": 4}
+      "bbox": {"x": 180, "y": 160, "width": 260, "height": 180},
+      "agent": "structural",
+      "priority": "critical",
+      "expectedComponents": [
+        {"className": "capacitor", "expectedCount": 4, "required": true}
+      ]
     },
     {
-      "roi_id": "resistor_array",
+      "id": "resistor_array",
       "name": "Resistor Array",
       "type": "structural",
-      "bbox": [460, 160, 200, 120],
-      "critical": false,
-      "expected": {"classes": ["resistor"], "expected_count": 6}
+      "bbox": {"x": 460, "y": 160, "width": 200, "height": 120},
+      "agent": "structural",
+      "priority": "high",
+      "expectedComponents": [
+        {"className": "resistor", "expectedCount": 6, "required": false}
+      ]
     },
     {
-      "roi_id": "ic_chip_main",
+      "id": "ic_chip_main",
       "name": "Main IC Chip",
       "type": "structural",
-      "bbox": [220, 360, 160, 160],
-      "critical": true,
-      "expected": {"classes": ["ic_chip"], "expected_count": 1}
+      "bbox": {"x": 220, "y": 360, "width": 160, "height": 160},
+      "agent": "structural",
+      "priority": "critical",
+      "expectedComponents": [
+        {"className": "ic_chip", "expectedCount": 1, "required": true}
+      ]
     },
     {
-      "roi_id": "io_connector_bank",
+      "id": "io_connector_bank",
       "name": "I/O Connector Bank",
       "type": "structural",
-      "bbox": [40, 520, 300, 90],
-      "critical": false,
-      "expected": {"classes": ["connector"], "expected_count": 3}
+      "bbox": {"x": 40, "y": 520, "width": 300, "height": 90},
+      "agent": "structural",
+      "priority": "high",
+      "expectedComponents": [
+        {"className": "connector", "expectedCount": 3, "required": false}
+      ]
     },
     {
-      "roi_id": "mounting_screws",
+      "id": "mounting_screws",
       "name": "Mounting Screws",
       "type": "structural",
-      "bbox": [20, 20, 560, 600],
-      "critical": false,
-      "expected": {"classes": ["screw"], "expected_count": 4}
+      "bbox": {"x": 20, "y": 20, "width": 560, "height": 600},
+      "agent": "structural",
+      "priority": "normal",
+      "expectedComponents": [
+        {"className": "screw", "expectedCount": 4, "required": false}
+      ]
     },
     {
-      "roi_id": "general_surface_check",
+      "id": "general_surface_check",
       "name": "General Board Surface",
       "type": "visual",
-      "bbox": [0, 0, 600, 620],
-      "critical": false,
-      "expected": {}
+      "bbox": {"x": 0, "y": 0, "width": 600, "height": 620},
+      "agent": "vlm",
+      "priority": "normal"
     }
   ]
 }

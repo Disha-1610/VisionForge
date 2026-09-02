@@ -223,8 +223,28 @@ class ROIExecutionPlan(BaseModel):
 
 
 def _template_file_path(product_type: ProductType, part_code: str, base_dir: Path) -> Path:
-    normalized_code = part_code.strip().upper().replace(" ", "_")
-    return base_dir / f"{product_type.value}_{normalized_code}.json"
+    raw = part_code.strip()
+    underscore_code = raw.replace(" ", "_").replace("-", "_")
+    hyphen_code = raw.replace(" ", "_")
+    prefix = f"{product_type.value}_"
+    stripped_underscore = (
+        underscore_code[len(prefix):]
+        if underscore_code.lower().startswith(prefix)
+        else underscore_code
+    )
+
+    candidates = [
+        base_dir / f"{product_type.value}_{underscore_code.lower()}.json",
+        base_dir / f"{product_type.value}_{stripped_underscore.lower()}.json",
+        base_dir / f"{product_type.value}_{underscore_code.upper()}.json",
+        base_dir / f"{product_type.value}_{hyphen_code.lower()}.json",
+        base_dir / f"{product_type.value}_{hyphen_code.upper()}.json",
+        base_dir / f"{product_type.value}_{raw}.json",
+    ]
+    for p in candidates:
+        if p.exists():
+            return p
+    return candidates[0]
 
 
 @lru_cache(maxsize=256)

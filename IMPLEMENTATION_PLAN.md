@@ -23,8 +23,9 @@
 | Evidence Store (append-only, immutable, thread-safe) | W1 D4 | ✅ Done |
 | Working Memory (per-stage StageResult tracking — SSE-ready) | W1 D5 | ✅ Done |
 | LLM Client (Groq/Gemini primary→fallback routing) | W1 D5 | ✅ Done |
-| Embedding Service - dual embedding (Gemini 1-shot -> OpenCLIP fallback) + FAISS index build/update, provider-dimension tracking, index_golden_reference, rebuild_index, remove_from_index, persistence roundtrip | W2 D4 | Done |
-| Unit tests Stages 1-3 + embedding service (43 passing: QC, state, reference match, embedding build/search/remove/save/load/dimension guards) | W2 D5 | Done |
+| Embedding Service - dual embedding (Gemini 1-shot -> OpenCLIP fallback) + FAISS index build/update, provider-dimension tracking, index_golden_reference, rebuild_index, remove_from_index, persistence roundtrip | W2 D4 | ✅ Done |
+| Unit tests Stages 1-3 + embedding service + image utils + llm client + routers (136 passing) | W2 D5 | ✅ Done |
+| Integration Day (Stages 1-3 end-to-end + ROI templates validation & execution planning + inspections router mounted) | W2 D6 | ✅ Done |
 | Alembic migration 001 (5 tables, 2-role enum) | W1 D6 | ✅ Done |
 | Test suite (16 passing: auth, RBAC, evidence store, memory, schemas) | W1 D6 | ✅ Done |
 | file_utils (safe upload), workflow stub | W2 D1 | ✅ Done |
@@ -461,34 +462,34 @@ VisionForge-MVP/
 | | D3 (Aug 26) | ✅ | ✅ |
 | | D4 (Aug 27) | ✅ | ✅ |
 | | D5 (Aug 28) | ✅ | ✅ |
-| | D6 (Aug 29) | | |
+| | D6 (Aug 29) | ✅ | ✅ | **Completed ✅** |
 | **W3** | D1 (Aug 31) | | |
 | | D2 (Sep 1) | | |
 | | D3 (Sep 2) | | |
 | | D4 (Sep 3) | | |
 | | D5 (Sep 4) | | |
-| | D6 (Sep 5) | ✅ | ✅ |
+| | D6 (Sep 5) | | |
 | **W4** | D1 (Sep 7) | | |
 | | D2 (Sep 8) | | |
 | | D3 (Sep 9) | | |
 | | D4 (Sep 10) | | |
 | | D5 (Sep 11) | | |
-| | D6 (Sep 12) | ✅ | ✅ |
+| | D6 (Sep 12) | | |
 | **W5** | D1 (Sep 14) | | |
 | | D2 (Sep 15) | | |
 | | D3 (Sep 16) | | |
 | | D4 (Sep 17) | | |
 | | D5 (Sep 18) | | |
-| | D6 (Sep 19) | ✅ | ✅ |
+| | D6 (Sep 19) | | |
 | **W6** | D1 (Sep 21) | | |
 | | D2 (Sep 22) | | |
 | | D3 (Sep 23) | | |
 | | D4 (Sep 24) | | |
 | | D5 (Sep 25) | | |
-| | D6 (Sep 26) | ✅ | ✅ |
+| | D6 (Sep 26) | | |
 | **W7** | D1 (Sep 28) | | |
 | | D2 (Sep 29) | | |
-| | D3 (Sep 30) | ✅ | ✅ |
+| | D3 (Sep 30) | | |
 
 ---
 

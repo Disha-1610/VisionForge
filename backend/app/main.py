@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import get_settings
 from app.core.database import engine
 from app.core.exceptions import register_exception_handlers
-from app.routers import auth, products, vendors
+from app.routers import auth, inspections, products, vendors
 from app.services.embedding_service import embedding_service
 
 logging.basicConfig(
@@ -73,6 +73,7 @@ API_PREFIX = "/api/v1"
 app.include_router(auth.router, prefix=API_PREFIX)
 app.include_router(products.router, prefix=API_PREFIX)
 app.include_router(vendors.router, prefix=API_PREFIX)
+app.include_router(inspections.router, prefix=API_PREFIX)
 
 
 # ── Health Check ──────────────────────────────────────────────────────────────

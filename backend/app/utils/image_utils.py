@@ -242,15 +242,15 @@ def cv_to_pil(image: np.ndarray) -> Image.Image:
         raise ImageValidationError("cv_to_pil requires a numpy ndarray")
     try:
         if image.ndim == 2:
-            return Image.fromarray(image, mode="L")
+            return Image.fromarray(image)
         if image.ndim == 3:
             channels = image.shape[2]
             if channels == 3:
                 rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-                return Image.fromarray(rgb, mode="RGB")
+                return Image.fromarray(rgb)
             if channels == 4:
                 rgba = cv2.cvtColor(image, cv2.COLOR_BGRA2RGBA)
-                return Image.fromarray(rgba, mode="RGBA")
+                return Image.fromarray(rgba)
         raise ImageValidationError(f"Unsupported ndarray shape for conversion: {image.shape}")
     except cv2.error as exc:
         raise ImageProcessingError(f"Failed to convert OpenCV image to PIL: {exc}") from exc
