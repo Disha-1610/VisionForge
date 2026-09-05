@@ -390,7 +390,7 @@ The platform has exactly **two roles**: `OPERATOR` (default on registration) and
 | 1 | **Landing** | Public | First impression for anyone opening the live URL — hero, "how it works" (4-step pipeline teaser), CTA to log in. This is the page an interviewer/judge sees first. |
 | 2 | **Login** | Public | Login + Register in one form (tab toggle) — keeps page count down. |
 | 3 | **Dashboard** | Protected | Home after login — summary cards (today's inspections, pending review, fraud detected this week), recent inspection activity, "+ New Inspection" CTA. Built for daily monitoring. |
-| 4 | **New Inspection** | Protected | Vendor dropdown (from `GET /vendors`, inline "add vendor" option), location field, product-type selector (Motherboard / Battery / RAM), multi-image drag-drop upload, triggers the 8-stage pipeline → redirects to Inspection Detail. |
+| 4 | **New Inspection** | Protected | Vendor dropdown (from `GET /vendors`, inline "add vendor" option), location field, product-type selector (Motherboard / Battery / RAM), dual intake options (drag-drop file upload + mobile rear-camera live capture with desktop guard), triggers the 8-stage pipeline → redirects to Inspection Detail. |
 | 5 | **Inspection Detail** | Protected | Live **8-stage `PipelineProgress` over SSE** (subscribes to `GET /inspections/{id}/events` — every stage start/complete/fail pushes an event instantly; polling fallback via `/status`), verdict banner, side-by-side image compare, ROI overlays (including YOLO bounding boxes), one evidence card per agent, Judge's root-cause explanation, Approve/Override action, "Download Report (PDF)" — this is the live review workspace. |
 | 6 | **Reports** | Protected | Filterable archive of every past inspection's report — filter by date range, vendor, location, verdict, fraud category; bulk export. Distinct from Inspection Detail: this is the audit/compliance view ("show me every Quarantined part from Vendor X in July"), not a live review screen. |
 | 7 | **Analytics** | Protected | Summary cards, monthly fraud trend chart, vendor breakdown, location breakdown, vendor-component-risk breakdown (matches the `/analytics/vendor-risk` endpoint). |
@@ -489,7 +489,7 @@ components/
 │   ├── Breadcrumbs.jsx          # detail pages
 │   └── Footer.jsx
 ├── inspection/
-│   ├── ImageUploader.jsx
+│   ├── ImageUploader.jsx        # Drag-drop upload + mobile rear-camera capture (facingMode: environment) with desktop guard modal
 │   ├── ImageCompare.jsx
 │   ├── PipelineProgress.jsx     # SSE-driven live 8-stage stepper: EventSource on /inspections/{id}/events, polling fallback to /status
 │   ├── ROIOverlay.jsx            # renders YOLO bounding boxes + ROI template regions
@@ -506,6 +506,19 @@ components/
     ├── VendorLocationTable.jsx
     └── VendorRiskTable.jsx       # vendor × fraud-category breakdown
 ```
+
+### Image Intake Architecture: Drag-Drop Upload vs. Mobile Rear-Camera Live Feed
+
+Factory and warehouse QA operators work on the move with smartphones or rugged handheld tablets, while lab managers and office auditors use desktop/laptop workstations. To ensure maximum operational fidelity and zero pipeline failures from poor camera quality:
+
+1. **Dual Intake Channels in `ImageUploader.jsx`:**
+   - **High-Res File Upload (Desktop / Laptop / Mobile):** Multi-image drag-and-drop zone accepting RAW/JPEG/PNG captures from industrial cameras or smartphones.
+   - **Mobile Live Camera Feed (Mobile / Tablet Only):** Operates on mobile devices using the device's high-resolution **rear/back camera** via `navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" } } })` (or native mobile `<input type="file" accept="image/*" capture="environment">`). Provides an industrial alignment viewfinder overlay so the operator can position the PCB, battery, or RAM module before capturing.
+2. **Desktop / Laptop Quality Guard:**
+   - Standard laptop webcams are fixed-focus, low-resolution (often 720p), and noisy — attempting to point a laptop at a PCB would trigger immediate failure in Stage 1 (Quality Check: blur & resolution checks).
+   - If an operator clicks "Live Camera" on a desktop or laptop, the UI detects the desktop environment and opens a guard modal:
+     > 📱 *"Live Camera capture is optimized for mobile devices with high-resolution rear cameras. Please upload a high-resolution image file, or scan this QR code to open VisionForge on your mobile device."*
+   - Includes a QR code that instantly launches the active inspection session on the operator's smartphone.
 
 ### Why Reports is a separate page from Inspection Detail
 

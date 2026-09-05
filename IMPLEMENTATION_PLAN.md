@@ -9,39 +9,6 @@
 
 ---
 
-## 🏁 Implementation Status — VisionForge.md ↔ Code (verified Sep 2026)
-
-`VisionForge.md` is the **design source of truth**; this plan maps its features to schedule. Status below reflects the actual codebase (verified via tests/imports):
-
-| VisionForge.md feature | Plan slot | Status |
-|:---|:---|:---:|
-| Async SQLAlchemy + pooling + session ctx | W1 D2 | ✅ Done |
-| Models: user, vendor, product, inspection, evidence (incl. YOLO count fields) | W1 D1 | ✅ Done |
-| JWT access/refresh + bcrypt + token-type check | W1 D2 | ✅ Done |
-| Schemas (auth, inspection, product, vendor, report) | W1 D3 | ✅ Done |
-| Routers: auth, products, vendors, inspections (+ background task, case numbers) | W1 D4 | ✅ Done |
-| Evidence Store (append-only, immutable, thread-safe) | W1 D4 | ✅ Done |
-| Working Memory (per-stage StageResult tracking — SSE-ready) | W1 D5 | ✅ Done |
-| LLM Client (Groq/Gemini primary→fallback routing) | W1 D5 | ✅ Done |
-| Embedding Service - dual embedding (Gemini 1-shot -> OpenCLIP fallback) + FAISS index build/update, provider-dimension tracking, index_golden_reference, rebuild_index, remove_from_index, persistence roundtrip | W2 D4 | ✅ Done |
-| Unit tests Stages 1-3 + embedding service + image utils + llm client + routers (136 passing) | W2 D5 | ✅ Done |
-| Integration Day (Stages 1-3 end-to-end + ROI templates validation & execution planning + inspections router mounted) | W2 D6 | ✅ Done |
-| Alembic migration 001 (5 tables, 2-role enum) | W1 D6 | ✅ Done |
-| Test suite (16 passing: auth, RBAC, evidence store, memory, schemas) | W1 D6 | ✅ Done |
-| file_utils (safe upload), workflow stub | W2 D1 | ✅ Done |
-| **RBAC — 2 roles (OPERATOR/ADMIN), `require_roles()` factory** | W1 (added) | ✅ Done |
-| Pipeline stages 1–3 (quality_check, authenticity, reference_match) | W2 | ✅ Done (quality_check + reference_match: Anil; authenticity full CV logic — ELA, EXIF, screenshot, noise, copy-move: Disha) |
-| ROI templates + image_utils | W2 D2 | ✅ Done (roi_templates util, image_utils helpers, JSON templates: motherboard/battery/RAM) |
-| LangGraph workflow (replace stub) | W2 D3/W4 D3 | 🔲 Planned (InspectionState bridge done ✅) |
-| Pipeline stages 4–5 + 4 agents | W3 | 🔲 Planned |
-| YOLO dataset merge (10 classes) + fine-tune | W3 D4 | 🔲 Planned |
-| Stages 6–8, reporting, analytics + by-operator RBAC | W4 | 🔲 Planned |
-| SSE endpoint `GET /inspections/{id}/events` + status fallback | W4 D4 | 🔲 Planned (contract documented) |
-| Frontend (7 pages + design system + components) | W5–W6 | 🔲 Planned |
-| CI/CD + Render/Vercel deploy | W7 | 🔲 Planned |
-
-> **Rule:** when a VisionForge.md feature lands in code, update this table in the same commit.
-
 ---
 
 
@@ -217,7 +184,7 @@ VisionForge-MVP/
 │       │   │   ├── Footer.jsx
 │       │   │   └── Breadcrumbs.jsx
 │       │   ├── inspection/
-│       │   │   ├── ImageUploader.jsx
+│       │   │   ├── ImageUploader.jsx     # Drag-drop upload + mobile rear-camera capture (facingMode: environment) with desktop guard modal
 │       │   │   ├── ImageCompare.jsx
 │       │   │   ├── PipelineProgress.jsx  # SSE-driven live 8-stage progress (EventSource on /inspections/{id}/events, polling fallback)
 │       │   │   ├── ROIOverlay.jsx
@@ -305,7 +272,7 @@ VisionForge-MVP/
 
 | Day | Anil | Disha |
 |:---|:---|:---|
-| **Day 1 (Aug 31)** | `pipeline/stages/roi_scheduler.py` — read ROI template, map ROI types to agents, produce execution plan, handle priority ordering | Stage 5: `pipeline/stages/evidence_execution.py` — dispatch framework for parallel agent execution, cropping ROI pairs from golden & inspection images |
+| **Day 1 (Aug 31)** | `pipeline/stages/roi_scheduler.py` — read ROI template, map ROI types to agents, produce execution plan, handle priority ordering  | Stage 5: `pipeline/stages/evidence_execution.py` — dispatch framework for parallel agent execution, cropping ROI pairs from golden & inspection images |
 | **Day 2 (Sep 1)** | `agents/base_agent.py` — Abstract base class with run() method, confidence standardization | `agents/ocr_agent.py` — Primary: PaddleOCR, Secondary: EasyOCR integration for text extraction and comparison |
 | **Day 3 (Sep 2)** | `agents/label_agent.py` — OpenCV template matching for labels, seals, logos (using golden template) | `agents/structural_agent.py` — SSIM calculation (OpenCV) foundation |
 | **Day 4 (Sep 3)** | **YOLO Dataset Preparation** — Merge public PCB-component datasets from Roboflow Universe (`https://universe.roboflow.com/search?q=pcb+components`, `?q=electronic+component+detection`; DeepPCB reference: `https://github.com/tangsanli5201/DeepPCB`) + self-shot battery/RAM photos; unify to the 10-class single shared model (Motherboard: capacitor, resistor, ic_chip, connector, screw • Battery: terminal, seal, battery_cell • RAM: ram_ic_chip, gold_pin_connector) on Roboflow free tier, export YOLO format | **YOLO Fine-Tune** — Set up Google Colab notebook, fine-tune YOLO11n on merged dataset (~300 images, 10 classes, T4 GPU, ~1-2 hours), export weights |
@@ -333,8 +300,8 @@ VisionForge-MVP/
 |:---|:---|:---|
 | **Day 1 (Sep 14)** | Frontend setup: Vite + React, package.json, routing (React Router — public routes `/`, `/login`; protected routes for the rest, plus a `*` → NotFoundPage), Tailwind CSS configuration **+ SaaS Design System tokens: status color palette (Accept/emerald, Quarantine/red, Review/amber, Processing/blue), dark mode via `ThemeContext`, typography scale (Inter), spacing & radius tokens, sidebar layout shell** | `services/api.js` — Axios setup with interceptors for auth, error handling; `context/AuthContext.jsx`; global `Toast` provider (success/error/info toasts on every mutation) |
 | **Day 2 (Sep 15)** | `pages/LandingPage.jsx` + `components/landing/HeroSection.jsx` + `HowItWorks.jsx` (4-step pipeline teaser) + `FeatureGrid.jsx` (agent/product feature cards) + `SocialProof.jsx` (metrics strip — "X parts inspected, Y fraud cases caught"), CTA to Login | `pages/LoginPage.jsx` — Login/Register forms with validation (split-card SaaS layout: form left, product value props right); `components/common/` (LoadingSpinner, ErrorBoundary, Pagination, EmptyState, SkeletonLoader, StatusChip) |
-| **Day 3 (Sep 16)** | `pages/DashboardPage.jsx` — `StatCard` summary row (today's inspections, pending review, fraud detected this week, fraud rate), recent inspections feed with `StatusChip` badges, `GoldenReferenceUploader` panel (admin: upload golden images per product — Motherboard/Battery/RAM → `POST /products`), "+ New Inspection" CTA | `pages/NewInspectionPage.jsx` — Drag-drop upload with multi-image thumbnails, vendor dropdown (`GET /vendors`) + inline add, location field, product-type selector (Motherboard/Battery/RAM), triggers the 8-stage pipeline → redirects to Inspection Detail |
-| **Day 4 (Sep 17)** | `pages/InspectionDetailPage.jsx` — Verdict banner, evidence cards, approve/override actions | `components/inspection/ImageUploader.jsx` + `components/inspection/ImageCompare.jsx` — drag-drop zone + side-by-side comparison with zoom; `components/inspection/PipelineProgress.jsx` — **SSE-driven live 8-stage stepper: native `EventSource` on `/inspections/{id}/events`, animated stage transitions on each `stage` event, verdict banner renders on the final `verdict` event; automatic fallback to `GET /inspections/{id}/status` polling (2-3s) if the SSE connection errors, plus auto-reconnect on transient drops** |
+| **Day 3 (Sep 16)** | `pages/DashboardPage.jsx` — `StatCard` summary row (today's inspections, pending review, fraud detected this week, fraud rate), recent inspections feed with `StatusChip` badges, `GoldenReferenceUploader` panel (admin: upload golden images per product — Motherboard/Battery/RAM → `POST /products`), "+ New Inspection" CTA | `pages/NewInspectionPage.jsx` — Drag-drop upload with multi-image thumbnails + mobile rear-camera capture toggle, vendor dropdown (`GET /vendors`) + inline add, location field, product-type selector (Motherboard/Battery/RAM), triggers the 8-stage pipeline → redirects to Inspection Detail |
+| **Day 4 (Sep 17)** | `pages/InspectionDetailPage.jsx` — Verdict banner, evidence cards, approve/override actions | `components/inspection/ImageUploader.jsx` (drag-drop zone + mobile rear-camera live viewfinder `facingMode: environment` + desktop webcam guard modal with QR code) + `components/inspection/ImageCompare.jsx` — side-by-side comparison with zoom; `components/inspection/PipelineProgress.jsx` — **SSE-driven live 8-stage stepper: native `EventSource` on `/inspections/{id}/events`, animated stage transitions on each `stage` event, verdict banner renders on the final `verdict` event; automatic fallback to `GET /inspections/{id}/status` polling (2-3s) if the SSE connection errors, plus auto-reconnect on transient drops** |
 | **Day 5 (Sep 18)** | `components/inspection/ROIOverlay.jsx` — Render YOLO bounding boxes on images, crop visualization | `components/inspection/EvidenceCard.jsx` + `components/inspection/VerdictBanner.jsx` — fraud probability, confidence, category |
 | **Day 6 (Sep 19)** | **Integration Day** — Connect Landing → Login → Dashboard → New Inspection → Inspection Detail flow end-to-end | **Integration Day** — UI polish, responsiveness fixes, loading states, error messages |
 
@@ -464,9 +431,9 @@ VisionForge-MVP/
 | | D5 (Aug 28) | ✅ | ✅ |
 | | D6 (Aug 29) | ✅ | ✅ | **Completed ✅** |
 | **W3** | D1 (Aug 31) | | |
-| | D2 (Sep 1) | | |
-| | D3 (Sep 2) | | |
-| | D4 (Sep 3) | | |
+| | D2 (Sep 1) |✅ | |
+| | D3 (Sep 2) |✅ | |
+| | D4 (Sep 3) |✅ | |
 | | D5 (Sep 4) | | |
 | | D6 (Sep 5) | | |
 | **W4** | D1 (Sep 7) | | |

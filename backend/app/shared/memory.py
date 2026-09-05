@@ -49,6 +49,8 @@ class WorkingMemory:
     image_paths: list[str] = field(default_factory=list)
     golden_reference_id: UUID | None = None
     golden_image_path: str | None = None
+    part_code: str | None = None
+    product_type: str | None = None
     roi_template: dict[str, Any] | None = None
 
     quality_passed: bool | None = None
@@ -109,6 +111,8 @@ class WorkingMemory:
             "image_paths": self.image_paths,
             "golden_reference_id": str(self.golden_reference_id) if self.golden_reference_id else None,
             "golden_image_path": self.golden_image_path,
+            "part_code": self.part_code,
+            "product_type": self.product_type,
             "roi_template": self.roi_template,
             "quality_passed": self.quality_passed,
             "authenticity_score": self.authenticity_score,
