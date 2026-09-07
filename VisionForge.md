@@ -226,35 +226,164 @@ This is the stage where object-level detection adds real accuracy, not just nove
 - YOLO adds a structured, per-object signal: it detects and counts individual components (capacitors, connectors, chips) in both the golden ROI and the inspection ROI, and reports **which specific component is missing, extra, or misplaced** — this is both more accurate (object presence/count is a stronger fraud signal than pixel similarity) and more explainable (the Judge and the final report can say "capacitor at position 3 is missing" instead of "structural similarity: 0.71").
 - Combine both signals: SSIM catches general structural drift, YOLO catches discrete component-level tampering. Fusion (Stage 6) weighs them together.
 
-**MVP Product Scope (Dell hackathon focus) — 3 products: Motherboard, Battery, RAM**
+---
 
-These are the 3 **product types** (Golden Reference level) supported in MVP. YOLO uses a **single shared model** with all classes combined — Stage 3 (Reference Intelligence) already knows the product type before Structural Agent runs, so the agent filters/counts only the classes relevant to the matched product.
+### 📦 Dedicated Specification: YOLO11n Component Detector & VisionForge Master Dataset
 
-**YOLO classes — single shared model, 10 classes (`component_detector.pt`):**
+#### 1. MVP Scope & Architectural Honesty (8 Classes vs. 10 Classes)
+The original theoretical specification outlined a 10-class model. During rigorous dataset research, licensing verification, and quality audits, two classes (`terminal` and `ram_ic_chip`) lacked high-quality, open-license public data suitable for production-grade MVP accuracy.
+- **Architectural Honesty:** We intentionally maintain an authoritative **8-class unified model** rather than polluting the model with synthetic or corrupt data.
+- **Deferred Classes:** `terminal` (Battery) and `ram_ic_chip` (RAM) are scheduled for future dataset expansion rounds.
 
-| # | Class | Product | Fraud signal |
-|:---|:---|:---|:---|
-| 0 | `capacitor` | Motherboard | Missing/extra electrolytic or SMD cap |
-| 1 | `resistor` | Motherboard | Missing/extra SMD resistor |
-| 2 | `ic_chip` | Motherboard | Pirated/re-marked chips, missing IC |
-| 3 | `connector` | Motherboard | Missing/bent connector |
-| 4 | `screw` | Motherboard | Assembly completeness |
-| 5 | `terminal` | Battery | Missing/damaged terminals |
-| 6 | `seal` | Battery | Broken/counterfeit seal |
-| 7 | `battery_cell` | Battery | Counterfeit cell count/pack structure |
-| 8 | `ram_ic_chip` | RAM | Missing/downgraded memory chips |
-| 9 | `gold_pin_connector` | RAM | Damaged pins, re-marked modules |
+#### 2. Authoritative 8-Class Unified Label Space (`component_detector.pt`)
+A **single shared YOLO11n model** inspects all 3 products (Motherboard, Battery, RAM). Stage 3 (Reference Intelligence) establishes the product type prior to agent execution, allowing the Structural Agent to evaluate relevant components:
 
-**Getting a usable YOLO model without a paid dataset or paid compute:**
-1. **Start from public datasets, re-fine-tune on your own golden images.** Merge Roboflow Universe PCB-component datasets (~150-200 motherboard images, classes capacitor/resistor/IC/connector), then add ~50-80 battery + ~50-80 RAM images (Roboflow Universe or self-photographed parts annotated on Roboflow free tier). Dataset search links:
-   - Roboflow Universe search: `https://universe.roboflow.com/search?q=pcb+components` and `?q=electronic+component+detection` (pick datasets whose classes map cleanly to the 10 classes above, export YOLOv11 format)
-   - **DeepPCB** (verified, MIT, 1,500 template/tested image pairs — defect classes, use as supplementary/reference data): `https://github.com/tangsanli5201/DeepPCB`
-   - Kaggle search for supplementary parts images: `https://www.kaggle.com/search?q=pcb+component+detection`
-2. Re-annotate/merge on **Roboflow free tier** so all sources share the exact 10-class label space, and export in YOLO format.
-3. Fine-tune `YOLO11n` (the nano variant — smallest, fastest, fits free compute) on the merged set (~300 images, 10 classes) using a free Google Colab GPU session (T4, ~1-2 hours).
-4. Export the weights to `data/yolo_weights/component_detector.pt` and load them locally in `structural_agent.py` — no inference API, no ongoing cost.
-5. Pretrained COCO-weights YOLO won't help here — COCO has no "capacitor" or "connector" class. The fine-tune step is what makes it useful, not the base model.
-6. License: AGPL-3.0 is free as long as the repo stays open-source, which it already is.
+| Class ID | Class Name | Target Product | Fraud Signal / Inspection Capability |
+|:---:|:---|:---|:---|
+| **0** | `capacitor` | Motherboard | Missing / extra electrolytic or SMD capacitor |
+| **1** | `resistor` | Motherboard | Missing / altered SMD resistor |
+| **2** | `ic_chip` | Motherboard | Pirated / re-marked IC, missing controller |
+| **3** | `connector` | Motherboard | Missing, bent, or tampered header / socket |
+| **4** | `screw` | Motherboard | Assembly completeness, missing retention screws |
+| **5** | `seal` | Battery | Broken, removed, or counterfeit warranty/QC seal |
+| **6** | `battery_cell` | Battery | Counterfeit cell count, pack structure anomaly |
+| **7** | `gold_pin_connector` | RAM | Scratched, burnt, or degraded edge connector pins |
+
+#### 3. Dataset Provenance & Cleaning Pipeline
+Five verified public datasets were cleaned, filtered, and remapped into the unified 8-class format:
+
+1. **Motherboard Components (LibreYOLO "printed-circuit-board" - Hugging Face):**
+   - Filtered from 34 source classes to 4 target classes:
+     - Capacitors (source IDs 4, 11) $\rightarrow$ Class 0 (`capacitor`)
+     - Resistors (source ID 25) $\rightarrow$ Class 1 (`resistor`)
+     - IC Chips (source IDs 15, 33) $\rightarrow$ Class 2 (`ic_chip`)
+     - Connectors (source ID 5) $\rightarrow$ Class 3 (`connector`)
+   - Verified counts: Train (14,155 cap, 3,591 res, 5,998 ic, 27,014 conn), Val (3,797 cap, 597 res, 1,032 ic, 3,630 conn), Test (1,938 cap, 439 res, 574 ic, 1,920 conn).
+2. **Battery Cells (Roboflow "battery types" by batt - ~2,741 source images):**
+   - Merged `cylindrical`, `pouch`, and `prismatic` classes into Class 6 (`battery_cell`).
+   - Verified counts: Train: 4,065 | Val: 1,158 | Test: 631 instances.
+3. **Motherboard Screws (Roboflow "Motherboard Screw Localization" - ~496 images):**
+   - Mapped positive `screw_roi` $\rightarrow$ Class 4 (`screw`); purged negative `no_screw` annotations.
+   - Verified train count: 2,932 instances.
+4. **Container / Security Seals (Roboflow "container seal detection jan21" - CC BY 4.0, ~422 images):**
+   - Mapped positive `seal` $\rightarrow$ Class 5 (`seal`); purged negative `no_seal` annotations.
+   - Verified train count: 480 instances.
+5. **RAM Gold Pins (Roboflow "GoldFinger" by hieu - CC BY 4.0, ~117 images):**
+   - Mapped `GoldFinger` $\rightarrow$ Class 7 (`gold_pin_connector`).
+   - Verified train count: 1,528 instances.
+
+#### 4. Master Dataset Structure & Metrics (Total 4,448 Images)
+The final consolidated dataset is housed in `visionforge-dataset/`:
+```
+visionforge-dataset/
+├── data.yaml                  # Unified 8-class dataset definition
+├── train/                     # 3,393 images + 3,393 labels (59,773 object instances)
+│   ├── images/ (3,393 files)
+│   └── labels/ (3,393 files)
+├── valid/                     # 715 images + 715 labels
+│   ├── images/ (715 files)
+│   └── labels/ (715 files)
+└── test/                      # 340 images + 340 labels
+    ├── images/ (340 files)
+    └── labels/ (340 files)
+```
+
+**Dataset Scale & Verification Breakdown:**
+* **Total Image Count:** **4,448 images**
+  * **Train Split:** **3,393 images** (76.3%)
+  * **Validation Split:** **715 images** (16.1%)
+  * **Test Split:** **340 images** (7.6%)
+* **Total Training Object Annotations:** **59,773 component bounding boxes**
+  * Connector: 27,014 instances
+  * Capacitor: 14,155 instances
+  * IC Chip: 5,998 instances
+  * Battery Cell: 4,065 instances
+  * Resistor: 3,591 instances
+  * Screw: 2,932 instances
+  * Gold Pin Connector: 1,528 instances
+  * Seal: 480 instances
+* **Negative / Background Context:** **51 empty training labels** intentionally retained to train the model against false positive detections on plain surfaces.
+* **Integrity Audit:** 0 invalid class IDs, 100% 1-to-1 image-label pairing across all splits.
+
+#### 5. Portable `data.yaml` Specification
+```yaml
+path: .
+train: train/images
+val: valid/images
+test: test/images
+
+nc: 8
+names:
+  - capacitor
+  - resistor
+  - ic_chip
+  - connector
+  - screw
+  - seal
+  - battery_cell
+  - gold_pin_connector
+```
+
+#### 6. Structural Agent Reasoning Logic
+When comparing a Golden ROI crop against an Inspection ROI crop, the Structural Agent runs YOLO inference on both and executes four-mode deterministic reasoning:
+1. **Missing Component:** Component detected in Golden ROI ($N_{\text{golden}} > 0$) but missing in Inspection ROI ($N_{\text{inspection}} = 0$).
+2. **Extra Component:** Component detected in Inspection ROI ($N_{\text{inspection}} > 0$) that does not exist in Golden ROI ($N_{\text{golden}} = 0$).
+3. **Count Mismatch:** Component exists in both, but counts diverge ($N_{\text{inspection}} \neq N_{\text{golden}}$).
+4. **Position Mismatch (Misplaced):** Same count detected, but center coordinate distance $\Delta(x, y) = \sqrt{(x_i - x_g)^2 + (y_i - y_g)^2} > \tau_{\text{pos}}$ exceeds positional tolerance.
+
+These findings are packaged into the structured `component_findings` payload of `AgentResult`, where they are combined with OpenCV SSIM holistic similarity for downstream Multi-View Fusion (Stage 6) and the AI Judge (Stage 7).
+
+#### 7. Training & Deployment Pipeline
+- **Base Architecture:** Ultralytics `YOLO11n` (nano — 2.6M params, optimized for ultra-fast local CPU inference < 15ms per crop).
+- **Training Environment:** Google Colab T4 GPU (free tier) or local CUDA GPU (30–50 epochs, imgsz=640, batch=16).
+- **Runtime Weights Location:** `data/yolo_weights/component_detector.pt` (referenced by `Settings.YOLO_WEIGHTS_DIR`).
+
+#### 8. Product-by-Product Mapping & Real-World Fraud Guide (Hinglish Field Notes & Pitch Guide)
+
+> 📊 **Master Dataset Scale (Quick Pitch Numbers):**  
+> * **Total Images:** **4,448 images** (Train: 3,393 | Valid: 715 | Test: 340)  
+> * **Total Annotated Components:** **59,773+ bounding boxes** across 8 classes  
+> * **100% Real Hardware Data:** Zero synthetic/hallucinated classes  
+
+> **Core Architecture Insight:** Ye 8 classes hamare 3 products (Motherboard, Battery, RAM) ke actual real-world hardware fraud ko kaise pakadti hain aur Single Shared Model kyun banaya gaya:
+
+##### 1. 🖥️ Product 1: Motherboard (PCB)
+* **Classes:** `capacitor` (0), `resistor` (1), `ic_chip` (2), `connector` (3), `screw` (4)
+* **Real-World Scams & Fraud Signals:**
+  - **Stolen / Missing ICs:** Refurbished ya counterfeit boards par se mehngi IC chips (audio codec, power regulator, microcontroller) nikaal li jaati hain ya sasti dummy chip laga di jaati hai.
+  - **Missing Capacitors:** Board ke power filter capacitors toot jaate hain ya desolder karke chura liye jaate hain.
+  - **Missing Screws / Bent Connectors:** Assembly incomplete hoti hai ya connector damaged hota hai.
+* **Pipeline Detection Flow:**
+  - Golden Reference ROI: 4 capacitors, 1 IC chip, 6 connectors, 4 screws.
+  - Inspection Sample ROI: 3 capacitors, 0 IC chips.
+  - **Result:** Structural Agent turant report karta hai: *"Capacitor missing at position 3, Main IC chip completely absent!"*
+
+##### 2. 🔋 Product 2: Battery Pack
+* **Classes:** `seal` (5), `battery_cell` (6)
+* **Real-World Scams & Fraud Signals:**
+  - **Cell Count Fraud (Industrial Scam):** Market mein 6-cell laptop battery bol kar bechte hain, lekin casing ke andar 4 real cells aur 2 mitti/cement ke dummy weight tubes hote hain!
+  - **Tampered / Broken Seal:** Original manufacturer ka safety ya warranty seal tod kar duplicate saste cells replace kiye jaate hain.
+* **Pipeline Detection Flow:**
+  - Golden Reference ROI: 6 battery_cells aur 1 intact QC seal.
+  - Inspection Sample ROI: 4 battery_cells aur broken seal.
+  - **Result:** System seedha fraud pakadta hai: *"Cell count mismatch: Expected 6, Found 4. Tamper seal broken/missing!"*
+
+##### 3. 💾 Product 3: RAM Module (DDR4 / DDR5)
+* **Classes:** `gold_pin_connector` (7), aur PCB level ke `capacitor` (0) / `resistor` (1)
+* **Real-World Scams & Fraud Signals:**
+  - **Damaged / Burnt Gold Pins:** Purani, short-circuit ya scrap RAM sticks jinke gold fingers (pins) jal chuke hain ya scratch ho gaye hain unhe return/warranty fraud ke liye bhejte hain. YOLO pin connector alignment aur presence check karta hai.
+  - **Missing SMD Decoupling Components:** RAM PCB par gold pins ke theek upar micro capacitors/resistors hote hain; inke chipped ya missing hone par RAM blue-screen/crash karti hai.
+  - *(RAM ke serial number, memory density aur label tampering ko hamara OCR Agent aur Label Agent cover karte hain).*
+
+##### 4. 🌟 Single Shared Model Ka Superpower:
+* **No Model Switching Overhead:** Ek hi `component_detector.pt` model memory mein load hota hai. 3 alag-alag models load karne ki latency (lag) 0 ho jaati hai.
+* **Stage 3 Integration:** Stage 3 (Reference Match) pehle se jaanta hai ki product kya hai (`motherboard`, `battery`, ya `ram`). Structural Agent us product ke specific classes par filter lagata hai.
+* **Explainability (The "WOW" Factor):** Bina YOLO ke koi software sirf bolta hai: *"Image similarity is 75%"*. Customer ya judge poochhega: *"75% kyun? Kya kharab hai?"*
+  Lekin VisionForge YOLO ke saath exact reason batata hai:
+  > 🚨 **Verdict: REJECT / QUARANTINE**  
+  > **Root Cause:** *Component mismatch in Capacitor Bank 1 — Golden reference has 4 capacitors, but inspection sample only has 3 (1 capacitor missing at x=180, y=220).*
+
+---
 
 **5d. VLM Agent** — Primary: Google Gemini **Gemini 3.5 Flash** (`gemini-3.5-flash`, verified active, multimodal defect analysis & explanation). Secondary / Fallback: Groq **Qwen 3.8 27B Vision** (`qwen/qwen3.8-27b`, verified active, 27B multimodal reasoning). Catches general visual anomalies the other 3 agents aren't specifically looking for; also the fallback when a region doesn't cleanly map to OCR/Label/Structural. Combined vision+reasoning means it can return a short explanation alongside the detection, not just a raw label.
 

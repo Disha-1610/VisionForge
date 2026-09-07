@@ -226,3 +226,8 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# VisionForge Datasets & Large Weights (Keep local / Colab)
+visionforge-dataset/
+data/yolo_weights/*.pt
+!data/yolo_weights/.gitkeep
