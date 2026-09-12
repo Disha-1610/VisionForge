@@ -5,6 +5,7 @@ from app.pipeline.agents.base_agent import AgentResult, BaseAgent
 from app.pipeline.agents.label_agent import LabelAgent
 from app.pipeline.agents.ocr_agent import OCRAgent
 from app.pipeline.agents.structural_agent import StructuralAgent
+from app.pipeline.agents.vlm_agent import VLMAgent, VLMAnomalyReport
 
 __all__ = [
     "BaseAgent",
@@ -12,5 +13,8 @@ __all__ = [
     "LabelAgent",
     "OCRAgent",
     "StructuralAgent",
+    "VLMAgent",
+    "VLMAnomalyReport",
 ]
+
 

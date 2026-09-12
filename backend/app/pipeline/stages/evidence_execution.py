@@ -25,6 +25,7 @@ from app.pipeline.agents.base_agent import AgentResult, BaseAgent
 from app.pipeline.agents.label_agent import LabelAgent
 from app.pipeline.agents.ocr_agent import OCRAgent
 from app.pipeline.agents.structural_agent import StructuralAgent
+from app.pipeline.agents.vlm_agent import VLMAgent
 from app.pipeline.state import InspectionState
 from app.shared.evidence_store import AgentType
 from app.shared.memory import PipelineStageName, StageResult
@@ -51,7 +52,9 @@ def get_default_agent_registry() -> dict[AgentType, BaseAgent]:
         AgentType.OCR: OCRAgent(),
         AgentType.LABEL: LabelAgent(),
         AgentType.STRUCTURAL: StructuralAgent(),
+        AgentType.VLM: VLMAgent(),
     }
+
 
 
 def _parse_bbox(bbox_data: Any) -> tuple[float, float, float, float]:
