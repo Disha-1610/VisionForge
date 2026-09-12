@@ -3,6 +3,9 @@
 
 from app.pipeline.stages.authenticity import run_authenticity_stage
 from app.pipeline.stages.evidence_execution import run_evidence_execution
+from app.pipeline.stages.evidence_fusion import run_evidence_fusion
+from app.pipeline.stages.judge import run_judge
+from app.pipeline.stages.policy_engine import run_policy_engine
 from app.pipeline.stages.quality_check import run_quality_check
 from app.pipeline.stages.reference_match import run_reference_match
 from app.pipeline.stages.roi_scheduler import infer_product_type, resolve_roi_template, run_roi_scheduler
@@ -13,6 +16,9 @@ __all__ = [
     "run_reference_match",
     "run_roi_scheduler",
     "run_evidence_execution",
+    "run_evidence_fusion",
+    "run_judge",
+    "run_policy_engine",
     "resolve_roi_template",
     "infer_product_type",
 ]

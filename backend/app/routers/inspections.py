@@ -1,3 +1,5 @@
+import asyncio
+import json
 import os
 import uuid
 from datetime import datetime, timezone
@@ -5,6 +7,7 @@ from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, UploadFile, status as http_status
+from fastapi.responses import StreamingResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -13,6 +16,7 @@ from app.core.security import get_current_user, require_roles
 from app.models.inspection import Inspection, InspectionStatus, ReviewDecision
 from app.models.user import User, UserRole
 from app.models.vendor import Vendor
+from app.pipeline.state import inspection_state_registry
 from app.pipeline.workflow import run_inspection_pipeline
 from app.schemas.inspection import (
     InspectionCreateResponse,
@@ -160,6 +164,112 @@ async def get_inspection(
     if inspection is None:
         raise HTTPException(http_status.HTTP_404_NOT_FOUND, "Inspection not found")
     return InspectionResponse.model_validate(inspection)
+
+
+@router.get("/{inspection_id}/status")
+async def get_inspection_status(
+    inspection_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> dict:
+    """Lightweight polling endpoint returning real-time or completed stage progress."""
+    state = await inspection_state_registry.get(inspection_id)
+    if state is not None:
+        return state.progress()
+
+    result = await db.execute(select(Inspection).where(Inspection.id == inspection_id))
+    inspection = result.scalar_one_or_none()
+    if inspection is None:
+        raise HTTPException(http_status.HTTP_404_NOT_FOUND, "Inspection not found")
+
+    is_done = inspection.status == InspectionStatus.COMPLETED
+    is_failed = inspection.status == InspectionStatus.FAILED
+    return {
+        "stage": 8 if is_done else (1 if is_failed else 1),
+        "stage_name": "policy_engine" if is_done else ("failed" if is_failed else "in_progress"),
+        "status": inspection.status.value,
+        "progress": 8 if is_done else 0,
+        "verdict": inspection.verdict.value if inspection.verdict else None,
+        "policy_action": inspection.policy_action.value if inspection.policy_action else None,
+        "detail": inspection.error_message if is_failed else (inspection.root_cause if is_done else None),
+    }
+
+
+@router.get("/{inspection_id}/events")
+async def stream_inspection_events(
+    inspection_id: UUID,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Real-time Server-Sent Events (SSE) endpoint streaming stage progress (1/8 -> 8/8).
+    Closes automatically with a 'verdict' event when the inspection completes.
+    """
+    async def event_generator():
+        sent_verdict = False
+        max_checks = 120  # ~60 seconds timeout
+        checks = 0
+
+        while checks < max_checks:
+            checks += 1
+            state = await inspection_state_registry.get(inspection_id)
+            if state is not None:
+                prog = state.progress()
+                yield f"data: {json.dumps(prog)}\n\n"
+
+                if prog.get("status") in ("completed", "failed"):
+                    final_payload = {
+                        "event": "verdict",
+                        "status": prog.get("status"),
+                        "inspection_id": str(inspection_id),
+                        "detail": prog.get("detail"),
+                    }
+                    yield f"event: verdict\ndata: {json.dumps(final_payload)}\n\n"
+                    sent_verdict = True
+                    break
+            else:
+                result = await db.execute(select(Inspection).where(Inspection.id == inspection_id))
+                insp = result.scalar_one_or_none()
+                if insp is not None:
+                    if insp.status == InspectionStatus.COMPLETED:
+                        prog = {
+                            "stage": 8,
+                            "stage_name": "policy_engine",
+                            "status": "completed",
+                            "progress": 8,
+                            "verdict": insp.verdict.value if insp.verdict else None,
+                            "policy_action": insp.policy_action.value if insp.policy_action else None,
+                        }
+                        yield f"data: {json.dumps(prog)}\n\n"
+                        yield f"event: verdict\ndata: {json.dumps(prog)}\n\n"
+                        sent_verdict = True
+                        break
+                    elif insp.status == InspectionStatus.FAILED:
+                        prog = {
+                            "stage": 1,
+                            "stage_name": "failed",
+                            "status": "failed",
+                            "progress": 0,
+                            "error": insp.error_message,
+                        }
+                        yield f"data: {json.dumps(prog)}\n\n"
+                        yield f"event: verdict\ndata: {json.dumps(prog)}\n\n"
+                        sent_verdict = True
+                        break
+
+            await asyncio.sleep(0.5)
+
+        if not sent_verdict:
+            yield f"event: error\ndata: {json.dumps({'error': 'stream_timeout'})}\n\n"
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 @router.post("/{inspection_id}/approve", response_model=InspectionResponse)
