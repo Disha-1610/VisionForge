@@ -231,3 +231,7 @@ __marimo__/
 visionforge-dataset/
 data/yolo_weights/*.pt
 !data/yolo_weights/.gitkeep
+
+# Claude AI local configs & state
+.claude/
+.cluade/
