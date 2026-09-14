@@ -40,6 +40,8 @@ async def get_summary_metrics(
 
 
 @router.get("/vendors", response_model=VendorRiskResponse)
+@router.get("/vendor-risk", response_model=VendorRiskResponse, include_in_schema=False)
+@router.get("/by-vendor", response_model=VendorRiskResponse, include_in_schema=False)
 async def get_vendor_risk(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -49,6 +51,7 @@ async def get_vendor_risk(
 
 
 @router.get("/locations", response_model=LocationRiskResponse)
+@router.get("/by-location", response_model=LocationRiskResponse, include_in_schema=False)
 async def get_location_risk(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -58,6 +61,7 @@ async def get_location_risk(
 
 
 @router.get("/trend", response_model=MonthlyTrendResponse)
+@router.get("/monthly-trend", response_model=MonthlyTrendResponse, include_in_schema=False)
 async def get_trend(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),

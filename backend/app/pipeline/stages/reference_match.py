@@ -24,6 +24,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.core.database import AsyncSessionLocal
 from app.models.product import GoldenReference
+from app.pipeline.stages.roi_scheduler import infer_product_type
 from app.pipeline.state import InspectionState
 from app.services.embedding_service import embedding_service
 from app.shared.memory import PipelineStageName, StageResult
@@ -93,6 +94,12 @@ async def run_reference_match(
     # 3. Threshold gate — below it we do NOT pair; manual review instead
     if best_score < settings.SIMILARITY_THRESHOLD:
         detail["reason"] = "below_similarity_threshold"
+        logger.warning(
+            "Stage 3 Reference Match flagged: best similarity %.4f < threshold %.2f (reference_id=%s)",
+            best_score,
+            settings.SIMILARITY_THRESHOLD,
+            best_id,
+        )
         return await state.record_stage(
             StageResult(
                 stage=PipelineStageName.REFERENCE_MATCH,
@@ -141,10 +148,23 @@ async def run_reference_match(
         )
 
     # 5. Lock in the pairing
+    golden_meta = golden.meta or {}
+    matched_product_type = golden_meta.get("product_type") or infer_product_type(golden.part_id).value
     await state.memory.update(
         similarity_score=float(best_score),
         golden_reference_id=golden.id,
         golden_image_path=golden.image_path,
+        part_code=golden.part_id,
+        product_type=matched_product_type,
+    )
+
+    logger.info(
+        "Stage 3 Reference Match locked in for inspection %s: matched part_id=%s ('%s'), similarity=%.4f (threshold=%.2f)",
+        inspection_id,
+        golden.part_id,
+        golden.part_name,
+        best_score,
+        settings.SIMILARITY_THRESHOLD,
     )
 
     detail["matched_reference"] = {

@@ -393,6 +393,9 @@ class GroqProviderClient(BaseProviderClient):
                 }
             )
 
+        # Cap max_tokens to 512 for Groq vision requests to stay within OTPM rate limits
+        max_tokens = min(request.max_tokens, 512) if request.max_tokens else 512
+
         system_messages = [m.model_dump() for m in request.messages if m.role == "system"]
         body: dict[str, Any] = {
             "model": model,
@@ -401,7 +404,7 @@ class GroqProviderClient(BaseProviderClient):
                 {"role": "user", "content": content_blocks},
             ],
             "temperature": request.temperature,
-            "max_tokens": request.max_tokens,
+            "max_tokens": max_tokens,
         }
         if request.response_format == ResponseFormat.JSON:
             body["response_format"] = {"type": "json_object"}
@@ -425,7 +428,10 @@ class GroqProviderClient(BaseProviderClient):
     def _to_data_url(image: ImageInput) -> str:
         if image.source.startswith("http://") or image.source.startswith("https://"):
             return image.source
-        return f"data:{image.mime_type};base64,{image.source}"
+        if image.source.startswith("data:"):
+            return image.source
+        mime = image.mime_type or "image/jpeg"
+        return f"data:{mime};base64,{image.source}"
 
     @staticmethod
     def _parse_openai_style(
@@ -491,11 +497,14 @@ class GeminiProviderClient(BaseProviderClient):
         if user_text:
             parts.append({"text": user_text})
         for img in images or []:
+            raw_b64 = img.source
+            if "," in raw_b64 and raw_b64.startswith("data:"):
+                raw_b64 = raw_b64.split(",", 1)[1]
             parts.append(
                 {
                     "inline_data": {
-                        "mime_type": img.mime_type,
-                        "data": img.source,
+                        "mime_type": img.mime_type or "image/jpeg",
+                        "data": raw_b64,
                     }
                 }
             )

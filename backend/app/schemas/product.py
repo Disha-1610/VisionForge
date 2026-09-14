@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Optional
+from typing import Any, Optional
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 class GoldenReferenceBase(BaseModel):
@@ -46,8 +46,36 @@ class ProductResponse(GoldenReferenceBase):
         default=None,
         description="ID of this reference's embedding in the FAISS index",
     )
+    part_code: Optional[str] = None
+    product_type: Optional[str] = None
+    meta: Optional[dict] = None
     created_at: datetime
     updated_at: datetime
+
+    @model_validator(mode="before")
+    @classmethod
+    def populate_aliases(cls, data: Any) -> Any:
+        if hasattr(data, "__dict__"):
+            part_id = getattr(data, "part_id", None)
+            meta = getattr(data, "meta", None) or {}
+            if not getattr(data, "part_code", None) and part_id:
+                try:
+                    setattr(data, "part_code", part_id)
+                except Exception:
+                    pass
+            if not getattr(data, "product_type", None) and isinstance(meta, dict):
+                try:
+                    setattr(data, "product_type", meta.get("product_type", "hardware"))
+                except Exception:
+                    pass
+        elif isinstance(data, dict):
+            if "part_code" not in data and "part_id" in data:
+                data["part_code"] = data["part_id"]
+            if "product_type" not in data:
+                meta = data.get("meta") or {}
+                if isinstance(meta, dict):
+                    data["product_type"] = meta.get("product_type", "hardware")
+        return data
 
 
 # Routers reference this name — same schema, kept as an alias.

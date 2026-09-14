@@ -15,7 +15,8 @@ from app.schemas.vendor import VendorCreate, VendorDropdown, VendorResponse, Ven
 router = APIRouter(prefix="/vendors", tags=["Vendors"])
 
 
-@router.get("/", response_model=list[VendorResponse])
+@router.get("", response_model=list[VendorResponse])
+@router.get("/", response_model=list[VendorResponse], include_in_schema=False)
 async def list_vendors(
     skip: int = 0,
     limit: int = 100,
@@ -51,7 +52,8 @@ async def get_vendor(
     return vendor
 
 
-@router.post("/", response_model=VendorResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=VendorResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=VendorResponse, status_code=status.HTTP_201_CREATED, include_in_schema=False)
 async def create_vendor(
     body: VendorCreate,
     db: AsyncSession = Depends(get_db),

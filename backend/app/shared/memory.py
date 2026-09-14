@@ -2,10 +2,31 @@ from __future__ import annotations
 
 import asyncio
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from enum import Enum
 from typing import Any
 from uuid import UUID
+
+
+def _sanitize_for_json(obj: Any) -> Any:
+    """Recursively converts non-JSON-serializable objects (UUID, datetime, Enum, numpy types) to plain primitives."""
+    if obj is None:
+        return None
+    if isinstance(obj, UUID):
+        return str(obj)
+    if isinstance(obj, (datetime, date)):
+        return obj.isoformat()
+    if isinstance(obj, Enum):
+        return obj.value
+    if hasattr(obj, "item"):
+        return obj.item()
+    if hasattr(obj, "tolist"):
+        return obj.tolist()
+    if isinstance(obj, dict):
+        return {str(k): _sanitize_for_json(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple, set)):
+        return [_sanitize_for_json(v) for v in obj]
+    return obj
 
 
 class PipelineStageName(str, Enum):
@@ -108,19 +129,19 @@ class WorkingMemory:
             "inspection_id": str(self.inspection_id),
             "vendor_id": str(self.vendor_id) if self.vendor_id else None,
             "location": self.location,
-            "image_paths": self.image_paths,
+            "image_paths": list(self.image_paths),
             "golden_reference_id": str(self.golden_reference_id) if self.golden_reference_id else None,
             "golden_image_path": self.golden_image_path,
             "part_code": self.part_code,
             "product_type": self.product_type,
-            "roi_template": self.roi_template,
+            "roi_template": _sanitize_for_json(self.roi_template),
             "quality_passed": self.quality_passed,
             "authenticity_score": self.authenticity_score,
             "authenticity_flagged": self.authenticity_flagged,
             "similarity_score": self.similarity_score,
-            "roi_execution_plan": self.roi_execution_plan,
+            "roi_execution_plan": _sanitize_for_json(self.roi_execution_plan),
             "evidence_refs": [str(e) for e in self.evidence_refs],
-            "fused_evidence": self.fused_evidence,
+            "fused_evidence": _sanitize_for_json(self.fused_evidence),
             "fraud_probability": self.fraud_probability,
             "judge_confidence": self.judge_confidence,
             "fraud_category": self.fraud_category,
@@ -130,7 +151,7 @@ class WorkingMemory:
                 {
                     "stage": r.stage.value,
                     "status": r.status,
-                    "data": r.data,
+                    "data": _sanitize_for_json(r.data),
                     "error": r.error,
                     "duration_ms": r.duration_ms(),
                 }

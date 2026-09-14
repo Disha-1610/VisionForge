@@ -23,6 +23,7 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.database import AsyncSessionLocal
 from app.models.product import GoldenReference
 from app.pipeline.state import InspectionState
 from app.shared.memory import PipelineStageName, StageResult
@@ -32,11 +33,19 @@ from app.utils.roi_templates import (
     ROIExecutionPlan,
     ROITemplate,
     ROITemplateError,
+    ROITemplateNotFoundError,
     create_execution_plan,
     load_roi_template,
 )
 
 logger = logging.getLogger("app.pipeline.roi_scheduler")
+
+
+DEFAULT_PART_CODES: dict[ProductType, str] = {
+    ProductType.MOTHERBOARD: "PCB-MCU-V2",
+    ProductType.BATTERY: "BAT-STD-V1",
+    ProductType.RAM: "RAM-DDR4-V1",
+}
 
 
 def infer_product_type(part_code: str) -> ProductType:
@@ -73,6 +82,7 @@ async def resolve_roi_template(
       2. `state.memory.roi_template` (dict in working memory).
       3. `GoldenReference` looked up via `state.memory.golden_reference_id` from DB.
       4. `state.memory.part_code` / `product_type` in working memory.
+      5. Resilient fallback to default part code for product type.
     """
     if template is not None:
         return template
@@ -84,36 +94,54 @@ async def resolve_roi_template(
             logger.warning("Failed parsing roi_template from memory: %s", exc)
 
     part_code: str | None = state.memory.part_code
-    product_type: ProductType | None = (
-        ProductType(state.memory.product_type) if state.memory.product_type else None
-    )
+    product_type: ProductType | None = None
+    if state.memory.product_type:
+        try:
+            product_type = ProductType(state.memory.product_type.lower().strip())
+        except ValueError:
+            product_type = None
 
-    if db is not None and state.memory.golden_reference_id is not None:
-        result = await db.execute(
-            select(GoldenReference).where(GoldenReference.id == state.memory.golden_reference_id)
-        )
-        golden = result.scalar_one_or_none()
-        if golden is not None:
-            if not part_code:
-                part_code = golden.part_id
-            if not product_type:
-                # Check meta first if present
-                meta = golden.meta or {}
-                if meta.get("product_type"):
-                    try:
-                        product_type = ProductType(meta["product_type"].lower())
-                    except ValueError:
-                        pass
+    if state.memory.golden_reference_id is not None and (not part_code or not product_type):
+        ref_id = state.memory.golden_reference_id
+        if isinstance(ref_id, str):
+            try:
+                ref_id = UUID(ref_id)
+            except (ValueError, TypeError):
+                ref_id = None
+        if ref_id is not None:
+            golden = None
+            if db is not None:
+                result = await db.execute(
+                    select(GoldenReference).where(GoldenReference.id == ref_id)
+                )
+                golden = result.scalar_one_or_none()
+            else:
+                async with AsyncSessionLocal() as session:
+                    result = await session.execute(
+                        select(GoldenReference).where(GoldenReference.id == ref_id)
+                    )
+                    golden = result.scalar_one_or_none()
+            if golden is not None:
+                if not part_code:
+                    part_code = golden.part_id
                 if not product_type:
-                    product_type = infer_product_type(golden.part_id)
-
-    if not part_code:
-        raise ROITemplateError(
-            "No part_code or golden reference found in InspectionState to resolve ROI template"
-        )
+                    meta = golden.meta or {}
+                    if meta.get("product_type"):
+                        try:
+                            product_type = ProductType(str(meta["product_type"]).lower().strip())
+                        except ValueError:
+                            pass
+                    if not product_type:
+                        product_type = infer_product_type(golden.part_id)
 
     if not product_type:
-        product_type = infer_product_type(part_code)
+        if part_code:
+            product_type = infer_product_type(part_code)
+        else:
+            product_type = ProductType.MOTHERBOARD
+
+    if not part_code:
+        part_code = DEFAULT_PART_CODES.get(product_type, "PCB-MCU-V2")
 
     return await load_roi_template(
         product_type=product_type,

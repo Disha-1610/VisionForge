@@ -77,10 +77,65 @@ class JudgeVerdictResponse(BaseModel):
         return []
 
 
+def _extract_forensic_agent_findings(state: InspectionState) -> dict[str, Any]:
+    """Gathers discrete findings across all evidence agents for forensic explainability."""
+    records = state.evidence.get_all_for_inspection(state.memory.inspection_id)
+    structural_findings: list[str] = []
+    ocr_findings: list[str] = []
+    vlm_findings: list[str] = []
+    label_findings: list[str] = []
+
+    for r in records:
+        ev = r.evidence or {}
+        if r.agent_type.value == "structural":
+            comp_findings = ev.get("component_findings")
+            missing = ev.get("missing_components", [])
+            extra = ev.get("extra_components", [])
+            ssim = ev.get("ssim_score") or ev.get("ssim")
+            if missing:
+                structural_findings.append(f"Missing components ({len(missing)}): {missing}")
+            if extra:
+                structural_findings.append(f"Counterfeit/Extra components ({len(extra)}): {extra}")
+            if isinstance(comp_findings, list):
+                for c in comp_findings:
+                    if isinstance(c, dict) and c.get("status") in ("missing", "extra", "mismatch"):
+                        structural_findings.append(f"{c.get('class_name', 'component')}: {c.get('status')}")
+            if ssim is not None and ssim < 0.85:
+                structural_findings.append(f"SSIM similarity drift: {float(ssim):.2f}")
+
+        elif r.agent_type.value == "ocr":
+            mismatches = ev.get("mismatches", [])
+            similarity = ev.get("similarity")
+            if mismatches:
+                structural_findings.append(f"OCR Serial/Text mismatch: {mismatches}")
+            elif similarity is not None and similarity < 0.90:
+                ocr_findings.append(f"OCR match similarity low: {float(similarity):.2f}")
+
+        elif r.agent_type.value == "vlm":
+            if ev.get("has_defect") or ev.get("anomaly_detected"):
+                dtype = ev.get("defect_type", "visual_anomaly")
+                sev = ev.get("severity", "medium")
+                desc = ev.get("description") or r.explanation
+                vlm_findings.append(f"VLM Flag [{sev.upper()}]: {dtype} - {desc}")
+
+        elif r.agent_type.value == "label":
+            if not ev.get("match", True) or (ev.get("match_score", 1.0) < 0.70):
+                score = ev.get("match_score", 0.0)
+                label_findings.append(f"Label template deviation: correlation score {float(score):.2f}")
+
+    return {
+        "structural": structural_findings,
+        "ocr": ocr_findings,
+        "vlm": vlm_findings,
+        "label": label_findings,
+    }
+
+
 def _build_judge_prompt(state: InspectionState) -> list[LLMMessage]:
     """Constructs forensic analysis prompt with structured inspection context."""
     mem = state.memory
     fused = mem.fused_evidence or {}
+    agent_findings = _extract_forensic_agent_findings(state)
 
     context_payload = {
         "part_code": mem.part_code or "UNKNOWN-PART",
@@ -92,6 +147,7 @@ def _build_judge_prompt(state: InspectionState) -> list[LLMMessage]:
         "fraud_score": fused.get("fraud_score", 0.0),
         "primary_category": fused.get("primary_category", "clean"),
         "detected_issues": fused.get("detected_issues", []),
+        "agent_findings": agent_findings,
         "roi_summaries": fused.get("roi_summaries", []),
     }
 
@@ -104,6 +160,8 @@ def _build_judge_prompt(state: InspectionState) -> list[LLMMessage]:
         "or significant structural deviation.\n"
         "- 'review': Borderline anomaly, minor solder bridge risk, low template match, or unverified vendor.\n"
         "- 'accept': All components and identifiers match golden engineering reference within tolerance.\n"
+        "Be extremely specific in root_cause_reasoning, citing exact component names, serial mismatches, "
+        "or visual anomalies so quality engineers understand the exact defect.\n"
         "Return valid JSON adhering to the JudgeVerdictResponse schema."
     )
 
@@ -126,37 +184,43 @@ def _rule_based_fallback_verdict(state: InspectionState) -> JudgeVerdictResponse
     fused = state.memory.fused_evidence or {}
     fraud_prob = state.memory.fraud_probability or 0.0
     category = fused.get("primary_category", "clean")
-    issues = fused.get("detected_issues", [])
+    agent_findings = _extract_forensic_agent_findings(state)
+    all_findings: list[str] = (
+        agent_findings.get("structural", [])
+        + agent_findings.get("ocr", [])
+        + agent_findings.get("vlm", [])
+        + agent_findings.get("label", [])
+    )
 
     if fraud_prob >= 0.65 or "missing_components" in category or "counterfeit" in category:
-        issues_summary = ", ".join(issues[:3]) if issues else "critical structural or component mismatch"
+        defect_details = "; ".join(all_findings[:3]) if all_findings else "Critical component or structural deviation"
         return JudgeVerdictResponse(
             verdict="reject",
             confidence=0.92,
             fraud_category=category,
             root_cause_reasoning=(
-                f"Defect threshold exceeded (fraud score: {fraud_prob*100:.1f}%). "
-                f"Critical anomalies identified: {issues_summary}. Hardware fails golden reference tolerance."
+                f"Hardware anomaly threshold exceeded (fraud risk: {fraud_prob*100:.1f}%). "
+                f"Primary root cause: {defect_details}. Physical sample fails golden engineering specification."
             ),
             recommendations=[
-                "Quarantine affected batch immediately",
-                "Flag vendor supply chain for forensic audit",
+                "Quarantine affected batch immediately to prevent assembly integration",
+                "Initiate vendor supply chain counterfeit/rework investigation",
             ],
         )
 
     if fraud_prob >= 0.30 or state.memory.authenticity_flagged:
-        issues_summary = ", ".join(issues[:3]) if issues else "borderline statistical variance"
+        defect_details = "; ".join(all_findings[:3]) if all_findings else "Statistical variance or unverified lot marking"
         return JudgeVerdictResponse(
             verdict="review",
             confidence=0.78,
             fraud_category=category,
             root_cause_reasoning=(
-                f"Borderline anomaly detected (fraud score: {fraud_prob*100:.1f}%). "
-                f"Findings ({issues_summary}) warrant secondary manual verification by a senior engineer."
+                f"Secondary anomaly detected (fraud risk: {fraud_prob*100:.1f}%). "
+                f"Findings: {defect_details}. Requires manual verification by Quality Assurance Lead."
             ),
             recommendations=[
-                "Perform high-magnification manual optical inspection",
-                "Verify component lot date code with vendor",
+                "Perform high-magnification optical inspection on target ROIs",
+                "Verify component lot date code with authorized distributor",
             ],
         )
 
@@ -165,10 +229,10 @@ def _rule_based_fallback_verdict(state: InspectionState) -> JudgeVerdictResponse
         confidence=0.95,
         fraud_category="clean",
         root_cause_reasoning=(
-            "All inspected regions and component counts match the golden engineering specification "
-            "within certified industrial tolerance limits. No tampering or component deviations detected."
+            "All inspected hardware regions, discrete YOLO component counts, OCR markings, "
+            "and optical textures strictly conform to the golden reference specification within certified tolerance limits."
         ),
-        recommendations=["Release batch to assembly / fulfillment"],
+        recommendations=["Release batch to production assembly / fulfillment"],
     )
 
 

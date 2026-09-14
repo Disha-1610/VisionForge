@@ -25,7 +25,10 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_ROI_TEMPLATE_DIR = Path("data/roi_templates")
+_BACKEND_DATA_DIR = Path(__file__).resolve().parent.parent.parent / "data"
+DEFAULT_ROI_TEMPLATE_DIR = _BACKEND_DATA_DIR / "roi_templates"
+if not DEFAULT_ROI_TEMPLATE_DIR.exists() and Path("data/roi_templates").exists():
+    DEFAULT_ROI_TEMPLATE_DIR = Path("data/roi_templates")
 
 _PRIORITY_ORDER: dict[str, int] = {"critical": 0, "high": 1, "normal": 2}
 

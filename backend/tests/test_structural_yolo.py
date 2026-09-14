@@ -140,7 +140,9 @@ async def test_structural_yolo_disabled_uses_pure_ssim():
 
 
 def test_structural_real_weights_loading():
-    weights_path = Path("data/yolo_weights/component_detector.pt")
+    weights_path = Path(__file__).resolve().parent.parent / "data" / "yolo_weights" / "component_detector.pt"
+    if not weights_path.exists():
+        weights_path = Path("data/yolo_weights/component_detector.pt")
     if not weights_path.exists():
         pytest.skip("component_detector.pt not present locally")
 

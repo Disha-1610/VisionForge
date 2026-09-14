@@ -92,13 +92,21 @@ def validate_image(path: str) -> dict[str, Any]:
     height, width = img.shape[:2]
 
     if blur_var < settings.MIN_BLUR_VARIANCE:
-        reasons.append(f"Image too blurry (variance {blur_var:.1f})")
+        reasons.append(
+            f"Image too blurry (variance {blur_var:.1f} < threshold {settings.MIN_BLUR_VARIANCE:.1f})"
+        )
     if brightness < settings.MIN_BRIGHTNESS:
-        reasons.append(f"Image too dark (brightness {brightness:.1f})")
+        reasons.append(
+            f"Image too dark (brightness {brightness:.1f} < threshold {settings.MIN_BRIGHTNESS:.1f})"
+        )
     if brightness > settings.MAX_BRIGHTNESS:
-        reasons.append(f"Image overexposed (brightness {brightness:.1f})")
+        reasons.append(
+            f"Image overexposed (brightness {brightness:.1f} > threshold {settings.MAX_BRIGHTNESS:.1f})"
+        )
     if width < settings.MIN_IMAGE_WIDTH or height < settings.MIN_IMAGE_HEIGHT:
-        reasons.append(f"Resolution too low ({width}x{height})")
+        reasons.append(
+            f"Resolution too low ({width}x{height} < minimum {settings.MIN_IMAGE_WIDTH}x{settings.MIN_IMAGE_HEIGHT})"
+        )
 
     return {
         "path": path,

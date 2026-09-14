@@ -33,7 +33,7 @@ from app.utils.roi_templates import (
     validate_roi_template,
 )
 
-TEMPLATE_DIR = pathlib.Path(__file__).resolve().parent.parent.parent / "data" / "roi_templates"
+TEMPLATE_DIR = pathlib.Path(__file__).resolve().parent.parent / "data" / "roi_templates"
 
 
 # ── Fixtures ──────────────────────────────────────────────────────────────────

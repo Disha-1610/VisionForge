@@ -10,6 +10,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPExcepti
 from fastapi.responses import StreamingResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.core.database import AsyncSessionLocal, get_db
 from app.core.security import get_current_user, require_roles
@@ -20,6 +21,7 @@ from app.pipeline.state import inspection_state_registry
 from app.pipeline.workflow import run_inspection_pipeline
 from app.schemas.inspection import (
     InspectionCreateResponse,
+    InspectionDetailResponse,
     InspectionListResponse,
     InspectionResponse,
     InspectionReviewRequest,
@@ -58,10 +60,13 @@ async def _run_pipeline_background(inspection_id: UUID) -> None:
 
 
 @router.post("", response_model=InspectionCreateResponse, status_code=http_status.HTTP_201_CREATED)
+@router.post("/", response_model=InspectionCreateResponse, status_code=http_status.HTTP_201_CREATED, include_in_schema=False)
 async def create_inspection(
     background_tasks: BackgroundTasks,
     vendor_id: UUID = Form(...),
     location: str = Form(...),
+    product_type: str = Form("motherboard"),
+    part_code: Optional[str] = Form(None),
     images: list[UploadFile] = File(...),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -107,6 +112,10 @@ async def create_inspection(
         image_count=len(saved_paths),
         status=InspectionStatus.PENDING,
         created_by=current_user.id,
+        working_memory={
+            "product_type": product_type.lower().strip(),
+            "part_code": part_code.strip() if part_code else None,
+        },
     )
     db.add(inspection)
     await db.commit()
@@ -123,6 +132,7 @@ async def create_inspection(
 
 
 @router.get("", response_model=InspectionListResponse)
+@router.get("/", response_model=InspectionListResponse, include_in_schema=False)
 async def list_inspections(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -134,7 +144,10 @@ async def list_inspections(
     if page < 1 or page_size < 1 or page_size > 100:
         raise HTTPException(http_status.HTTP_400_BAD_REQUEST, "Invalid pagination params")
 
-    query = select(Inspection)
+    query = select(Inspection).options(
+        selectinload(Inspection.vendor),
+        selectinload(Inspection.golden_reference),
+    )
     if vendor_id is not None:
         query = query.where(Inspection.vendor_id == vendor_id)
     if status_filter is not None:
@@ -153,17 +166,25 @@ async def list_inspections(
     )
 
 
-@router.get("/{inspection_id}", response_model=InspectionResponse)
+@router.get("/{inspection_id}", response_model=InspectionDetailResponse)
 async def get_inspection(
     inspection_id: UUID,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
-) -> InspectionResponse:
-    result = await db.execute(select(Inspection).where(Inspection.id == inspection_id))
+) -> InspectionDetailResponse:
+    result = await db.execute(
+        select(Inspection)
+        .options(
+            selectinload(Inspection.vendor),
+            selectinload(Inspection.golden_reference),
+            selectinload(Inspection.evidence_records),
+        )
+        .where(Inspection.id == inspection_id)
+    )
     inspection = result.scalar_one_or_none()
     if inspection is None:
         raise HTTPException(http_status.HTTP_404_NOT_FOUND, "Inspection not found")
-    return InspectionResponse.model_validate(inspection)
+    return InspectionDetailResponse.model_validate(inspection)
 
 
 @router.get("/{inspection_id}/status")

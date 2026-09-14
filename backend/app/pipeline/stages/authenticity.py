@@ -400,6 +400,26 @@ async def _analyze_image(inspection_id: UUID, image_path: str) -> AuthenticityRe
     score, flags = _calculate_authenticity_score(ela, exif, screenshot, noise, copy_move)
     processing_time_ms = round((time.perf_counter() - start) * 1000, 2)
 
+    if flags:
+        logger.warning(
+            "Authenticity anomaly flags triggered on %s (score=%.2f): %s "
+            "[ELA error_map_std=%.2f, Noise consistency=%.2f, Copy-move matched blocks=%d, Screenshot detected=%s]",
+            Path(image_path).name,
+            score,
+            [f.value for f in flags],
+            ela.error_map_std,
+            noise.consistency_score,
+            copy_move.matched_blocks,
+            screenshot.is_screenshot,
+        )
+    else:
+        logger.info(
+            "Authenticity verified clean for %s (score=%.2f in %.1fms)",
+            Path(image_path).name,
+            score,
+            processing_time_ms,
+        )
+
     return AuthenticityResult(
         inspection_id=inspection_id,
         image_id=uuid4(),
@@ -486,6 +506,14 @@ async def run_authenticity_stage(state: InspectionState) -> StageResult:
         f"{settings.AUTHENTICITY_HARD_BLOCK_THRESHOLD:.2f}"
         if hard_block
         else None
+    )
+
+    logger.info(
+        "Stage 2 Authenticity completed for inspection %s: overall_score=%.2f, status=%s, flagged=%s",
+        inspection_id,
+        overall_score,
+        status,
+        flagged,
     )
 
     return await state.record_stage(

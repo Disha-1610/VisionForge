@@ -235,3 +235,8 @@ data/yolo_weights/*.pt
 # Claude AI local configs & state
 .claude/
 .cluade/
+
+# Local databases
+*.db
+*.sqlite3
+backend/data/

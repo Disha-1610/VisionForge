@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import uuid
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -78,7 +80,21 @@ async def refresh_token(body: TokenRefresh, db: AsyncSession = Depends(get_db)):
         )
 
     user_id = payload.get("sub")
-    result = await db.execute(select(User).where(User.id == user_id))
+    if not user_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token missing subject",
+        )
+
+    try:
+        parsed_id = uuid.UUID(user_id) if isinstance(user_id, str) else user_id
+    except (ValueError, TypeError):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid user ID format in token",
+        )
+
+    result = await db.execute(select(User).where(User.id == parsed_id))
     user = result.scalar_one_or_none()
 
     if user is None or not user.is_active:

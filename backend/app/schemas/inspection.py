@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import Optional
+from typing import Any, Optional, Union
 
 from pydantic import BaseModel, Field
 
@@ -16,14 +16,14 @@ class EvidenceResponse(BaseModel):
     confidence: float
     roi_id: str
     roi_type: str
-    bounding_box: dict
+    bounding_box: Union[dict, list[Any], Any] = Field(default_factory=dict)
     detected_count: Optional[int] = None
     expected_count: Optional[int] = None
-    component_findings: Optional[dict] = None
+    component_findings: Optional[Union[dict, list[Any], Any]] = None
     evidence_summary: str
     explanation: str
     processing_time_ms: int
-    failed: bool
+    failed: bool = False
     failure_reason: Optional[str] = None
     created_at: datetime
 
@@ -59,24 +59,28 @@ class InspectionResponse(BaseModel):
     case_number: str
     vendor_id: uuid.UUID
     location: str
+    status: str = "pending"
+    product_type: Optional[str] = None
+    vendor_name: Optional[str] = None
     golden_reference_id: Optional[uuid.UUID] = None
-    image_paths: list[str]
-    image_count: int
-    quality_passed: bool
+    image_paths: list[str] = Field(default_factory=list)
+    image_count: int = 0
+    quality_passed: bool = False
     quality_failure_reason: Optional[str] = None
     authenticity_score: Optional[float] = None
-    authenticity_flagged: bool
+    authenticity_flagged: bool = False
     reference_similarity: Optional[float] = None
     fraud_probability: Optional[float] = None
     judge_confidence: Optional[float] = None
     fraud_category: Optional[str] = None
     root_cause: Optional[str] = None
-    verdict: str
+    verdict: Optional[str] = "pending"
     policy_action: Optional[str] = None
     report_path: Optional[str] = None
-    review_decision: str
+    review_decision: Optional[str] = "pending"
     reviewer_comment: Optional[str] = None
     reviewed_at: Optional[datetime] = None
+    working_memory: Optional[Union[dict, Any]] = None
     created_by: uuid.UUID
     created_at: datetime
     updated_at: datetime

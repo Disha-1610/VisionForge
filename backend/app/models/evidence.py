@@ -6,7 +6,7 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, Enum, Float, ForeignKey, Integer, String, func
+from sqlalchemy import DateTime, Enum, Float, ForeignKey, Integer, String, func, JSON
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -42,16 +42,22 @@ class Evidence(Base):
 
     roi_id: Mapped[str] = mapped_column(String(100), nullable=False)
     roi_type: Mapped[str] = mapped_column(String(50), nullable=False)
-    bounding_box: Mapped[dict] = mapped_column(JSONB, nullable=False)  # {x, y, w, h}
+    bounding_box: Mapped[dict] = mapped_column(
+        JSONB().with_variant(JSON(), "sqlite"), nullable=False
+    )  # {x, y, w, h}
 
     # YOLO-specific structured findings (null for non-structural agents)
     detected_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
     expected_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    component_findings: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    component_findings: Mapped[dict | None] = mapped_column(
+        JSONB().with_variant(JSON(), "sqlite"), nullable=True
+    )
 
     evidence_summary: Mapped[str] = mapped_column(String(2000), nullable=False)
     explanation: Mapped[str] = mapped_column(String(2000), nullable=False)
-    raw_output: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    raw_output: Mapped[dict | None] = mapped_column(
+        JSONB().with_variant(JSON(), "sqlite"), nullable=True
+    )
 
     processing_time_ms: Mapped[int] = mapped_column(Integer, nullable=False)
     failed: Mapped[bool] = mapped_column(default=False, nullable=False)

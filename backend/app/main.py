@@ -6,9 +6,10 @@ from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.core.config import get_settings
-from app.core.database import engine
+from app.core.database import engine, init_db
 from app.core.exceptions import register_exception_handlers
 from app.routers import analytics, auth, inspections, products, reports, vendors
 from app.services.embedding_service import embedding_service
@@ -37,6 +38,13 @@ async def lifespan(app: FastAPI):
         settings.REPORTS_DIR,
     ]:
         Path(dir_path).mkdir(parents=True, exist_ok=True)
+
+    # Initialize database tables and seed demo users/vendors
+    try:
+        await init_db()
+        logger.info("Database tables and seed data initialized successfully")
+    except Exception as e:
+        logger.warning("Database initialization deferred: %s", e)
 
     # Try to load existing FAISS index
     embedding_service.load_index(settings.FAISS_INDEX_PATH)
@@ -76,6 +84,16 @@ app.include_router(vendors.router, prefix=API_PREFIX)
 app.include_router(inspections.router, prefix=API_PREFIX)
 app.include_router(reports.router, prefix=API_PREFIX)
 app.include_router(analytics.router, prefix=API_PREFIX)
+
+
+# ── Static File Serving ───────────────────────────────────────────────────────
+upload_path = Path(settings.UPLOAD_DIR)
+upload_path.mkdir(parents=True, exist_ok=True)
+app.mount("/static/uploads", StaticFiles(directory=str(upload_path)), name="uploads")
+
+golden_path = Path(settings.GOLDEN_IMAGE_DIR)
+golden_path.mkdir(parents=True, exist_ok=True)
+app.mount("/static/golden", StaticFiles(directory=str(golden_path)), name="golden")
 
 
 # ── Health Check ──────────────────────────────────────────────────────────────

@@ -34,7 +34,10 @@ logger = logging.getLogger("app.pipeline.agents.structural")
 DEFAULT_SSIM_THRESHOLD = 0.80
 DEFAULT_DIFF_TOLERANCE = 25  # pixel intensity difference threshold
 DEFAULT_YOLO_CONF = 0.20     # calibrated for micro-components in localized ROI crops
-DEFAULT_WEIGHTS_PATH = Path("data/yolo_weights/component_detector.pt")
+_BACKEND_DATA_DIR = Path(__file__).resolve().parent.parent.parent.parent / "data"
+DEFAULT_WEIGHTS_PATH = _BACKEND_DATA_DIR / "yolo_weights" / "component_detector.pt"
+if not DEFAULT_WEIGHTS_PATH.exists() and Path("data/yolo_weights/component_detector.pt").exists():
+    DEFAULT_WEIGHTS_PATH = Path("data/yolo_weights/component_detector.pt")
 
 
 def calculate_opencv_ssim(
