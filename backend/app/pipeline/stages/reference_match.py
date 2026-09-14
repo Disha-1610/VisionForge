@@ -22,6 +22,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
+from app.core.database import AsyncSessionLocal
 from app.models.product import GoldenReference
 from app.pipeline.state import InspectionState
 from app.services.embedding_service import embedding_service
@@ -31,7 +32,10 @@ from app.utils.image_utils import load_pil_image
 logger = logging.getLogger("app.pipeline.reference_match")
 
 
-async def run_reference_match(state: InspectionState, db: AsyncSession) -> StageResult:
+async def run_reference_match(
+    state: InspectionState,
+    db: AsyncSession | None = None,
+) -> StageResult:
     """
     Stage 3 entrypoint. Uses the first inspection image (quality stage has
     already guaranteed all images are usable). On success, WorkingMemory holds
@@ -114,10 +118,17 @@ async def run_reference_match(state: InspectionState, db: AsyncSession) -> Stage
             )
         )
 
-    result = await db.execute(
-        select(GoldenReference).where(GoldenReference.id == reference_id)
-    )
-    golden = result.scalar_one_or_none()
+    if db is not None:
+        result = await db.execute(
+            select(GoldenReference).where(GoldenReference.id == reference_id)
+        )
+        golden = result.scalar_one_or_none()
+    else:
+        async with AsyncSessionLocal() as session:
+            result = await session.execute(
+                select(GoldenReference).where(GoldenReference.id == reference_id)
+            )
+            golden = result.scalar_one_or_none()
     if golden is None:
         detail["reason"] = "golden_reference_missing"
         return await state.record_stage(

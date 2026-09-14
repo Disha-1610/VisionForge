@@ -62,20 +62,44 @@ def _extract_agent_anomaly_score(record: EvidenceRecord) -> tuple[float, str | N
 
     if record.agent_type == AgentType.STRUCTURAL:
         # 1. Check YOLO component count anomalies
-        findings = evidence_data.get("component_findings") or {}
-        missing = findings.get("missing", [])
-        extra = findings.get("extra", [])
-        mismatched = findings.get("mismatched", [])
+        missing_list: list[Any] = []
+        extra_list: list[Any] = []
+        mismatched_list: list[Any] = []
 
-        if missing:
-            return 0.95, f"missing_components:{len(missing)}"
-        if extra:
-            return 0.90, f"counterfeit_extra_components:{len(extra)}"
-        if mismatched:
-            return 0.85, f"component_count_mismatch:{len(mismatched)}"
+        # Direct missing/extra component lists
+        if "missing_components" in evidence_data and isinstance(evidence_data["missing_components"], list):
+            missing_list.extend(evidence_data["missing_components"])
+        if "extra_components" in evidence_data and isinstance(evidence_data["extra_components"], list):
+            extra_list.extend(evidence_data["extra_components"])
 
-        # 2. Check SSIM
-        ssim_val = evidence_data.get("ssim")
+        # Component findings (list of dicts from StructuralAgent or dict from legacy mocks)
+        findings = evidence_data.get("component_findings")
+        if isinstance(findings, list):
+            for item in findings:
+                if isinstance(item, dict):
+                    status = item.get("status")
+                    if status == "missing" or item.get("diff", 0) < 0:
+                        missing_list.append(item)
+                    elif status == "extra" or item.get("diff", 0) > 0:
+                        extra_list.append(item)
+                    elif status == "mismatch":
+                        mismatched_list.append(item)
+        elif isinstance(findings, dict):
+            missing_list.extend(findings.get("missing", []))
+            extra_list.extend(findings.get("extra", []))
+            mismatched_list.extend(findings.get("mismatched", []))
+
+        if missing_list:
+            return 0.95, f"missing_components:{len(missing_list)}"
+        if extra_list:
+            return 0.90, f"counterfeit_extra_components:{len(extra_list)}"
+        if mismatched_list:
+            return 0.85, f"component_count_mismatch:{len(mismatched_list)}"
+
+        # 2. Check SSIM score
+        ssim_val = evidence_data.get("ssim_score")
+        if ssim_val is None:
+            ssim_val = evidence_data.get("ssim")
         if ssim_val is not None and isinstance(ssim_val, (int, float)):
             if ssim_val < 0.70:
                 return 0.80, f"severe_ssim_drift:{ssim_val:.2f}"
@@ -84,8 +108,11 @@ def _extract_agent_anomaly_score(record: EvidenceRecord) -> tuple[float, str | N
             if ssim_val < 0.90:
                 return 0.20, f"minor_ssim_drift:{ssim_val:.2f}"
 
-        # 3. Check generic defect flag
-        if evidence_data.get("defect_detected") or not evidence_data.get("match", True):
+        # 3. Check generic defect flag / match status
+        match_status = evidence_data.get("match_status")
+        defect_detected = evidence_data.get("defect_detected")
+        match_flag = evidence_data.get("match", True)
+        if match_status == "defect_detected" or defect_detected is True or match_flag is False:
             return 0.60, "structural_defect"
 
         return 0.0, None
@@ -95,7 +122,7 @@ def _extract_agent_anomaly_score(record: EvidenceRecord) -> tuple[float, str | N
         similarity = evidence_data.get("similarity", 1.0)
         match = evidence_data.get("match", True)
 
-        if not match or len(mismatches) > 0:
+        if not match or len(mismatches) > 0 or similarity < 0.85:
             if similarity < 0.5:
                 return 0.95, f"tampered_serial_major:{len(mismatches)}_diffs"
             return 0.75, f"tampered_serial_minor:{len(mismatches)}_diffs"
@@ -103,8 +130,10 @@ def _extract_agent_anomaly_score(record: EvidenceRecord) -> tuple[float, str | N
         return 0.0, None
 
     if record.agent_type == AgentType.VLM:
-        anomaly_detected = evidence_data.get("anomaly_detected", False)
-        if anomaly_detected:
+        has_defect = evidence_data.get("has_defect")
+        if has_defect is None:
+            has_defect = evidence_data.get("anomaly_detected", False)
+        if has_defect:
             severity = str(evidence_data.get("severity", "medium")).lower()
             mult = VLM_SEVERITY_MULTIPLIER.get(severity, 0.5)
             defect_type = evidence_data.get("defect_type", "visual_anomaly")
@@ -114,9 +143,11 @@ def _extract_agent_anomaly_score(record: EvidenceRecord) -> tuple[float, str | N
 
     if record.agent_type == AgentType.LABEL:
         match = evidence_data.get("match", True)
+        match_score = evidence_data.get("match_score")
         confidence = evidence_data.get("confidence", record.confidence)
-        if not match or confidence < 0.65:
-            return 0.75, f"label_mismatch_low_conf:{confidence:.2f}"
+        score_to_check = match_score if match_score is not None else confidence
+        if not match or score_to_check < 0.65:
+            return 0.75, f"label_mismatch_low_conf:{score_to_check:.2f}"
 
         return 0.0, None
 
@@ -209,11 +240,22 @@ async def run_evidence_fusion(state: InspectionState) -> StageResult:
         weights.append(0.30)
         detected_issues.append(f"low_reference_similarity:{ref_sim:.2f}")
 
-    # Compute composite fraud probability (0.0 to 1.0)
+    # Compute composite fraud probability (0.0 to 1.0) with Critical Anomaly Max-Pooling
+    critical_defect_scores = [
+        score for r in records
+        if (score := _extract_agent_anomaly_score(r)[0]) >= 0.75
+    ]
+    max_critical_score = max(critical_defect_scores, default=0.0)
+
     if weights and sum(weights) > 0:
         avg_weighted = sum(weighted_scores) / sum(weights)
         max_single_score = max([_extract_agent_anomaly_score(r)[0] for r in records], default=0.0)
-        composite_prob = round(min(1.0, 0.65 * avg_weighted + 0.35 * max_single_score), 4)
+        blended_score = 0.65 * avg_weighted + 0.35 * max_single_score
+        # Max-pooling guarantees critical defects (>=0.75) are never diluted below quarantine threshold
+        if max_critical_score >= 0.75:
+            composite_prob = round(min(1.0, max(max_critical_score, blended_score)), 4)
+        else:
+            composite_prob = round(min(1.0, blended_score), 4)
     else:
         composite_prob = 0.0
 

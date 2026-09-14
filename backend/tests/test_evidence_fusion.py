@@ -125,3 +125,124 @@ async def test_evidence_fusion_detects_vlm_critical_anomaly(clean_state):
     assert res.status == "flagged"
     assert clean_state.memory.fraud_probability >= 0.60
     assert clean_state.memory.fraud_category == "visual_anomaly"
+
+
+@pytest.mark.asyncio
+async def test_evidence_fusion_structural_agent_real_format(clean_state):
+    """
+    Verifies that evidence generated directly by StructuralAgent
+    (list-based component_findings, ssim_score, missing_components)
+    is correctly parsed by Evidence Fusion without errors.
+    """
+    await clean_state.append_evidence(
+        agent_type=AgentType.STRUCTURAL,
+        roi_id="IC_BANK",
+        confidence=0.88,
+        evidence={
+            "ssim_score": 0.68,
+            "threshold": 0.85,
+            "match_status": "defect_detected",
+            "component_findings": [
+                {
+                    "class_name": "ic_chip",
+                    "golden_count": 2,
+                    "inspection_count": 1,
+                    "diff": -1,
+                    "status": "missing",
+                }
+            ],
+            "missing_components": ["missing:ic_chip(diff=-1)"],
+            "extra_components": [],
+        },
+        explanation="Missing IC chip at golden location",
+        processing_time_ms=45.0,
+    )
+
+    res = await run_evidence_fusion(clean_state)
+    assert res.status == "flagged"
+    assert clean_state.memory.fraud_probability >= 0.75
+    assert clean_state.memory.fraud_category == "missing_components"
+
+
+@pytest.mark.asyncio
+async def test_evidence_fusion_vlm_agent_real_format(clean_state):
+    """
+    Verifies that evidence generated directly by VLMAgent
+    (has_defect=True, severity, defect_type) is correctly parsed.
+    """
+    await clean_state.append_evidence(
+        agent_type=AgentType.VLM,
+        roi_id="CONNECTOR_HEADER",
+        confidence=0.91,
+        evidence={
+            "has_defect": True,
+            "defect_type": "physical_crack",
+            "severity": "critical",
+            "description": "Fractured solder joint and cracked PCB substrate",
+            "affected_area": "pin_row_1",
+            "vlm_confidence": 0.95,
+        },
+        explanation="Critical physical crack detected on connector",
+        processing_time_ms=250.0,
+    )
+
+    res = await run_evidence_fusion(clean_state)
+    assert res.status == "flagged"
+    assert clean_state.memory.fraud_probability >= 0.75
+    assert clean_state.memory.fraud_category == "visual_anomaly"
+
+
+@pytest.mark.asyncio
+async def test_evidence_fusion_critical_anomaly_max_pooling_prevents_dilution(clean_state):
+    """
+    Verifies that 9 clean ROIs do not dilute a single critical defect (missing IC chip)
+    below the quarantine threshold (fraud_probability >= 0.70).
+    """
+    # 9 Clean ROIs
+    for i in range(9):
+        await clean_state.append_evidence(
+            agent_type=AgentType.STRUCTURAL,
+            roi_id=f"CLEAN_ROI_{i}",
+            confidence=0.98,
+            evidence={
+                "ssim_score": 0.99,
+                "threshold": 0.85,
+                "match_status": "match",
+                "component_findings": [],
+                "missing_components": [],
+                "extra_components": [],
+            },
+            explanation="Clean ROI conforming to golden standard",
+            processing_time_ms=10.0,
+        )
+
+    # 1 Severe Defect ROI
+    await clean_state.append_evidence(
+        agent_type=AgentType.STRUCTURAL,
+        roi_id="DEFECTIVE_IC_ROI",
+        confidence=0.95,
+        evidence={
+            "ssim_score": 0.55,
+            "threshold": 0.85,
+            "match_status": "defect_detected",
+            "component_findings": [
+                {
+                    "class_name": "ic_chip",
+                    "golden_count": 1,
+                    "inspection_count": 0,
+                    "diff": -1,
+                    "status": "missing",
+                }
+            ],
+            "missing_components": ["missing:ic_chip(diff=-1)"],
+            "extra_components": [],
+        },
+        explanation="Critical missing IC chip",
+        processing_time_ms=20.0,
+    )
+
+    res = await run_evidence_fusion(clean_state)
+    assert res.status == "flagged"
+    # Max-pooling guarantees risk is >= 0.75 even with 9 clean ROIs
+    assert clean_state.memory.fraud_probability >= 0.75
+    assert clean_state.memory.fraud_category == "missing_components"
