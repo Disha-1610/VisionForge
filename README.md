@@ -1,28 +1,45 @@
-# 🔬 VisionForge AI
-
 <div align="center">
 
-### **Autonomous Industrial Computer Vision & Multi-Agent Hardware Fraud Detection**
+# 🔬 VisionForge AI
 
-*Stop counterfeit hardware, tampered electronics, and cloned circuit boards before they enter your supply chain.*
+### **Autonomous Industrial Visual Forensics & Multi-Agent Hardware Fraud Detection**
 
-<br/>
-
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
-[![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.115%2B-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
-[![React](https://img.shields.io/badge/React-18.3-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev)
-[![Ultralytics YOLO11](https://img.shields.io/badge/YOLO11n-Custom_Trained-00FFFF?style=for-the-badge&logo=yolo&logoColor=black)](docs/YOLO_MODEL.md)
-[![PyTorch](https://img.shields.io/badge/PyTorch-2.0%2B-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white)](https://pytorch.org)
-[![LangGraph](https://img.shields.io/badge/LangGraph-StateGraph-FF6F00?style=for-the-badge&logo=langchain&logoColor=white)](docs/PIPELINE.md)
-[![Groq LPU](https://img.shields.io/badge/Groq_LPU-AI_Judge_Reasoning-F55036?style=for-the-badge&logo=groq&logoColor=white)](https://groq.com)
-[![Google Gemini](https://img.shields.io/badge/Gemini_3.5_Flash-Multimodal_VLM-4285F4?style=for-the-badge&logo=google&logoColor=white)](https://ai.google.dev)
-[![FAISS](https://img.shields.io/badge/FAISS-Vector_Search-00599C?style=for-the-badge&logo=meta&logoColor=white)](https://github.com/facebookresearch/faiss)
-[![Test Suite](https://img.shields.io/badge/Pytest-203_Tests_Passing-brightgreen?style=for-the-badge&logo=pytest&logoColor=white)](docs/TESTING.md)
+*Stop counterfeit hardware, recycled silicon, and tampered electronics before they reach your customers.*
 
 <br/>
 
-[📖 The Problem](#-the-problem--a-story-that-costs-billions) • [💡 The Solution](#-the-solution--visionforge-ai) • [⚡ 4-Second Journey](#-the-journey-of-one-inspection-under-4-seconds) • [🏗️ Architecture](#-system-architecture) • [🔄 8-Stage Pipeline](#-the-8-stage-inspection-pipeline) • [🤖 Multi-Agent Swarm](#-specialized-forensic-agent-swarm) • [👁️ YOLO11n Model](#-custom-fine-tuned-yolo11n-detector) • [🛠️ Tech Stack](#-modern-industrial-tech-stack) • [🚀 Quick Start](#-quick-start) • [📚 Docs Hub](#-complete-documentation-hub)
+[![Dell FutureMin Finalist](https://img.shields.io/badge/Dell_Hackathon-National_Finalist-0076CE?style=flat-square&logo=dell&logoColor=white)](#-project-origin--from-dell-futuremin-ai-hackathon-finalist-to-production-architecture)
+[![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white)](https://python.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![React](https://img.shields.io/badge/React-18.3-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev)
+[![Ultralytics YOLO11n](https://img.shields.io/badge/YOLO11n-Custom_Trained_8_Classes-00FFFF?style=flat-square&logo=yolo&logoColor=black)](docs/YOLO_MODEL.md)
+[![PyTorch](https://img.shields.io/badge/PyTorch-2.0+-EE4C2C?style=flat-square&logo=pytorch&logoColor=white)](https://pytorch.org)
+[![LangGraph](https://img.shields.io/badge/LangGraph-StateGraph_8_Stages-FF6F00?style=flat-square&logo=langchain&logoColor=white)](docs/PIPELINE.md)
+
+[![Groq LPU](https://img.shields.io/badge/Groq_LPU-gpt--oss--20b-F55036?style=flat-square&logo=groq&logoColor=white)](https://groq.com)
+[![Google Gemini](https://img.shields.io/badge/Gemini_3.5_Flash-Multimodal_VLM-4285F4?style=flat-square&logo=google&logoColor=white)](https://ai.google.dev)
+[![FAISS](https://img.shields.io/badge/FAISS-Vector_Search_3072D-00599C?style=flat-square&logo=meta&logoColor=white)](https://github.com/facebookresearch/faiss)
+[![Pytest](https://img.shields.io/badge/Pytest-203_Tests_Passing-brightgreen?style=flat-square&logo=pytest&logoColor=white)](docs/TESTING.md)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
+
+<br/><br/>
+
+| ⚡ Inspection Speed | 🎯 Detection Accuracy | 🤖 Agent Architecture | 📊 Hardware Dataset | 🧪 Hermetic QA |
+| :---: | :---: | :---: | :---: | :---: |
+| **&lt; 4.0 Seconds**<br/><sub>Sub-second edge inference</sub> | **98.4% mAP@50**<br/><sub>Custom fine-tuned YOLO11n</sub> | **4 Swarm Agents + Judge**<br/><sub>OCR • Label • Structural • VLM</sub> | **4,448 Images / 59.7k Labels**<br/><sub>Motherboards • Batteries • RAM</sub> | **203 Passing Tests**<br/><sub>100% offline mocking</sub> |
+
+<br/>
+
+**[📖 Problem](#-the-problem--a-story-that-costs-billions)** •
+**[💡 Solution](#-the-solution--visionforge-ai)** •
+**[⚡ 4s Journey](#-the-journey-of-one-inspection-under-4-seconds)** •
+**[🏗️ Architecture](#-system-architecture)** •
+**[🔄 8-Stage Pipeline](#-the-8-stage-inspection-pipeline)** •
+**[🤖 Agent Swarm](#-specialized-forensic-agent-swarm)** •
+**[👁️ YOLO11n Model](#-custom-fine-tuned-yolo11n-detector)** •
+**[🛠️ Tech Stack](#-modern-industrial-tech-stack)** •
+**[🚀 Quick Start](#-quick-start)** •
+**[📚 Docs Hub](#-complete-documentation-hub)**
 
 </div>
 
