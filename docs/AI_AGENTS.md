@@ -1,318 +1,325 @@
-# 🤖 Specialized AI Agents & Forensic Judge
+# 🤖 Forensic AI Agents & Multi-Agent Swarm
 
-> **Why a swarm of dedicated domain experts outperforms a single monolithic vision model in hardware inspection.**
+> **Technical Specification of the Specialized Forensic Swarm and AI Arbitration Judge**  
+> **Status:** Authoritative (Reflects Actual Implemented Codebase)  
+> **Source Files:** `backend/app/pipeline/agents/*.py`, `backend/app/pipeline/stages/evidence_execution.py`, `backend/app/pipeline/stages/judge.py`, `backend/app/shared/llm_client.py`
 
 ---
 
 ## 📖 Table of Contents
 
-- [1. Why No Single AI Model Works for Everything](#1-why-no-single-ai-model-works-for-everything)
-- [2. The Agent Swarm Architecture](#2-the-agent-swarm-architecture)
-- [3. The Standardized Evidence Card Contract](#3-the-standardized-evidence-card-contract)
-- [4. Deep Dive into the 4 Forensic Agents](#4-deep-dive-into-the-4-forensic-agents)
-  - [🔤 1. OCR Forensic Agent](#-1-ocr-forensic-agent)
-  - [🏷️ 2. Label & Security Seal Agent](#️-2-label--security-seal-agent)
-  - [🧩 3. Structural YOLO & SSIM Agent](#-3-structural-yolo--ssim-agent)
-  - [👁️ 4. Vision-Language (VLM) Surface Agent](#️-4-vision-language-vlm-surface-agent)
-- [5. 50/50 Dual-Provider Round-Robin Load Balancer](#5-5050-dual-provider-round-robin-load-balancer)
-- [6. The AI Forensic Judge](#6-the-ai-forensic-judge)
-- [7. Conflict Resolution & Evidence Arbitration](#7-conflict-resolution--evidence-arbitration)
+- [1. Multi-Agent Philosophy & Hardware Threat Model](#1-multi-agent-philosophy--hardware-threat-model)
+- [2. Base Agent Architecture & Standardized Contracts](#2-base-agent-architecture--standardized-contracts)
+- [3. Standardized Evidence Card Schema](#3-standardized-evidence-card-schema)
+- [4. Deep-Dive: The 4 Specialized Forensic Agents](#4-deep-dive-the-4-specialized-forensic-agents)
+  - [4.1 🔤 OCR Forensic Agent (`ocr_agent.py`)](#41--ocr-forensic-agent-ocr_agentpy)
+  - [4.2 🏷️ Label & Seal Verification Agent (`label_agent.py`)](#42-️-label--seal-verification-agent-label_agentpy)
+  - [4.3 🧩 Structural & Component Agent (`structural_agent.py`)](#43--structural--component-agent-structural_agentpy)
+  - [4.4 👁️ Vision-Language (VLM) Agent (`vlm_agent.py`)](#44-️-vision-language-vlm-agent-vlm_agentpy)
+- [5. Dual-Provider Round-Robin Balancing Engine](#5-dual-provider-round-robin-balancing-engine)
+- [6. The AI Forensic Judge (`judge.py`)](#6-the-ai-forensic-judge-judgepy)
+- [7. Conflict Resolution & Arbitration Mechanics](#7-conflict-resolution--arbitration-mechanics)
+- [8. Agent Latency & Resource Utilization](#8-agent-latency--resource-utilization)
+- [9. Known Agent Limitations & Safeguards](#9-known-agent-limitations--safeguards)
 
 ---
 
-## 1. Why No Single AI Model Works for Everything
+## 1. Multi-Agent Philosophy & Hardware Threat Model
 
-When engineering an automated hardware fraud detection system, it is tempting to feed an entire motherboard image into a large multimodal vision model (like GPT-4o or Gemini 1.5 Pro) with a single prompt:
+### Why Not a Single "Omniscient" AI Prompt?
+When developers first approach computer vision for hardware inspection, the instinctive approach is to feed a full 4K photograph of a circuit board to a large multimodal model (such as GPT-4o or Gemini 1.5 Pro) with a prompt like: *"Find all counterfeit parts on this motherboard."*
 
-> *"Is there anything counterfeit, missing, or altered on this circuit board?"*
+In industrial reality, this fails completely:
+1. **Severe Downscaling:** Modern VLMs downscale large images to $1024 \times 1024$ or $768 \times 768$ tokens. On a $300\text{ mm} \times 200\text{ mm}$ server motherboard, a $1.0\text{ mm}$ surface-mount resistor becomes a blurry $3 \times 2$ pixel smear. The model cannot read its code or verify its presence.
+2. **Counting Hallucinations:** Large language models struggle with high-density counting tasks. Asking an LLM to count 64 identical decoupling capacitors around a CPU socket produces unpredictable errors.
+3. **Execution Latency:** Multi-modal cloud calls take 4 to 8 seconds per image, which is unacceptable on a factory line running 60 inspections per minute.
+4. **Different Defects Require Different Physics:** Verifying a laser-etched font requires high-contrast character segmentation. Verifying a capacitor requires discrete object detection. Verifying thermal burn marks requires qualitative semantic reasoning.
 
-In practice, this approach fails on factory intake lines:
-
-1. **Resolution Loss:** Modern industrial cameras capture 4K to 12K images. Uploading a full board to a cloud VLM forces aggressive downscaling, destroying the microscopic details of tiny surface-mount resistors ($0.4\text{mm} \times 0.2\text{mm}$).
-2. **Counting Inaccuracy:** Multimodal LLMs are notoriously poor at exact object counting. Asking a VLM to count 48 decoupling capacitors frequently produces hallucinated counts.
-3. **Slow Latency & High Cost:** Sending multi-megabyte images to cloud frontier models takes 3 to 8 seconds and costs several cents per query.
-4. **Lack of Explainable Chain-of-Custody:** A vague *"The board looks slightly off"* output cannot be defended in a legal warranty dispute with a supplier.
-
-### The VisionForge Solution: A Modular Micro-Agent Swarm
-
-VisionForge replaces the single monolithic model with a **specialized agent swarm**:
+### The VisionForge Multi-Agent Swarm
+VisionForge deploys a **Micro-Agent Swarm**: each agent is a specialized domain expert with its own mathematical algorithms, neural weights, and execution contracts:
 
 ```mermaid
 flowchart TD
-    Scheduler[Stage 4: ROI Priority Scheduler] -->|Focused Image Crops| Swarm
+    Scheduler[Stage 4: ROI Scheduler] -->|Distribute Localized Crops| Swarm
     
-    subgraph Swarm["Stage 5: Parallel Forensic Agent Swarm"]
+    subgraph Swarm["🤖 Stage 5: Specialized Evidence Swarm"]
         direction LR
         OCR[🔤 OCR Agent<br/>PaddleOCR / EasyOCR]
-        Label[🏷️ Label Agent<br/>OpenCV matchTemplate]
+        Label[🏷️ Label Agent<br/>cv2.matchTemplate]
         Struct[🧩 Structural Agent<br/>YOLO11n + SSIM]
-        VLM[👁️ VLM Agent<br/>50/50 Gemini + Groq]
+        VLM[👁️ VLM Agent<br/>Gemini 3.5 & Groq Qwen]
     end
 
-    Swarm -->|Standardized Evidence Cards| Fusion[Stage 6: Evidence Fusion]
-    Fusion -->|Fused Anomaly Vector| Judge[Stage 7: AI Forensic Judge<br/>Groq LPU gpt-oss-20b]
-    Judge -->|Causal Explanation & Verdict| Policy[Stage 8: Policy Engine]
+    Swarm -->|Normalized Evidence Cards| Fusion[Stage 6: Multi-View Evidence Fusion]
+    Fusion -->|Fused Anomaly Context| Judge[Stage 7: AI Forensic Judge<br/>Groq LPU gpt-oss-20b]
+    Judge -->|Verdict, Fraud Prob, Root Cause| Policy[Stage 8: Policy Engine]
 ```
-
-Each agent is a focused domain expert. It runs only on relevant Regions of Interest (ROIs), uses the fastest tool for that specific job, and outputs a standardized, verifiable **Evidence Card**.
 
 ---
 
-## 2. The Agent Swarm Architecture
+## 2. Base Agent Architecture & Standardized Contracts
 
-All agents inherit from a common base class (`backend/app/pipeline/agents/base_agent.py`) enforcing a strict inspection contract:
+All evidence agents inherit from the abstract base class `BaseAgent` (`backend/app/pipeline/agents/base_agent.py`). This guarantees uniform error isolation, execution timing, and output serialization:
 
 ```python
-class BaseAgent(ABC):
-    def __init__(self, agent_name: str, agent_type: str):
-        self.agent_name = agent_name
+class BaseAgent(abc.ABC):
+    """Abstract base class for all VisionForge evidence agents."""
+    
+    def __init__(self, name: str, agent_type: AgentType):
+        self.name = name
         self.agent_type = agent_type
 
-    @abstractmethod
-    async def inspect_roi(
+    @abc.abstractmethod
+    async def inspect(
         self,
-        test_crop: np.ndarray,
-        golden_crop: Optional[np.ndarray],
-        roi_metadata: Dict[str, Any]
-    ) -> EvidenceCard:
-        """Inspect a single ROI crop against golden reference."""
-        pass
-```
+        inspection_crop: ImageSource,
+        golden_crop: Optional[ImageSource],
+        roi_metadata: dict[str, Any],
+    ) -> AgentResult:
+        """Execute domain inspection and return standardized AgentResult."""
+        raise NotImplementedError
 
-### Key Architectural Safeguards:
-- **Non-Blocking Async Execution:** Agents execute concurrently via Python `asyncio.gather()`, ensuring 4 agents inspect an ROI in the time it takes the slowest agent to run.
-- **Fail-Safe Isolation:** If one agent throws an unexpected error (e.g., OCR fails on a featureless black surface), it emits a neutral evidence card rather than crashing the pipeline.
-
----
-
-## 3. The Standardized Evidence Card Contract
-
-Every agent outputs evidence using a strict Pydantic schema:
-
-```json
-{
-  "agent_name": "structural_agent",
-  "agent_type": "STRUCTURAL",
-  "roi_id": "roi_power_rail_01",
-  "roi_name": "12V Power Delivery Stage",
-  "anomaly_detected": true,
-  "anomaly_score": 0.88,
-  "confidence": 0.94,
-  "finding_type": "MISSING_COMPONENT",
-  "description": "Expected 4 capacitors based on golden reference; found only 3 (C14 missing).",
-  "details": {
-    "expected_count": 4,
-    "detected_count": 3,
-    "missing_classes": ["capacitor"],
-    "ssim_drift_score": 0.42
-  }
-}
-```
-
-> 💡 **Key Idea:** Because all agents speak the exact same language (the Evidence Card), downstream stages (Evidence Fusion and the AI Judge) never need to know *how* an agent computed its score—only *what* physical fact was discovered.
-
----
-
-## 4. Deep Dive into the 4 Forensic Agents
-
----
-
-### 🔤 1. OCR Forensic Agent
-
-```text
-File: backend/app/pipeline/agents/ocr_agent.py
-Primary Models: PaddleOCR / EasyOCR
-Processing Time: ~120ms
-```
-
-#### The Problem It Solves
-Counterfeiters often take cheap consumer microcontrollers, sand down the original laser etching, and re-etch a part number for an expensive industrial or automotive microcontroller (silicon remarking).
-
-#### How It Works
-1. Pre-processes the chip surface crop (grayscale conversion, adaptive thresholding, and contrast normalization).
-2. Extracts all visible alphanumeric strings.
-3. Compares the extracted string against the expected part number from the Golden Blueprint using **Levenshtein Distance Similarity**:
-
-$$\text{Similarity}(S_{\text{test}}, S_{\text{golden}}) = 1 - \frac{\text{Levenshtein}(S_{\text{test}}, S_{\text{golden}})}{\max(|S_{\text{test}}|, |S_{\text{golden}}|)}$$
-
-```text
-Golden Master Part Number:  STM32F407VGT6
-Detected Chip Marking:      STM32F401CBU6
-Levenshtein Distance:       5 characters mismatched
-Anomaly Score:              0.83 (FLAGGED AS REMARKED CHIP)
+    async def run(
+        self,
+        inspection_crop: ImageSource,
+        golden_crop: Optional[ImageSource],
+        roi_metadata: dict[str, Any],
+    ) -> AgentResult:
+        """Standard wrapper providing execution timing and crash isolation."""
+        start_t = time.perf_counter()
+        try:
+            result = await self.inspect(inspection_crop, golden_crop, roi_metadata)
+        except Exception as exc:
+            logger.exception("Agent %s failed on ROI %s", self.name, roi_metadata.get("id"))
+            return AgentResult(
+                agent_type=self.agent_type,
+                detector_name=self.name,
+                roi_id=roi_metadata.get("id", "unknown"),
+                failed=True,
+                failure_reason=str(exc),
+                processing_time_ms=(time.perf_counter() - start_t) * 1000.0,
+            )
+        elapsed = (time.perf_counter() - start_t) * 1000.0
+        return result.model_copy(update={"processing_time_ms": elapsed})
 ```
 
 ---
 
-### 🏷️ 2. Label & Security Seal Agent
+## 3. Standardized Evidence Card Schema
 
-```text
-File: backend/app/pipeline/agents/label_agent.py
-Primary Algorithm: OpenCV Normalized Cross-Correlation (cv2.matchTemplate)
-Processing Time: ~15ms
-```
-
-#### The Problem It Solves
-Suppliers sometimes paste photocopied safety logos (CE, FCC, RoHS) or counterfeit holographic seals over defective components to bypass visual quality gates.
-
-#### How It Works
-1. Extracts the safety seal or regulatory badge from the test board ROI.
-2. Performs multi-scale template matching (`cv2.TM_CCOEFF_NORMED`) against the manufacturer's verified reference graphic.
-3. Computes rotation invariance and correlation coefficients:
-
-```text
-Correlation >= 0.85  →  Genuine Stamp (Authentic)
-0.60 <= Corr < 0.85  →  Poor Print Quality / Potential Tamper (Review)
-Correlation < 0.60   →  Missing or Forged Certification Logo (Reject)
-```
-
----
-
-### 🧩 3. Structural YOLO & SSIM Agent
-
-```text
-File: backend/app/pipeline/agents/structural_agent.py
-Primary Models: Ultralytics YOLO11n (Fine-Tuned 8-Class) + Structural Similarity (SSIM)
-Processing Time: ~25ms
-```
-
-#### The Problem It Solves
-Missing bypass capacitors, unpopulated mounting holes, or displaced surface-mount resistors alter electrical impedance and cause premature hardware failure.
-
-#### How It Works
-1. Runs the fine-tuned **YOLO11n model** across the ROI to count and classify every electronic component:
-   - `capacitor`, `resistor`, `ic_chip`, `connector`, `screw`, `seal`, `battery_cell`, `gold_pin_connector`
-2. Compares detected component counts against the Golden Blueprint.
-3. Computes pixel-level **Structural Similarity (SSIM)** against the aligned golden crop to detect components that are present but crooked, lifted, or tombstoned.
-
-```mermaid
-flowchart LR
-    Golden["Golden Blueprint<br/>(4 Capacitors)"] --> Diff{"Component Delta"}
-    Test["Test Board Crop<br/>(3 Capacitors)"] --> Diff
-    Diff --> Flag["MISSING_COMPONENT<br/>Anomaly Score: 1.0"]
-```
-
----
-
-### 👁️ 4. Vision-Language (VLM) Surface Agent
-
-```text
-File: backend/app/pipeline/agents/vlm_agent.py
-Primary Models: Google Gemini 3.5 Flash & Groq Qwen 3.8 27B
-Processing Time: ~800ms
-```
-
-#### The Problem It Solves
-Some defects cannot be caught by template matching or bounding boxes: burned traces, flux residue, cold solder joints, scratched solder masks, or heat-gun discoloration from chip harvesting.
-
-#### How It Works
-1. Sends the cropped high-resolution surface patch to a multimodal LLM.
-2. Uses structured JSON prompting to enforce diagnostic rigor:
-
-```json
-{
-  "surface_integrity_score": 0.35,
-  "burn_marks_detected": true,
-  "solder_bridging": false,
-  "flux_residue_severity": "HIGH",
-  "reasoning": "Thermal discoloration and flux residue observed around pin 12 of U4, consistent with manual desoldering and replacement."
-}
-```
-
----
-
-## 5. 50/50 Dual-Provider Round-Robin Load Balancer
-
-To prevent factory intake lines from stalling due to cloud rate limits (`HTTP 429`) or provider outages, VisionForge uses a **stateful round-robin load balancer**:
-
-```mermaid
-sequenceDiagram
-    participant Pipeline as 🔄 Pipeline Orchestrator
-    participant Router as 🔀 Round-Robin Dispatcher
-    participant Gemini as ☁️ Google Gemini 3.5 Flash
-    participant Groq as ⚡ Groq Cloud (Qwen 3.8 27B)
-
-    Note over Pipeline,Groq: Request 1 (Even Counter)
-    Pipeline->>Router: Dispatch ROI surface inspection
-    Router->>Gemini: POST /v1beta/models/gemini-3.5-flash
-    Gemini-->>Router: 200 OK (Inspection Findings)
-    Router-->>Pipeline: Return Evidence Card
-
-    Note over Pipeline,Groq: Request 2 (Odd Counter)
-    Pipeline->>Router: Dispatch next ROI inspection
-    Router->>Groq: POST /openai/v1/chat/completions (Qwen 3.8)
-    Groq-->>Router: 200 OK (Inspection Findings)
-    Router-->>Pipeline: Return Evidence Card
-
-    Note over Pipeline,Groq: Failover Scenario (Gemini 429 Rate Limit)
-    Pipeline->>Router: Dispatch ROI inspection
-    Router->>Gemini: POST (Gemini Returns 429 Too Many Requests)
-    Router->>Groq: Instant Failover to Groq Qwen 3.8
-    Groq-->>Router: 200 OK
-    Router-->>Pipeline: Return Evidence Card (Zero Operator Interruption)
-```
+Every agent converts its internal findings into a standardized `AgentResult` Pydantic schema:
 
 ```python
-# backend/app/shared/llm_client.py
-class LLMClient:
-    _counter = 0
+class AgentResult(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="ignore")
 
-    async def analyze_visual_patch(self, image_bytes: bytes, prompt: str) -> dict:
-        self._counter += 1
-        provider = "gemini" if (self._counter % 2 == 0) else "groq"
-        
-        try:
-            return await self._call_provider(provider, image_bytes, prompt)
-        except Exception as primary_err:
-            fallback = "groq" if provider == "gemini" else "gemini"
-            logger.warning(f"Provider {provider} failed ({primary_err}). Falling back to {fallback}.")
-            return await self._call_provider(fallback, image_bytes, prompt)
+    agent_type: AgentType           # "ocr" | "label" | "structural" | "vlm"
+    detector_name: str              # e.g. "paddle_ocr", "yolo11n", "gemini_vlm"
+    roi_id: str                     # Target ROI identifier
+    roi_type: Optional[str]         # "text" | "label" | "structural" | "surface"
+    confidence: float               # Confidence in detection (0.0 to 1.0)
+    has_defect: bool                # True if anomaly detected
+    evidence: dict[str, Any]        # Structured key-value findings
+    explanation: str                # Human-readable forensic summary
+    bounding_box: Optional[Any]     # Normalized coordinates {x, y, w, h}
+    processing_time_ms: float       # Execution duration in milliseconds
+    failed: bool                    # Error flag
+    failure_reason: Optional[str]   # Stacktrace or error description
+    raw_output: Optional[dict[str, Any]]
 ```
 
 ---
 
-## 6. The AI Forensic Judge
+## 4. Deep-Dive: The 4 Specialized Forensic Agents
 
+---
+
+### 4.1 🔤 OCR Forensic Agent (`ocr_agent.py`)
+- **Primary Engine:** **PaddleOCR** (PP-OCRv4) — Highly optimized for rotated text and tiny stamped industrial serial numbers.
+- **Secondary Engine:** **EasyOCR** (PyTorch-based) — Local fallback if PaddleOCR fails or experiences initialization errors.
+- **Target ROI Types:** `serial_number`, `mac_address`, `chip_marking`, `lot_code`, `date_code`.
+
+#### Forensic Problem Solved
+Counterfeiters frequently sand down low-speed microcontrollers (e.g. 16MHz) and laser-etch part numbers for high-speed variants (e.g. 72MHz automotive grade) or alter date codes to sell expired military hardware.
+
+#### Processing Algorithm & Math
+1. **Text Extraction:** PaddleOCR detects text polygons and executes character classification on $C_{\text{test}}$.
+2. **Text Normalization:** Strips non-alphanumeric noise, standardizes casing, and handles common OCR confusion pairs (e.g., `'O'` vs `'0'`, `'I'` vs `'1'`).
+3. **Levenshtein Similarity Matching:** Computes the Levenshtein edit distance between detected text $T_{\text{det}}$ and expected blueprint text $T_{\text{exp}}$:
+   $$\text{Dist} = \text{Levenshtein}(T_{\text{det}}, T_{\text{exp}})$$
+   $$\text{Text Match Ratio} = 1.0 - \frac{\text{Dist}}{\max(|T_{\text{det}}|, |T_{\text{exp}}|)}$$
+4. **Defect Gating:** If $\text{Text Match Ratio} < 0.85$, flags a `TEXT_MISMATCH` defect.
+
+#### Concrete Example
 ```text
-File: backend/app/pipeline/stages/judge.py
-Hardware Engine: Groq LPU (Language Processing Unit)
-Model: openai/gpt-oss-20b (with Gemini 3.5 Flash Fallback)
-Inference Speed: ~400ms
+Expected Blueprint Text: "STM32F407VGT6-Y2408"
+Detected Hardware Text: "STM32F407VGT6-Y1802"
+Levenshtein Distance: 4 edits
+Result: Text Mismatch Flagged!
+Explanation: "Date code discrepancy: Hardware displays batch Y1802 (2018), expected Y2408 (2024). High probability of recycled silicon."
 ```
 
-### Why the Judge Never Looks at Raw Pixels
+---
 
-A critical engineering decision in VisionForge is that **the AI Judge does not receive images directly**.
+### 4.2 🏷️ Label & Seal Verification Agent (`label_agent.py`)
+- **Primary Engine:** OpenCV Multi-Scale Normalized Cross-Correlation (`cv2.matchTemplate`).
+- **Target ROI Types:** `qc_seal`, `warranty_label`, `fcc_logo`, `ce_stamp`, `ul_mark`.
 
-Instead, the Judge receives the **fused evidence portfolio** containing the deterministic findings of all four upstream agents:
+#### Forensic Problem Solved
+Recycled or tampered equipment often features photocopied QC seals, missing regulatory certifications, or stickers that have been peeled and reattached at an angle.
+
+#### Processing Algorithm & Math
+1. **Multi-Scale Pyramid Matching:** The golden template $T$ is scaled across multiple factors $s \in [0.90, 1.10]$ to handle minor camera distance variances.
+2. **Normalized Cross-Correlation (TM_CCOEFF_NORMED):**
+   $$R(x, y) = \frac{\sum_{x', y'} (T'(x', y') \cdot I'(x+x', y+y'))}{\sqrt{\sum_{x', y'} T'(x', y')^2 \cdot \sum_{x', y'} I'(x+x', y+y')^2}}$$
+   Where $T'$ and $I'$ denote mean-subtracted patches.
+3. **Score Calibration:**
+   - Perfect alignment: $R \ge 0.88$
+   - Misaligned or altered seal: $R < 0.70$ $\to$ Defect Flagged.
+
+---
+
+### 4.3 🧩 Structural & Component Agent (`structural_agent.py`)
+- **Primary Engine:** Custom fine-tuned **Ultralytics YOLO11n** (`component_detector.pt`) + **OpenCV SSIM**.
+- **Target ROI Types:** `component_bank`, `power_stage`, `pcie_slot`, `battery_array`, `memory_banks`.
+
+#### Forensic Problem Solved
+Detects physical component absence, ghost components, stolen ICs, and solder alignment drift across 8 unified component classes.
+
+#### Dual-Layer Detection Engine
+1. **Holistic Structural Similarity (SSIM):**
+   $$\text{SSIM}(x, y) = \frac{(2\mu_x\mu_y + c_1)(2\sigma_{xy} + c_2)}{(\mu_x^2 + \mu_y^2 + c_1)(\sigma_x^2 + \sigma_y^2 + c_2)}$$
+   Computes overall pixel drift ($0.0$ to $1.0$). If $\text{SSIM} < 0.80$, flags general structural anomaly.
+2. **Discrete YOLO11n Object Detection:** Runs simultaneous inference on both $C_{\text{golden}}$ and $C_{\text{test}}$ at localized resolution, outputting discrete bounding boxes and class counts.
+3. **Four-Mode Component Reasoning:**
+   - **Missing Component:** $N_{\text{golden}} > 0$ and $N_{\text{test}} = 0$.
+   - **Extra Component:** $N_{\text{test}} > 0$ and $N_{\text{golden}} = 0$.
+   - **Count Divergence:** $N_{\text{golden}} \neq N_{\text{test}}$.
+   - **Position Drift:** $\sqrt{(x_t - x_g)^2 + (y_t - y_g)^2} > \tau_{\text{drift}}$.
+
+#### Concrete Example
+```text
+Target ROI: Main 12V Power Delivery Stage
+Golden Blueprint YOLO Detections: 4 capacitors, 1 IC chip, 4 screws
+Test Board YOLO Detections: 3 capacitors, 1 IC chip, 4 screws
+SSIM Score: 0.71 (Significant localized pixel difference)
+Result: STRUCTURAL DEFECT FLAGGED
+Explanation: "Capacitor count mismatch in Power Delivery Stage: Expected 4, detected 3. Electrolytic capacitor C12 is missing from PCB."
+```
+
+---
+
+### 4.4 👁️ Vision-Language (VLM) Agent (`vlm_agent.py`)
+- **Primary Providers:** Dual load-balanced **Google Gemini 3.5 Flash** (`gemini-3.5-flash`) + **Groq Qwen 3.8 27B Vision** (`qwen/qwen3.8-27b`).
+- **Target ROI Types:** `solder_joints`, `substrate`, `connector_pins`, `thermal_dissipation`.
+
+#### Forensic Problem Solved
+Analyzes complex physical phenomena that rigid bounding boxes cannot quantify: cold solder joints, solder bridges, burnt PCB traces, flux residue from manual desoldering, and water corrosion.
+
+#### Structured Prompt & JSON Contract
+The VLM receives both the golden crop and inspection crop side-by-side with a strict system prompt instructing it to output structured JSON:
+```json
+{
+  "has_anomaly": true,
+  "anomaly_score": 0.85,
+  "confidence": 0.92,
+  "defect_type": "THERMAL_DAMAGE",
+  "explanation": "Darkened carbonization and burnt PCB substrate observed adjacent to MOSFET Q3, indicating severe overcurrent failure or rework torch damage."
+}
+```
+
+---
+
+## 5. Dual-Provider Round-Robin Balancing Engine
+
+To ensure **zero downtime and complete protection against free-tier cloud rate limits**, VisionForge incorporates a 50/50 round-robin load balancer directly inside `backend/app/shared/llm_client.py`:
 
 ```mermaid
 flowchart TD
-    E1["OCR: 'STM32F401' vs Golden 'STM32F407' (Mismatch)"] --> Portfolio["📋 Structured Evidence Portfolio"]
-    E2["YOLO: Missing 1x 0805 Capacitor at C14"] --> Portfolio
-    E3["ELA: Tamper Score 0.04 (Image Authentic)"] --> Portfolio
-    E4["VLM: Thermal burn mark detected on pad 3"] --> Portfolio
-
-    Portfolio --> Judge["⚖️ AI Forensic Judge (Groq LPU)"]
-    Judge --> Verdict["📜 Verdict: REJECT<br/>Fraud Probability: 0.96<br/>Confidence: 0.99<br/>Root Cause: Silicon Remarking + Missing Power Passive"]
+    Req["Incoming ROI Inspection Crop"] --> Split{"ROI Sequence Index % 2"}
+    
+    Split -->|Odd Index| G1["Route to Gemini 3.5 Flash"]
+    Split -->|Even Index| Q1["Route to Groq Qwen 3.8 27B"]
+    
+    G1 -->|200 OK| Res1["Parse Evidence Card"]
+    G1 -->|HTTP 429 / 500 / Timeout| Failover1["Failover to Groq Qwen"]
+    Failover1 --> Res1
+    
+    Q1 -->|200 OK| Res2["Parse Evidence Card"]
+    Q1 -->|HTTP 429 / 500 / Timeout| Failover2["Failover to Gemini 3.5"]
+    Failover2 --> Res2
 ```
 
-### Why This Design Eliminates Hallucinations:
-- The Judge acts as a **forensic logician**, not a computer vision model.
-- It weighs conflicting evidence mathematically, correlates related failures (e.g., a burn mark next to a missing capacitor), and drafts an audit-ready root cause explanation for plant managers.
+### Why This Engine is Essential
+- **Gemini Free Tier Quota:** 15 Requests Per Minute (RPM).
+- **Groq Free Tier Quota:** 30 Requests Per Minute (RPM) & 7,000 Input Tokens Per Minute (ITPM).
+- An inspection with 6 ROIs would normally consume 6 calls on a single provider, risking immediate `HTTP 429 (Too Many Requests)` rate-limiting on burst submissions.
+- By splitting requests 3-and-3 across both providers, neither provider exceeds $50\%$ of its per-minute rate limit. If either provider temporarily degrades, the mutual failover intercepts the request with zero dropped inspections.
 
 ---
 
-## 7. Conflict Resolution & Evidence Arbitration
+## 6. The AI Forensic Judge (`judge.py`)
 
-When specialized agents return disagreeing signals, the Judge applies strict evidentiary precedence:
+The AI Forensic Judge acts as the **courtroom arbitrator** of the pipeline. It does not look at raw images directly; instead, it reviews the structured evidence submitted by all four forensic agents and resolves conflicting findings into an explainable root cause narrative.
 
-| Conflict Scenario | Agent A Signal | Agent B Signal | Judge Decision & Reasoning |
-| :--- | :--- | :--- | :--- |
-| **Pristine Text on Sanded Chip** | OCR: Part number matches ($1.0$) | VLM: Surface has circular sanding scratches | **FLAGGED FOR REVIEW:** OCR was likely re-etched onto sanded silicon. |
-| **Component Shift vs Missing** | YOLO: Expected 4, Found 4 | SSIM: Drift score $>0.60$ | **FLAGGED AS DEFECT:** Component is present but tombstoned or lifted. |
-| **Photoshop Artifact vs Physical Defect** | ELA: High tampering score ($0.45$) | YOLO: All parts present | **IMMEDIATE REJECT:** Digital forgery in submitted photo. |
+- **Primary Model:** **Groq LPU (`openai/gpt-oss-20b`)** — Delivers ultra-low latency (~420ms) and verified JSON formatting.
+- **Secondary Fallback:** **Google Gemini 3.5 Flash** (`gemini-3.5-flash`).
+
+### Judge System Prompt Logic
+The Judge is provided with:
+1. Expected hardware part details (e.g. "Industrial ATX Motherboard V1").
+2. Vendor historical trust score.
+3. Authenticity metrics from Stage 2.
+4. An array of all completed Evidence Cards.
+
+```markdown
+You are the Chief Hardware Forensic Investigator for VisionForge AI.
+Analyze the provided evidence cards. Identify the root cause of any defects.
+Distinguish between minor cosmetic blemishes and critical counterfeit fraud.
+Return a structured JSON verdict with fields:
+- verdict: "ACCEPT" | "REJECT" | "REVIEW"
+- fraud_category: string
+- confidence: float (0.0 to 1.0)
+- root_cause: detailed forensic narrative
+- risk_level: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL"
+```
 
 ---
 
-*For detailed specifications on the YOLO11n structural detection model, read [`docs/YOLO_MODEL.md`](YOLO_MODEL.md).*
+## 7. Conflict Resolution & Arbitration Mechanics
+
+In real-world inspections, agents occasionally emit conflicting evidence. The Judge enforces strict domain hierarchy:
+
+| Conflict Scenario | Agent A Finding | Agent B Finding | Judge Resolution Strategy |
+|:---|:---|:---|:---|
+| **Remarked Recycled Chip** | OCR: `Text Match Ratio = 0.98` (Text matches expected) | Structural: `SSIM = 0.62`, package thickness irregular | **Reject.** Genuine text laser-etched onto a non-original package is a classic sign of remarked recycled silicon. |
+| **Peeled QC Seal** | Label: `Match = 0.55` (Seal missing / damaged) | Structural: `SSIM = 0.98`, all components present | **Review / Quarantine.** Hardware may be physically authentic, but a broken warranty seal implies unauthorized repair. |
+| **Cosmetic Dust Particle** | VLM: `Anomaly Score = 0.72` (Dark speck observed) | Structural: `YOLO = 100% match`, no components missing | **Accept / Ignore.** Judge determines the speck is non-conductive surface dust rather than a blown component. |
+
+---
+
+## 8. Agent Latency & Resource Utilization
+
+| Agent | Technology Stack | Execution Location | Avg Latency | Memory Footprint |
+|:---|:---|:---|:---:|:---:|
+| **OCR Agent** | PaddleOCR / EasyOCR | Local CPU / GPU | ~280ms | ~320 MB |
+| **Label Agent** | OpenCV `matchTemplate` | Local CPU | ~18ms | ~15 MB |
+| **Structural Agent**| Ultralytics YOLO11n + SSIM | Local CPU / CUDA | ~65ms (CPU) / ~15ms (GPU) | ~80 MB |
+| **VLM Agent** | Gemini 3.5 / Groq Qwen | Cloud HTTPS (Async) | ~1,100ms | <5 MB |
+| **AI Judge** | Groq LPU (`gpt-oss-20b`) | Cloud HTTPS (Async) | ~420ms | <5 MB |
+
+---
+
+## 9. Known Agent Limitations & Safeguards
+
+1. **OCR Low-Contrast Laser Markings:** Ultra-faint grey-on-black laser markings on worn IC chips can result in low character confidence.  
+   *Safeguard:* The OCR Agent applies adaptive CLAHE (Contrast Limited Adaptive Histogram Equalization) before character binarization.
+2. **YOLO Component Occlusion:** Very tall heat sinks can obscure small capacitors located directly at their base.  
+   *Safeguard:* The intake schema accepts multi-angle photo arrays so that angled shots capture hidden component rows.
+3. **Cloud Latency Variance:** Internet congestion can cause VLM calls to take >3 seconds.  
+   *Safeguard:* `llm_client.py` enforces a strict 8-second timeout guard, falling back to local heuristic evidence cards if the cloud times out.
+
+---
+
+*For details on the YOLO11n object detection model, see [`docs/YOLO_MODEL.md`](YOLO_MODEL.md).*  
+*To review how evidence cards are fused into composite scores, see [`docs/PIPELINE.md`](PIPELINE.md).*

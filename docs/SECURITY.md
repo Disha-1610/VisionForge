@@ -1,38 +1,39 @@
-# 🛡️ VisionForge AI Security Architecture & Threat Model
+# 🛡️ Security Architecture & Threat Model
 
-> **How defense-in-depth, cryptographic JWT tokens, append-only evidence logging, and AI anti-hallucination guardrails secure hardware inspection lines.**
+> **Defense-in-Depth for Micro-Electronics Integrity and Zero-Trust Supply Chains**  
+> **Status:** Authoritative (Reflects Actual Implemented Codebase)  
+> **Cryptography Engine:** Bcrypt (Salting & Hashing) + PyJWT (HS256 Dual-Token Architecture)  
+> **Audit Guarantee:** Append-Only Immutable Forensic Provenance (`evidence` Table)  
+> **Source Files:** `backend/app/core/security.py`, `backend/app/routers/auth.py`
 
 ---
 
 ## 📖 Table of Contents
 
-- [1. The Story: The Stakes of Hardware & Digital Security](#1-the-story-the-stakes-of-hardware--digital-security)
-- [2. Supply Chain Hardware Threat Model](#2-supply-chain-hardware-threat-model)
-- [3. Authentication Architecture & Token Lifecycle](#3-authentication-architecture--token-lifecycle)
-  - [🔐 3.1 Dual-Token Cryptographic Specification](#-31-dual-token-cryptographic-specification)
-  - [⏱️ 3.2 Proactive Rotation & 401 Interception Queue](#️-32-proactive-rotation--401-interception-queue)
-- [4. Role-Based Access Control (RBAC)](#4-role-based-access-control-rbac)
-- [5. Forensic Integrity & Append-Only Evidence Storage](#5-forensic-integrity--append-only-evidence-storage)
-- [6. Network Security & Encrypted Mobile Ingress](#6-network-security--encrypted-mobile-ingress)
-- [7. AI Model Safeguards & Anti-Hallucination Controls](#7-ai-model-safeguards--anti-hallucination-controls)
-- [8. Input Validation & File Sanitization](#8-input-validation--file-sanitization)
+- [1. Security Philosophy & Dual Threat Model](#1-security-philosophy--dual-threat-model)
+  - [1.1 Physical Hardware Attack Vectors](#11-physical-hardware-attack-vectors)
+  - [1.2 Digital Software & API Threat Vectors](#12-digital-software--api-threat-vectors)
+- [2. Authentication Architecture & Token Lifecycle](#2-authentication-architecture--token-lifecycle)
+  - [2.1 Dual-Token Cryptographic Specification](#21-dual-token-cryptographic-specification)
+  - [2.2 Proactive Token Rotation & 401 Retry Queue](#22-proactive-token-rotation--401-retry-queue)
+- [3. Role-Based Access Control (RBAC)](#3-role-based-access-control-rbac)
+- [4. Forensic Audit Integrity & Append-Only Evidence Storage](#4-forensic-audit-integrity--append-only-evidence-storage)
+- [5. Network Security & Tunnel Ingress Isolation](#5-network-security--tunnel-ingress-isolation)
+- [6. AI Model Safeguards & Anti-Hallucination Controls](#6-ai-model-safeguards--anti-hallucination-controls)
+- [7. File Upload Sanitization & Path Traversal Protections](#7-file-upload-sanitization--path-traversal-protections)
 
 ---
 
-## 1. The Story: The Stakes of Hardware & Digital Security
+## 1. Security Philosophy & Dual Threat Model
 
-When a supplier delivers counterfeit microcontrollers, the threat is not just a digital bug—it is **physical hardware sabotage** that can cause automotive braking systems to fail, medical equipment to power down, or aerospace communications to lose synchronization.
-
-At the same time, because inspection reports are used to justify warranty chargebacks and legal contract terminations, bad actors have strong incentives to tamper with digital inspection records or alter camera photos.
-
-VisionForge AI deploys a **dual-domain defense grid** protecting both the physical hardware intake and the digital software infrastructure:
+VisionForge AI operates at the boundary between **physical supply-chain hardware security** and **enterprise software security**. The system must defend against bad actors attempting to compromise physical circuit boards as well as digital adversaries attempting to bypass receiving dock controls:
 
 ```mermaid
 flowchart TD
     subgraph PhysicalThreats["Physical Hardware Threat Vectors"]
         T1["🗑️ Recycled & Remarked Chips<br/>(Laser-sanded package tops, fake lot codes)"]
-        T2["📉 Ghost Components & Missing Parts<br/>(Bypassed capacitors, unpopulated pads)"]
-        T3["🔬 Clone Silicon & Counterfeit ICs<br/>(Non-genuine silicon in genuine packages)"]
+        T2["📉 Ghost Components & Missing Parts<br/>(Omitted capacitors, unpopulated pads)"]
+        T3["🔬 Counterfeit Silicon Clones<br/>(Non-genuine silicon in genuine packages)"]
         T4["📷 Tampered Digital Photos<br/>(Photoshop clone-stamping, synthetic EXIF)"]
     end
 
@@ -47,144 +48,138 @@ flowchart TD
     PhysicalThreats --> DefenseGrid
 ```
 
----
+### 1.1 Physical Hardware Attack Vectors
+- **Silicon Remarking:** Subcontractors grind off original manufacturer markings on commercial-grade microcontrollers and laser-etch automotive or aerospace part numbers to command higher prices.
+- **Component Harvesting:** Desoldering end-of-life components from e-waste circuit boards, polishing tarnished pins, and packaging them as factory-new parts.
+- **Counterfeit Clones:** Unlicensed third-party silicon dies that mimic official pinouts but degrade rapidly under thermal stress or electrical transients.
+- **Ghost Passives:** Cost-cutting omission of secondary power filter capacitors, EMI choke inductors, or ESD protection diodes.
 
-## 2. Supply Chain Hardware Threat Model
-
-| Hardware Attack Vector | Description | VisionForge Countermeasure |
-| :--- | :--- | :--- |
-| **Silicon Remarking** | Grinding off original low-speed silicon markings and laser-etching fake high-speed part numbers. | **OCR Agent + Levenshtein Matching:** Flags mismatched font metrics, skewed lot codes, and invalid checksums. |
-| **Ghost / Missing Passives** | Omitting bypass capacitors or pull-up resistors to reduce production costs by pennies. | **Structural YOLO11n Detector:** Compares component counts against the verified Golden Blueprint. |
-| **Component Harvesting** | Desoldering aged chips from e-waste boards and polishing pins for resale. | **VLM Agent + Texture Analysis:** Identifies package micro-scratches, solder flux residue, and thermal burn marks. |
-| **Digital Photo Tampering** | Altering photos in Photoshop to pass intake inspection. | **Error Level Analysis (ELA):** Amplifies compression discrepancies ($10\times$) across spliced image regions. |
-
----
-
-## 3. Authentication Architecture & Token Lifecycle
+### 1.2 Digital Software & API Threat Vectors
+- **Digital Image Manipulation:** Uploading digitally modified photos (e.g., clone-stamping a serial number) to pass receiving dock intake gates.
+- **Historical Audit Tampering:** Attempting to alter or delete past inspection records to conceal counterfeit component receipts from compliance auditors.
+- **API Unauthorized Ingestion:** Injecting forged inspection verdicts to bypass factory line operator gates.
 
 ---
 
-### 🔐 3.1 Dual-Token Cryptographic Specification
+## 2. Authentication Architecture & Token Lifecycle
 
-VisionForge uses **Bcrypt password hashing** with salt rounds and a two-tier JWT token system:
-
-```text
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                          JWT TOKEN SPECIFICATIONS                           │
-├─────────────────────────────────────────────────────────────────────────────┤
-│  Access Token:                                                              │
-│    • Signing Algorithm: HS256 (HMAC-SHA256)                                 │
-│    • Lifespan:          30 Minutes                                          │
-│    • Payload:           { "sub": "<user_uuid>", "role": "<role>", "exp" }  │
-│                                                                             │
-│  Refresh Token:                                                             │
-│    • Signing Algorithm: HS256 (HMAC-SHA256)                                 │
-│    • Lifespan:          7 Days                                              │
-│    • Payload:           { "sub": "<user_uuid>", "type": "refresh", "exp" }  │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
-
----
-
-### ⏱️ 3.2 Proactive Rotation & 401 Interception Queue
-
-To ensure operators are never logged out during active inspections while maintaining tight token lifespans:
+VisionForge enforces strict JSON Web Token (JWT) authentication using **Bcrypt salted password hashing** and a **two-tier proactive and reactive token management engine**:
 
 ```mermaid
 sequenceDiagram
     participant UI as 🖥️ Workstation UI
-    participant Timer as ⏱️ Background Auth Timer
+    participant Timer as ⏱️ Auth Refresh Timer
     participant Interceptor as 🛡️ Axios Interceptor
     participant Backend as ⚡ FastAPI (/auth)
 
-    Note over UI,Backend: 1. Proactive Rotation (Minute 29 of 30)
+    Note over UI,Backend: Step 1: Initial Login
+    UI->>Backend: POST /api/v1/auth/login (email, password)
+    Backend-->>UI: 200 OK (access_token: 30m, refresh_token: 7d)
+    UI->>Timer: Start proactive timer for 29 minutes
+
+    Note over UI,Backend: Step 2: Proactive Pre-Expiry Rotation
     Timer->>Backend: POST /api/v1/auth/refresh (refresh_token)
-    Backend-->>UI: 200 OK (new access_token)
+    Backend-->>UI: 200 OK (new access_token + refresh_token)
     UI->>Timer: Reset timer for 29 minutes
 
-    Note over UI,Backend: 2. Reactive 401 Recovery (Network Lag)
-    UI->>Backend: GET /api/v1/inspections (Token Expired)
+    Note over UI,Backend: Step 3: Reactive 401 Recovery (Fail-Safe)
+    UI->>Backend: GET /api/v1/inspections (Network delay causes expired token)
     Backend-->>Interceptor: 401 Unauthorized
-    Interceptor->>Backend: POST /api/v1/auth/refresh
+    Interceptor->>Backend: POST /api/v1/auth/refresh (refresh_token)
     Backend-->>Interceptor: 200 OK (new token)
-    Interceptor->>Backend: Replay queued original request
+    Interceptor->>Backend: Replay original request with new token
     Backend-->>UI: 200 OK
 ```
 
+### 2.1 Dual-Token Cryptographic Specification
+- **Access Token:**
+  - **Algorithm:** `HS256` (HMAC SHA-256).
+  - **Payload Claims:** `{ "sub": user_id, "role": user_role, "exp": timestamp + 30m }`.
+  - **Lifespan:** 30 minutes.
+- **Refresh Token:**
+  - **Algorithm:** `HS256`.
+  - **Payload Claims:** `{ "sub": user_id, "type": "refresh", "exp": timestamp + 7d }`.
+  - **Lifespan:** 7 days.
+- **Password Salting:** Bcrypt with 12 salt rounds, resilient against GPU rainbow table attacks.
+
 ---
 
-## 4. Role-Based Access Control (RBAC)
+## 3. Role-Based Access Control (RBAC)
 
-FastAPI endpoints enforce strict role verification via dependency injection:
+Authorization is enforced via FastAPI dependency injection guards (`app/core/security.py`):
 
 ```python
-# backend/app/core/security.py (Conceptual Role Guard)
-def require_roles(*allowed_roles: UserRole):
-    async def role_checker(current_user: User = Depends(get_current_user)) -> User:
-        if current_user.role not in allowed_roles:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Insufficient permissions for this operation."
-            )
-        return current_user
-    return role_checker
+async def require_admin(current_user: User = Depends(get_current_active_user)) -> User:
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Administrative privileges required for this action."
+        )
+    return current_user
 ```
 
 ### RBAC Permission Matrix
-| Operation | `OPERATOR` | `ADMIN` | Security Rationale |
-| :--- | :---: | :---: | :--- |
-| **Run Hardware Inspection** | ✅ | ✅ | Core dock receiving duty. |
-| **View Past Inspections & PDFs** | ✅ | ✅ | Historical traceability. |
-| **Approve AI Verdict** | ✅ | ✅ | Factory validation workflow. |
-| **Override AI Verdict** | ✅ | ✅ | Mandatory engineering notes required. |
-| **Upload Golden Blueprints** | ❌ | ✅ | Prevents unauthorized baseline modifications. |
-| **Delete Golden Reference** | ❌ | ✅ | Preserves historic inspection baselines. |
-| **Register / Delete Suppliers** | ❌ | ✅ | Protects vendor ledger integrity. |
-| **View Analytics & Risk KPIs** | ❌ | ✅ | Supervisory oversight dashboard. |
+| Operation / Resource | `OPERATOR` Role | `ADMIN` Role |
+|:---|:---:|:---:|
+| Run Physical Inspection (`POST /inspections`) | ✅ Permitted | ✅ Permitted |
+| View Real-Time Telemetry & Evidence Cards | ✅ Permitted | ✅ Permitted |
+| Approve / Override Verdict (`POST /review`) | ✅ Permitted | ✅ Permitted |
+| Download Audit PDF Certificates | ✅ Permitted | ✅ Permitted |
+| View Personal Inspection History | ✅ Permitted | ✅ Permitted |
+| Register New Hardware Vendors (`POST /vendors`) | ❌ Forbidden (403) | ✅ Permitted |
+| Upload Golden Reference Blueprints (`POST /products/upload`) | ❌ Forbidden (403) | ✅ Permitted |
+| Delete Hardware Blueprints (`DELETE /products/{id}`) | ❌ Forbidden (403) | ✅ Permitted |
+| Calibrate Pipeline Quality Thresholds | ❌ Forbidden (403) | ✅ Permitted |
+| View Cross-Facility Global Vendor Risk Analytics | ❌ Forbidden (403) | ✅ Permitted |
 
 ---
 
-## 5. Forensic Integrity & Append-Only Evidence Storage
+## 4. Forensic Audit Integrity & Append-Only Evidence Storage
 
-In legal warranty disputes, the integrity of the evidence ledger is critical:
+To ensure compliance with industrial quality standards (such as ISO 9001 and AS6174 Counterfeit Electronics Mitigation):
 
-1. **Append-Only Evidence Schema:** The `evidence` database table has zero `UPDATE` or `DELETE` API endpoints. Once an agent records an anomaly, it is permanently locked to that inspection ID.
-2. **Referential Deletion Protection (`ON DELETE RESTRICT`):** Deleting a supplier or operator account is blocked if that entity is linked to historical inspection records.
-3. **Immutable PDF Audit Certificates:** Every completed inspection generates an immutable, signed ReportLab PDF certificate containing timestamped model versions, bounding box coordinates, and operator signatures.
+1. **Append-Only Evidence Design:** The `evidence` table has **no update routes**. Once an AI agent writes an evidence card or YOLO detection count, the record cannot be edited or modified.
+2. **Referential Deletion Protection:** Deleting a vendor that has associated inspections is rejected by the database engine (`ondelete="RESTRICT"`).
+3. **Cryptographic SHA-256 PDF Stamping:** When a report is compiled in Stage 8, a SHA-256 digest is generated from the combined inspection metadata, evidence records, and image timestamps. This hash is embedded into the generated PDF and logged in the database, allowing third-party verification of report authenticity.
 
 ---
 
-## 6. Network Security & Encrypted Mobile Ingress
+## 5. Network Security & Tunnel Ingress Isolation
 
-```mermaid
-flowchart LR
-    Phone["📱 Line Operator Phone<br/>(HTTPS Mobile Web)"] -->|TLS 1.3 Encrypted| CF["☁️ Cloudflare Quick Tunnel<br/>(Port 443 Ingress)"]
-    CF -->|Loopback HTTP| Host["🖥️ Workstation Host<br/>(Vite :5173 / FastAPI :8000)"]
+### Cloudflare Quick Tunnel Ingress
+To support mobile smartphone camera intake on cleanroom subnets without exposing open inbound firewall ports:
+- The backend spins up an outbound-only connection to Cloudflare edge nodes using `cloudflared`.
+- The connection is encrypted via TLS 1.3.
+- The tunnel URL is ephemeral, rotated upon application restart, and exposed only to authenticated operators through dynamic QR codes on the desktop HUD.
+
+### Cross-Origin Resource Sharing (CORS)
+CORS origins are strictly clamped in `backend/app/core/config.py`:
+```python
+CORS_ORIGINS: list[str] = ["http://localhost:5173", "http://localhost:3000"]
 ```
-
-1. **Zero-Inbound Port Forwarding:** Cloudflare Quick Tunnel establishes outbound HTTPS tunnels over standard port 443, eliminating the need to open firewall ports on sensitive factory networks.
-2. **Mandatory Secure Contexts:** Mobile camera access (`getUserMedia`) requires HTTPS, preventing unencrypted video stream eavesdropping.
-3. **CORS Restrictions:** The backend enforces strict origin whitelisting (`CORS_ORIGINS`).
+Wildcard origins (`"*"`) are explicitly rejected in production mode.
 
 ---
 
-## 7. AI Model Safeguards & Anti-Hallucination Controls
+## 6. AI Model Safeguards & Anti-Hallucination Controls
 
-To prevent vision-language models from hallucinating defects or missing real physical anomalies:
+Large Vision-Language Models can hallucinate if unconstrained. VisionForge enforces three anti-hallucination layers:
 
-1. **Round-Robin Multi-Provider Load Balancing:** VLM visual inspection alternates between **Google Gemini 3.5 Flash** and **Groq Qwen 3.8 27B** to prevent vendor lock-in and single-provider bias.
-2. **Deterministic Prompt Envelopes:** Prompts strictly constrain models to return structured JSON adhering to predefined schemas.
-3. **Cognitive Judge Isolation (Stage 7):** The AI Judge does not inspect raw images directly; it reasons over deterministic mathematical telemetry (blur score, ELA score, YOLO missing counts, OCR Levenshtein distance).
-4. **Human Escalation Zone:** Inspections with ambiguous fraud probabilities ($0.40 \le p \le 0.70$) are automatically routed to `FLAGGED FOR REVIEW`, requiring human engineering approval.
-
----
-
-## 8. Input Validation & File Sanitization
-
-- **Magic Byte Inspection:** Uploaded images are verified using binary magic headers (JPEG `FF D8 FF`, PNG `89 50 4E 47`).
-- **File Size Caps:** Uploads are strictly capped at 25 MB to prevent memory exhaustion attacks.
-- **Pydantic Schema Serialization:** All API requests are parsed and validated against strict Pydantic v2 models, stripping untrusted or extraneous keys.
+1. **Strict JSON Schema Contracts:** VLM and LLM Judge endpoints use OpenAI/Gemini structured outputs (`response_format={"type": "json_object"}`). Free-form conversational text is rejected.
+2. **Deterministic Dual-Layer Anchoring:** The AI Judge is **never** permitted to generate a verdict based solely on its own opinion. It is constrained to arbitrate strictly over the pre-calculated Evidence Cards submitted by the deterministic agents (YOLO, SSIM, PaddleOCR, Template Matcher).
+3. **Anomaly Max-Pooling Guard:** Even if an LLM is optimistic, the mathematical Stage 6 Fusion Engine guarantees that a severe component absence ($A=0.88$) forces the composite score into the `REJECT` zone before the Judge prompt is executed.
 
 ---
 
-*For upcoming security enhancements and feature milestones, read [`docs/ROADMAP.md`](ROADMAP.md).*
+## 7. File Upload Sanitization & Path Traversal Protections
+
+Incoming multipart file uploads (`POST /api/v1/inspections`, `POST /api/v1/products/upload`) undergo multi-stage sanitization:
+
+1. **MIME Type & Magic Byte Validation:** Verifies file signatures using python-magic/Pillow to confirm uploaded files are genuine `image/jpeg` or `image/png` formats, rejecting disguised executables or scripts.
+2. **Payload Size Clamping:** Enforces a maximum upload ceiling of **15 MB per image** to prevent Denial-of-Service (DoS) memory exhaustion.
+3. **Path Traversal Defense:** Uploaded files are renamed using cryptographically secure UUIDs (`uuid.uuid4()`) and stored in isolated storage directories (`data/inspection_uploads/`). User-supplied filenames are never used as file paths on the host filesystem.
+
+---
+
+*For details on database constraints, see [`docs/DATABASE.md`](DATABASE.md).*  
+*For end-to-end testing of security controls, see [`docs/TESTING.md`](TESTING.md).*

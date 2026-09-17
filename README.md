@@ -272,8 +272,8 @@ The repository includes a batch launcher that checks prerequisites, clears busy 
 
 ```bat
 # Clone the repository
-git clone https://github.com/your-org/visionforge-ai.git
-cd visionforge-ai
+git clone https://github.com/Disha-1610/VisionForge.git
+cd VisionForge
 
 # Launch everything with one command
 .\run_visionforge.bat
@@ -281,9 +281,10 @@ cd visionforge-ai
 
 The launcher will:
 1. Clear any zombie processes on ports `8000` and `5173`.
-2. Start the FastAPI backend on `http://localhost:8000`.
-3. Start the Vite React frontend on `http://localhost:5173`.
-4. Open your browser directly to the dashboard.
+2. Automatically initialize and seed the SQLite database with default credentials and golden references.
+3. Start the FastAPI backend on `http://localhost:8000`.
+4. Start the Vite React frontend on `http://localhost:5173`.
+5. Open your browser directly to the dashboard.
 
 ---
 
@@ -302,7 +303,8 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 
 # Create environment configuration
-cp .env.example .env
+cp .env.example .env     # On Linux / macOS
+copy .env.example .env   # On Windows
 ```
 
 Open `backend/.env` and add your API keys:
@@ -313,13 +315,9 @@ GROQ_API_KEY=your_groq_api_key_here
 JWT_SECRET_KEY=generate_a_random_64_character_hex_string
 ```
 
-Seed the demo database and start the API:
+Start the FastAPI backend (database tables and demo blueprints auto-seed on startup):
 
 ```bash
-# Seed initial admin, operator, and sample products
-python scripts/seed_demo_data.py
-
-# Start FastAPI backend
 python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
@@ -356,27 +354,36 @@ The database comes pre-seeded with test credentials:
 
 ```
 VisionForge/
-├── backend/                       # FastAPI backend server
+├── backend/                       # FastAPI async backend server
 │   ├── app/
-│   │   ├── api/v1/                # REST API routers (auth, inspections, products, reports)
-│   │   ├── core/                  # Security (JWT, bcrypt), config, database session
-│   │   ├── models/                # SQLAlchemy models (User, Inspection, Evidence, etc.)
+│   │   ├── core/                  # Security (JWT, bcrypt), config, database sessions & seeds
+│   │   ├── models/                # SQLAlchemy models (User, Vendor, Inspection, Evidence, etc.)
+│   │   ├── pipeline/              # 8-stage LangGraph state machine orchestrator
+│   │   │   ├── agents/            # Specialized agents (BaseAgent, OCR, Label, Structural, VLM)
+│   │   │   ├── stages/            # Individual stage logic (Quality, Authenticity, Fusion, Judge, etc.)
+│   │   │   ├── state.py           # InspectionState TypedDict definition
+│   │   │   └── workflow.py        # LangGraph StateGraph builder & execution runner
+│   │   ├── routers/               # REST API routers (auth, inspections, products, reports, etc.)
 │   │   ├── schemas/               # Pydantic v2 validation schemas
-│   │   ├── services/              # AI agents (OCR, Label, Structural, VLM, AI Judge)
-│   │   │   └── pipeline/          # 8-stage LangGraph state machine orchestrator
-│   │   └── utils/                 # Image math (Laplacian blur, ELA, SSIM, coordinates)
-│   ├── data/                      # SQLite database, uploaded images, and PDF reports
-│   ├── scripts/                   # Database seed scripts and YOLO conversion tools
-│   └── tests/                     # 23-module pytest test suite (203 tests)
-├── frontend/                      # React 18 + Vite SPA
+│   │   ├── services/              # High-level services (analytics, embeddings, reporting)
+│   │   ├── shared/                # Cross-cutting runtime (evidence_store, llm_client, memory)
+│   │   └── utils/                 # Image math (Laplacian blur, ELA, SSIM, ROI templates)
+│   ├── data/                      # SQLite database, golden blueprints, and PDF reports
+│   └── tests/                     # Hermetic 23-module pytest test suite (203 tests)
+├── frontend/                      # React 18 + Vite workstation SPA
 │   ├── src/
-│   │   ├── components/            # DualImageCanvas, PipelineProgress, EvidenceCards
+│   │   ├── components/            # DualImageCanvas, PipelineProgress, EvidenceCards, Modals
 │   │   ├── context/               # AuthContext (JWT rotation) & ToastContext
 │   │   ├── hooks/                 # usePipelineSSE (real-time telemetry subscriber)
-│   │   ├── pages/                 # Dashboard, NewInspection, InspectionDetail, Reports
-│   │   └── services/              # Axios instance & automatic 401 token refresh queue
-│   └── scripts/                   # Cloudflare mobile tunnel launcher (tunnel.mjs)
-├── docs/                          # Comprehensive documentation suite
+│   │   ├── pages/                 # Dashboard, NewInspection, InspectionDetail, Reports, Analytics
+│   │   └── services/              # Axios API client & automatic 401 token refresh queue
+│   └── scripts/                   # Cloudflare mobile tunnel bridge (tunnel.mjs)
+├── visionforge-dataset/           # 4,448-image micro-electronic hardware training corpus
+│   ├── data.yaml                  # Unified 8-class YOLO dataset definition
+│   ├── train/                     # 3,393 training images & labels
+│   ├── valid/                     # 715 validation images & labels
+│   └── test/                      # 340 benchmark test images & labels
+├── docs/                          # Comprehensive technical documentation suite (12 guides)
 ├── run_visionforge.bat            # 1-click Windows master launcher
 ├── start_backend.bat              # Standalone backend runner
 └── start_frontend.bat             # Standalone frontend runner
