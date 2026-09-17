@@ -580,13 +580,6 @@ VisionForge AI originated from a real-world industrial challenge presented at th
 
 ### The Original Hackathon Inception — Team IDEAFORG-E
 
-| Contributor | Hackathon Role |
-|:---|:---|
-| **Disha** | Backend Dev |
-| **Anil** | Agents Dev |
-| **Priyanka** | Frontend Dev |
-| **Chaitanya** | DataSet Collection |
-| **Jagruti** | Frontend Dev |
 
 ### Why We Completely Re-Architected the System
 The original hackathon proof-of-concept (**VeriVision AI**) demonstrated the feasibility of visual inspection using a 5-agent linear pipeline with Open_CLIP ViT-B/32, ORB homography, full-image SSIM, EasyOCR, and NVIDIA NIM cloud microservices (`meta/llama-3.2-11b-vision-instruct`). However, when tested against realistic factory conditions, the prototype revealed critical engineering bottlenecks:
