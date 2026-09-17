@@ -560,7 +560,7 @@ VisionForge features an exhaustive 12-document technical specification suite:
 
 ## 🏆 Project Origin — From Dell FutureMin AI Hackathon Finalist to Production Architecture
 
-VisionForge AI originated from a real-world industrial challenge presented at the **Dell FutureMin AI Hackathon**, where **Disha** and **Anil** reached the **National Finals**:
+VisionForge AI originated from a real-world industrial challenge presented at the **Dell FutureMin AI Hackathon**, where **OUR TEAM ** reached the **National Finals**:
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────┐
