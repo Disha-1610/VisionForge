@@ -1,0 +1,92 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "VisionForge AI - Forensic AI Agent Architecture",
+    "output": "diagrams/03-ai-agent-architecture.html",
+    "quality_profile": "showcase",
+    "viewBox": [1200, 560],
+    "views": [
+      {
+        "id": "swarm-dispatch",
+        "label": "ROI dispatch to specialized agents",
+        "focus": ["scheduler", "ocr", "label", "structural", "vlm", "store"],
+        "note": "Stage 4 scheduler delivers localized sub-crops to the 4 specialized agents."
+      },
+      {
+        "id": "vlm-load-balancing",
+        "label": "Dual-Provider VLM Failover",
+        "focus": ["vlm", "groq_vlm", "gemini_vlm"],
+        "note": "Odd/even ROI round-robin routing between Gemini Flash and Groq Cloud."
+      },
+      {
+        "id": "evidence-to-judge",
+        "label": "Evidence Fusion and AI Judge",
+        "focus": ["store", "fusion", "judge", "verdict"],
+        "note": "Normalized cards are max-pooled and evaluated by the Groq LPU causal judge."
+      }
+    ]
+  },
+  "components": [
+    { "id": "scheduler", "type": "backend", "label": "ROI Scheduler", "sublabel": "Stage 4: Crop Dispatch", "pos": [40, 240], "size": [140, 60], "tag": "8-12x Scale" },
+    { "id": "ocr", "type": "backend", "label": "OCR Agent", "sublabel": "PaddleOCR + EasyOCR", "pos": [260, 90], "size": [150, 60], "tag": "String Diff" },
+    { "id": "label", "type": "backend", "label": "Label Agent", "sublabel": "Color Hist & QC Seals", "pos": [260, 190], "size": [150, 60], "tag": "Tamper Seal" },
+    { "id": "structural", "type": "backend", "label": "Structural Agent", "sublabel": "YOLO11n + SSIM Diff", "pos": [260, 290], "size": [150, 60], "tag": "YOLO + SSIM" },
+    { "id": "vlm", "type": "backend", "label": "VLM Agent", "sublabel": "Visual Anomaly Inspector", "pos": [260, 390], "size": [150, 60], "tag": "Multimodal" },
+    { "id": "store", "type": "database", "label": "Evidence Store", "sublabel": "Normalized Card Array", "pos": [490, 240], "size": [150, 60], "tag": "Append-Only" },
+    { "id": "fusion", "type": "backend", "label": "Evidence Fusion", "sublabel": "Stage 6: Max-Pooling", "pos": [490, 380], "size": [150, 60], "tag": "Non-Diluted" },
+    { "id": "judge", "type": "cloud", "label": "AI Forensic Judge", "sublabel": "Stage 7: Groq LPU gpt-oss", "pos": [730, 240], "size": [150, 60], "tag": "~420ms" },
+    { "id": "groq_vlm", "type": "cloud", "label": "Groq Qwen 3.8-27B", "sublabel": "Primary: Even ROIs", "pos": [730, 370], "size": [150, 54], "tag": "LPU Speed" },
+    { "id": "gemini_vlm", "type": "cloud", "label": "Gemini 3.5 Flash", "sublabel": "Primary: Odd ROIs", "pos": [730, 460], "size": [150, 54], "tag": "Failover Pair" },
+    { "id": "verdict", "type": "security", "label": "Policy Engine", "sublabel": "Stage 8: Final Verdict", "pos": [970, 240], "size": [150, 60], "tag": "Deterministic" }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "Forensic Swarm (Stage 5)", "wraps": ["ocr", "label", "structural", "vlm"] },
+    { "kind": "region", "label": "Evidence Persistence & Fusion", "wraps": ["store", "fusion"] },
+    { "kind": "region", "label": "Dual-Provider VLM Failover", "wraps": ["groq_vlm", "gemini_vlm"] },
+    { "kind": "security-group", "label": "Causal Arbitration & Verdict", "wraps": ["judge", "verdict"] }
+  ],
+  "connections": [
+    { "id": "c1", "from": "scheduler", "to": "ocr", "label": "lot text", "fromSide": "top", "toSide": "left" },
+    { "id": "c2", "from": "scheduler", "to": "label", "label": "QC crops", "fromSide": "right", "toSide": "left" },
+    { "id": "c3", "from": "scheduler", "to": "structural", "label": "PCB crops", "fromSide": "right", "toSide": "left" },
+    { "id": "c4", "from": "scheduler", "to": "vlm", "label": "ROI crops", "fromSide": "bottom", "toSide": "left" },
+    { "id": "c5", "from": "ocr", "to": "store", "label": "text card", "fromSide": "right", "toSide": "top" },
+    { "id": "c6", "from": "label", "to": "store", "label": "seal card", "fromSide": "right", "toSide": "left", "labelDy": -20 },
+    { "id": "c7", "from": "structural", "to": "store", "label": "YOLO card", "fromSide": "right", "toSide": "left", "variant": "emphasis", "labelDx": -35 },
+    { "id": "c8", "from": "vlm", "to": "store", "label": "vlm card", "fromSide": "right", "toSide": "left", "labelDy": 16 },
+    { "id": "c9", "from": "store", "to": "fusion", "label": "cards array", "fromSide": "bottom", "toSide": "top", "labelDy": 24 },
+    { "id": "c10", "from": "fusion", "to": "judge", "label": "max anomaly", "fromSide": "right", "toSide": "bottom", "variant": "emphasis" },
+    { "id": "c11", "from": "store", "to": "judge", "label": "evidence context", "fromSide": "right", "toSide": "left" },
+    { "id": "c12", "from": "vlm", "to": "groq_vlm", "label": "even ROI", "fromSide": "bottom", "toSide": "left" },
+    { "id": "c13", "from": "groq_vlm", "to": "gemini_vlm", "label": "fallback 429", "variant": "dashed", "fromSide": "bottom", "toSide": "top", "labelDy": 20 },
+    { "id": "c14", "from": "judge", "to": "verdict", "label": "verdict & cert", "fromSide": "right", "toSide": "left", "variant": "security" }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Specialized Agent Swarm",
+      "items": [
+        "Stage 4 crops localized sub-regions to eliminate scale drift on micro-components",
+        "Structural Agent combines fine-tuned YOLO11n object detection with localized SSIM delta heatmaps",
+        "OCR Agent verifies serial numbers and lot codes using PaddleOCR and Levenshtein string distance"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Dual-Provider VLM Failover",
+      "items": [
+        "50-50 round-robin odd/even ROI load balancing splits request volume across Gemini Flash and Groq Cloud",
+        "Transparent failover with exponential backoff handles HTTP 429 quota exhaustion with zero downtime"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Mathematical Fusion & Causal Rationale",
+      "items": [
+        "Evidence Fusion computes Anomaly Max-Pooling: max(agent_anomalies) preserves 1-component counterfeits",
+        "Groq LPU (gpt-oss-20b) arbitrates conflicting clues to produce an explainable causal verdict in ~420ms"
+      ]
+    }
+  ]
+}

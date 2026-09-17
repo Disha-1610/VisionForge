@@ -1,0 +1,103 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "VisionForge AI - Frontend to Backend Inspection Sequence",
+    "output": "diagrams/05-frontend-backend-sequence.html",
+    "viewBox": [1080, 980],
+    "column_fit": "spread",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "upload-and-ack",
+        "label": "Async Upload and Ingestion",
+        "focus": ["user", "ui", "api", "db", "pipeline"],
+        "note": "FastAPI immediately returns 201 Created and spins off the background state machine."
+      },
+      {
+        "id": "sse-telemetry",
+        "label": "Real-Time SSE Telemetry Stream",
+        "focus": ["pipeline", "sse", "ui"],
+        "note": "Stages stream live progress, ROI bounding box coordinates, and final completion events."
+      },
+      {
+        "id": "audit-and-pdf",
+        "label": "Verdict Audit and PDF Certificate",
+        "focus": ["ui", "api", "db", "user"],
+        "note": "The Tactical HUD queries case evidence and downloads the signed forensic PDF certificate."
+      }
+    ]
+  },
+  "participants": [
+    { "id": "user", "type": "external", "label": "QA Operator", "sublabel": "Workstation" },
+    { "id": "ui", "type": "frontend", "label": "Tactical HUD", "sublabel": "React 18 SPA" },
+    { "id": "api", "type": "backend", "label": "FastAPI Gateway", "sublabel": "Uvicorn :8000" },
+    { "id": "pipeline", "type": "backend", "label": "LangGraph Engine", "sublabel": "Background Task" },
+    { "id": "sse", "type": "messagebus", "label": "SSE Channel", "sublabel": "EventStream" },
+    { "id": "db", "type": "database", "label": "Database", "sublabel": "SQLAlchemy 2.0" }
+  ],
+  "segments": [
+    { "from": 140, "to": 300, "label": "Intake & Fast Acknowledgment" },
+    { "from": 320, "to": 630, "label": "Real-Time Pipeline Telemetry" },
+    { "from": 650, "to": 870, "label": "Evidence Retrieval & PDF Export" }
+  ],
+  "messages": [
+    { "id": "m1", "from": "user", "to": "ui", "y": 160, "label": "upload board scan", "variant": "default" },
+    { "id": "m2", "from": "ui", "to": "api", "y": 195, "label": "POST /api/v1/inspections", "variant": "emphasis" },
+    { "id": "m3", "from": "api", "to": "db", "y": 230, "label": "INSERT case (status=PENDING)", "variant": "default" },
+    { "id": "m4", "from": "api", "to": "pipeline", "y": 260, "label": "spawn background task", "variant": "emphasis" },
+    { "id": "m5", "from": "api", "to": "ui", "y": 290, "label": "201 Created { id: insp_123 }", "variant": "return" },
+    { "id": "m6", "from": "ui", "to": "api", "y": 340, "label": "GET /api/v1/inspections/insp_123/stream", "variant": "emphasis" },
+    { "id": "m7", "from": "api", "to": "sse", "y": 375, "label": "open SSE stream", "variant": "default" },
+    { "id": "m8", "from": "pipeline", "to": "sse", "y": 415, "label": "event: progress { stage: S1_QUALITY }", "variant": "dashed" },
+    { "id": "m9", "from": "sse", "to": "ui", "y": 450, "label": "update stage indicator", "variant": "return" },
+    { "id": "m10", "from": "pipeline", "to": "sse", "y": 490, "label": "event: progress { stage: S5_SWARM, rois: 4 }", "variant": "dashed" },
+    { "id": "m11", "from": "pipeline", "to": "db", "y": 530, "label": "UPDATE case (status=COMPLETED)", "variant": "emphasis" },
+    { "id": "m12", "from": "pipeline", "to": "sse", "y": 570, "label": "event: completed { verdict: TAMPERED }", "variant": "emphasis" },
+    { "id": "m13", "from": "sse", "to": "ui", "y": 605, "label": "render split-canvas workbench", "variant": "return" },
+    { "id": "m14", "from": "ui", "to": "api", "y": 670, "label": "GET /api/v1/inspections/insp_123", "variant": "default" },
+    { "id": "m15", "from": "api", "to": "db", "y": 705, "label": "SELECT case + evidence", "variant": "default" },
+    { "id": "m16", "from": "db", "to": "api", "y": 735, "label": "case details & heatmaps", "variant": "return" },
+    { "id": "m17", "from": "api", "to": "ui", "y": 765, "label": "200 JSON inspection details", "variant": "return" },
+    { "id": "m18", "from": "ui", "to": "api", "y": 800, "label": "GET /api/v1/inspections/insp_123/report/pdf", "variant": "emphasis" },
+    { "id": "m19", "from": "api", "to": "ui", "y": 830, "label": "200 PDF certificate with SHA-256", "variant": "return" },
+    { "id": "m20", "from": "ui", "to": "user", "y": 855, "label": "download forensic PDF certificate", "variant": "return" }
+  ],
+  "activations": [
+    { "participant": "ui", "from": 160, "to": 298, "type": "frontend" },
+    { "participant": "api", "from": 190, "to": 296, "type": "backend" },
+    { "participant": "pipeline", "from": 255, "to": 580, "type": "backend" },
+    { "participant": "ui", "from": 335, "to": 860, "type": "frontend" },
+    { "participant": "api", "from": 340, "to": 385, "type": "backend" },
+    { "participant": "sse", "from": 370, "to": 612, "type": "messagebus" },
+    { "participant": "api", "from": 665, "to": 772, "type": "backend" },
+    { "participant": "api", "from": 795, "to": 836, "type": "backend" }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Non-Blocking Async Submission",
+      "items": [
+        "POST /api/v1/inspections accepts multipart uploads and immediately persists initial PENDING record",
+        "API responds with 201 Created in < 50ms, offloading heavy CV and neural inference to background worker"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Live Server-Sent Events (SSE)",
+      "items": [
+        "React hook usePipelineSSE connects to GET /api/v1/inspections/{id}/stream",
+        "Pipeline pushes microsecond stage transitions and active ROI bounding box coordinates in real time",
+        "Automatic fallback to HTTP polling every 2.5s guarantees resilience against network drops"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Audit Evidence & Forensic PDF",
+      "items": [
+        "Tactical HUD renders synchronized dual-canvas inspection with localized JET heatmap overlays",
+        "GET /api/v1/inspections/{id}/report/pdf exports compliance certificate with SHA-256 audit signature"
+      ]
+    }
+  ]
+}

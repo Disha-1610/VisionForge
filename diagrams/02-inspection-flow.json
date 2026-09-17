@@ -1,0 +1,91 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "VisionForge AI - End-to-End Inspection Pipeline",
+    "output": "diagrams/02-inspection-flow.html",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "full-pipeline",
+        "label": "Complete Inspection Journey",
+        "focus": ["upload", "quality", "reference", "scheduler", "agents", "fusion", "judge", "policy", "review"],
+        "note": "Complete 8-stage state machine from raw capture to human sign-off."
+      },
+      {
+        "id": "defensive-screening",
+        "label": "Defensive Fast-Fail Screening",
+        "focus": ["quality", "reference"],
+        "note": "Early screening eliminates blurred scans and verifies blueprint match."
+      },
+      {
+        "id": "forensics-and-decision",
+        "label": "Forensic Swarm & Causal Arbitration",
+        "focus": ["scheduler", "agents", "fusion", "judge", "policy"],
+        "note": "Localized ROI analysis, Anomaly Max-Pooling, and Groq LPU reasoning."
+      }
+    ]
+  },
+  "lanes": [
+    { "id": "operator", "label": "Operator & Workstation", "variant": "normal" },
+    { "id": "defensive", "label": "Defensive Ingestion Gates", "variant": "normal" },
+    { "id": "forensic", "label": "Forensic Swarm & Fusion", "variant": "normal" },
+    { "id": "decision", "label": "AI Judge & Governance", "variant": "normal" }
+  ],
+  "phases": [
+    { "id": "intake", "label": "Intake & Quality", "fromCol": 0, "toCol": 1 },
+    { "id": "validation", "label": "Reference & Scheduling", "fromCol": 2, "toCol": 3, "variant": "emphasis" },
+    { "id": "forensics", "label": "Swarm & Arbitration", "fromCol": 4, "toCol": 5, "variant": "dashed" }
+  ],
+  "mainPath": ["upload", "quality", "reference", "scheduler", "agents", "fusion", "judge", "policy", "review"],
+  "nodes": [
+    { "id": "upload", "lane": "operator", "col": 0, "type": "frontend", "label": "Image Upload", "sublabel": "Operator / API Post", "tag": "Multipart", "width": 130 },
+    { "id": "quality", "lane": "defensive", "col": 1, "type": "backend", "label": "Quality Check", "sublabel": "S1/S2: Blur & ELA Check", "tag": "Laplacian <30ms", "width": 130 },
+    { "id": "reference", "lane": "defensive", "col": 2, "type": "backend", "label": "Golden Reference", "sublabel": "S3: CLIP & FAISS Match", "tag": "Sim >= 0.75", "width": 130 },
+    { "id": "scheduler", "lane": "forensic", "col": 2, "type": "backend", "label": "ROI Scheduler", "sublabel": "S4: Localized Crops", "tag": "8-12x Zoom", "width": 130 },
+    { "id": "agents", "lane": "forensic", "col": 3, "type": "backend", "label": "Evidence Agents", "sublabel": "S5: YOLO, OCR, VLM", "tag": "ThreadPool", "width": 130 },
+    { "id": "fusion", "lane": "forensic", "col": 4, "type": "backend", "label": "Evidence Fusion", "sublabel": "S6: Max-Pooling Math", "tag": "Non-Diluted", "width": 130 },
+    { "id": "judge", "lane": "decision", "col": 4, "type": "cloud", "label": "AI Forensic Judge", "sublabel": "S7: Groq LPU Causal", "tag": "~420ms", "width": 130 },
+    { "id": "policy", "lane": "decision", "col": 5, "type": "security", "label": "Policy / Report", "sublabel": "S8: Verdict & PDF Cert", "tag": "Deterministic", "width": 130 },
+    { "id": "review", "lane": "operator", "col": 5, "type": "external", "label": "Human Review", "sublabel": "HITL Sign-off", "tag": "Audit Trail", "width": 130 }
+  ],
+  "edges": [
+    { "id": "e1", "from": "upload", "to": "quality", "label": "raw scan", "variant": "emphasis" },
+    { "id": "e2", "from": "quality", "to": "reference", "label": "sharp & authentic", "variant": "default" },
+    { "id": "e3", "from": "reference", "to": "scheduler", "label": "blueprint match", "variant": "emphasis" },
+    { "id": "e4", "from": "scheduler", "to": "agents", "label": "crops", "variant": "default" },
+    { "id": "e5", "from": "agents", "to": "fusion", "label": "evidence cards", "variant": "emphasis" },
+    { "id": "e6", "from": "fusion", "to": "judge", "label": "pooled anomaly", "variant": "emphasis" },
+    { "id": "e7", "from": "judge", "to": "policy", "label": "causal verdict", "variant": "security" },
+    { "id": "e8", "from": "policy", "to": "review", "label": "audit certificate", "variant": "emphasis" }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Ingestion & Defensive Screening",
+      "items": [
+        "Stage 1 rejects blurred or glared images in under 30ms before wasting neural compute",
+        "Stage 2 detects manipulated photos or metadata spoofing via Error Level Analysis (ELA)",
+        "Stage 3 matches Open_CLIP 512-dim visual embeddings against golden reference library"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Forensic Swarm & Mathematical Fusion",
+      "items": [
+        "Stage 4 crops localized sub-regions, expanding micro-components by 8x-12x",
+        "Stage 5 dispatches parallel forensic agents (YOLO11n, PaddleOCR, Label, and VLM)",
+        "Stage 6 fuses anomaly scores using Anomaly Max-Pooling to preserve critical defects"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Causal Arbitration & Governance",
+      "items": [
+        "Stage 7 synthesizes root-cause explanation on Groq LPU (gpt-oss-20b) in ~420ms",
+        "Stage 8 renders laboratory-grade PDF certificate with SHA-256 integrity hash",
+        "Human-in-the-loop workbench enables QA inspectors to approve, reject, or override verdicts"
+      ]
+    }
+  ]
+}

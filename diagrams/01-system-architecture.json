@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "VisionForge AI - System Architecture",
+    "output": "diagrams/01-system-architecture.html",
+    "quality_profile": "showcase",
+    "viewBox": [1380, 560],
+    "views": [
+      {
+        "id": "full-journey",
+        "label": "Complete inspection flow",
+        "focus": ["operator", "frontend", "api", "pipeline", "db", "storage"],
+        "note": "Primary inspection journey from the operator console to durable state."
+      },
+      {
+        "id": "ai-models",
+        "label": "AI & Computer Vision Core",
+        "focus": ["pipeline", "yolo", "cv", "groq"],
+        "note": "Local YOLO11n detection, OpenCV heuristics, and Groq LPU causal arbitration."
+      },
+      {
+        "id": "security-persistence",
+        "label": "Security and Persistence",
+        "focus": ["auth", "api", "db", "storage"],
+        "note": "JWT token lifecycle and append-only evidence persistence."
+      }
+    ]
+  },
+  "components": [
+    { "id": "operator", "type": "external", "label": "QA Inspector", "sublabel": "Industrial Station", "pos": [50, 260], "size": [130, 60] },
+    { "id": "frontend", "type": "frontend", "brand": "react", "label": "Tactical HUD", "sublabel": "React 18 + Vite :5173", "pos": [260, 260], "size": [140, 60], "tag": "Dual Canvas" },
+    { "id": "auth", "type": "security", "label": "JWT Auth & RBAC", "sublabel": "HS256 Rotation", "pos": [470, 110], "size": [140, 60], "tag": "Security" },
+    { "id": "api", "type": "backend", "brand": "fastapi", "label": "FastAPI Gateway", "sublabel": "Uvicorn :8000", "pos": [470, 260], "size": [140, 60], "tag": "REST + SSE" },
+    { "id": "yolo", "type": "backend", "label": "YOLO11n Engine", "sublabel": "component_detector.pt", "pos": [690, 110], "size": [150, 60], "tag": "Local PyTorch" },
+    { "id": "pipeline", "type": "backend", "label": "LangGraph Engine", "sublabel": "8-stage state machine", "pos": [690, 260], "size": [150, 60], "tag": "StateGraph" },
+    { "id": "cv", "type": "backend", "label": "CV Forensics", "sublabel": "OpenCV • ELA • SSIM", "pos": [690, 410], "size": [150, 60] },
+    { "id": "groq", "type": "cloud", "label": "Groq Cloud LPU", "sublabel": "gpt-oss-20b (~420ms)", "pos": [920, 110], "size": [140, 60], "tag": "Causal Judge" },
+    { "id": "db", "type": "database", "label": "Relational DB", "sublabel": "SQLAlchemy 2.0", "pos": [920, 260], "size": [140, 60], "tag": "Postgres/SQLite" },
+    { "id": "storage", "type": "database", "label": "Media Storage", "sublabel": "data/cases & reports", "pos": [1140, 260], "size": [130, 60], "tag": "Append-Only" }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "Industrial Edge Workstation", "wraps": ["operator", "frontend"] },
+    { "kind": "security-group", "label": "Zero-Trust API Gateway", "wraps": ["api", "auth"] },
+    { "kind": "region", "label": "VisionForge Backend Runtime", "wraps": ["pipeline", "yolo", "cv", "db", "storage"] }
+  ],
+  "connections": [
+    { "id": "c1", "from": "operator", "to": "frontend", "label": "scan UI" },
+    { "id": "c2", "from": "frontend", "to": "api", "label": "HTTPS :8000", "variant": "emphasis" },
+    { "id": "c3", "from": "api", "to": "auth", "label": "verify JWT", "variant": "security", "fromSide": "top", "toSide": "bottom" },
+    { "id": "c4", "from": "api", "to": "pipeline", "label": "dispatch scan", "variant": "emphasis" },
+    { "id": "c5", "from": "pipeline", "to": "yolo", "label": "YOLO11n", "fromSide": "top", "toSide": "bottom", "labelDy": -20, "labelDx": -16 },
+    { "id": "c6", "from": "pipeline", "to": "cv", "label": "OpenCV", "fromSide": "bottom", "toSide": "top", "labelDy": 24 },
+    { "id": "c7", "from": "pipeline", "to": "groq", "label": "causal judge", "variant": "emphasis", "fromSide": "top", "toSide": "left", "labelDy": -24 },
+    { "id": "c8", "from": "pipeline", "to": "db", "label": "save state", "fromSide": "right", "toSide": "left" },
+    { "id": "c9", "from": "db", "to": "storage", "label": "reports", "fromSide": "right", "toSide": "left", "labelDy": -20 }
+  ],
+  "cards": [
+    { "dot": "cyan", "title": "Client & Edge Ingestion", "items": ["React 18 Cyberpunk HUD with synchronized dual canvas and real-time SSE telemetry", "FastAPI gateway handling multipart image uploads and token authentication"] },
+    { "dot": "emerald", "title": "Local AI Core & LPU Inference", "items": ["LangGraph 8-stage state machine orchestrating 30ms defensive fast-fail gates", "Fine-tuned YOLO11n running localized inference on sub-regions", "Groq LPU (gpt-oss-20b) delivering sub-second root-cause reasoning"] },
+    { "dot": "rose", "title": "Persistence & Security", "items": ["PostgreSQL/SQLite dual-dialect persistence with append-only evidence", "Media storage with SHA-256 hash provenance and immutable audit trail"] }
+  ]
+}

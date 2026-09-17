@@ -1,0 +1,86 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "VisionForge AI - Data & Security Architecture",
+    "output": "diagrams/07-data-security-architecture.html",
+    "quality_profile": "showcase",
+    "viewBox": [1160, 540],
+    "views": [
+      {
+        "id": "auth-flow",
+        "label": "Identity & Role-Based Access",
+        "focus": ["user", "auth_jwt", "rbac", "operator_api", "admin_api"],
+        "note": "OAuth2 password bearer tokens verify identity and enforce RBAC permissions."
+      },
+      {
+        "id": "relational-persistence",
+        "label": "Relational Data Integrity",
+        "focus": ["operator_api", "admin_api", "db_core", "evidence_store", "audit_logs"],
+        "note": "SQLAlchemy ORM manages relational foreign-key integrity and append-only evidence."
+      },
+      {
+        "id": "media-provenance",
+        "label": "Media Provenance & Artifacts",
+        "focus": ["db_core", "golden_store", "report_store"],
+        "note": "Golden reference FAISS embeddings and PDF compliance certificates with SHA-256."
+      }
+    ]
+  },
+  "components": [
+    { "id": "user", "type": "external", "label": "Client User", "sublabel": "Browser / Terminal", "pos": [40, 240], "size": [130, 60] },
+    { "id": "auth_jwt", "type": "security", "label": "JWT Auth Handler", "sublabel": "OAuth2 Password Bearer", "pos": [250, 240], "size": [140, 60], "tag": "HS256" },
+    { "id": "rbac", "type": "security", "label": "RBAC Enforcer", "sublabel": "Operator vs Admin", "pos": [250, 100], "size": [140, 60], "tag": "Route Guards" },
+    { "id": "operator_api", "type": "backend", "label": "Operator Endpoints", "sublabel": "Inspections & Triage", "pos": [470, 170], "size": [140, 60], "tag": "REST + SSE" },
+    { "id": "admin_api", "type": "backend", "label": "Admin Endpoints", "sublabel": "Products & Settings", "pos": [470, 310], "size": [140, 60], "tag": "Catalog Management" },
+    { "id": "evidence_store", "type": "database", "label": "ROIEvidence Table", "sublabel": "Append-Only Cards", "pos": [690, 100], "size": [150, 60], "tag": "Foreign Keys" },
+    { "id": "db_core", "type": "database", "label": "Relational Engine", "sublabel": "PostgreSQL / SQLite", "pos": [690, 240], "size": [150, 60], "tag": "SQLAlchemy 2.0" },
+    { "id": "audit_logs", "type": "database", "label": "AuditLog Table", "sublabel": "HITL Reviews & History", "pos": [690, 380], "size": [150, 60], "tag": "Immutable Log" },
+    { "id": "golden_store", "type": "database", "label": "Golden Library", "sublabel": "data/reference_library", "pos": [920, 170], "size": [150, 60], "tag": "FAISS Vectors" },
+    { "id": "report_store", "type": "database", "label": "Forensic Reports", "sublabel": "data/reports/*.pdf", "pos": [920, 310], "size": [150, 60], "tag": "SHA-256 Signed" }
+  ],
+  "boundaries": [
+    { "kind": "security-group", "label": "Identity & Access Tier", "wraps": ["auth_jwt", "rbac"] },
+    { "kind": "region", "label": "Protected REST Routers", "wraps": ["operator_api", "admin_api"] },
+    { "kind": "region", "label": "SQLAlchemy Persistence Tier", "wraps": ["db_core", "evidence_store", "audit_logs"] },
+    { "kind": "region", "label": "Media & Provenance Store", "wraps": ["golden_store", "report_store"] }
+  ],
+  "connections": [
+    { "id": "c1", "from": "user", "to": "auth_jwt", "label": "credentials", "variant": "security" },
+    { "id": "c2", "from": "auth_jwt", "to": "rbac", "label": "token claims", "variant": "security", "fromSide": "top", "toSide": "bottom" },
+    { "id": "c3", "from": "rbac", "to": "operator_api", "label": "operator role", "fromSide": "bottom", "toSide": "left", "labelDx": -15 },
+    { "id": "c4", "from": "rbac", "to": "admin_api", "label": "admin role", "fromSide": "right", "toSide": "left", "labelDy": 24 },
+    { "id": "c5", "from": "operator_api", "to": "db_core", "label": "cases & reviews", "fromSide": "right", "toSide": "left" },
+    { "id": "c6", "from": "admin_api", "to": "db_core", "label": "catalog", "fromSide": "right", "toSide": "left", "labelDy": -15 },
+    { "id": "c7", "from": "db_core", "to": "evidence_store", "label": "cascade evidence", "fromSide": "top", "toSide": "bottom", "variant": "emphasis" },
+    { "id": "c8", "from": "db_core", "to": "audit_logs", "label": "log review", "fromSide": "bottom", "toSide": "top", "labelDy": 24 },
+    { "id": "c9", "from": "db_core", "to": "golden_store", "label": "reference link", "fromSide": "right", "toSide": "left" },
+    { "id": "c10", "from": "db_core", "to": "report_store", "label": "report metadata", "fromSide": "right", "toSide": "left" }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Authentication & RBAC",
+      "items": [
+        "FastAPI OAuth2PasswordBearer issues dual HS256 tokens: short-lived access and 7-day refresh credentials",
+        "Role-based dependency guards enforce strict separation: operators submit inspections, admins manage catalog"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Relational Data Integrity",
+      "items": [
+        "SQLAlchemy 2.0 ORM provides identical schema support across local SQLite 3 and enterprise PostgreSQL",
+        "Foreign-key cascading relationships link Products -> InspectionCases -> ROIEvidence records"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Non-Repudiation & Provenance",
+      "items": [
+        "ROIEvidence and AuditLog tables are append-only to prevent tampering with historical forensic proof",
+        "Every generated PDF report includes an embedded SHA-256 hash verifiable against the database case record"
+      ]
+    }
+  ]
+}

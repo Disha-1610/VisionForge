@@ -1,0 +1,85 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "VisionForge AI - Golden Reference & YOLO Verification Flow",
+    "output": "diagrams/04-golden-reference-yolo.html",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "full-flow",
+        "label": "Golden Reference to Structural Evidence",
+        "focus": ["input_img", "clip_search", "golden_ref", "roi_crop", "yolo_det", "comp_diff", "struct_card"],
+        "note": "Vector search matches the blueprint, localized crops zoom in, and YOLO detects component mismatches."
+      },
+      {
+        "id": "vector-indexing",
+        "label": "Neural Vector Search",
+        "focus": ["input_img", "clip_search", "golden_ref"],
+        "note": "Open_CLIP ViT-B/32 embeddings retrieve golden reference blueprint via FAISS index."
+      },
+      {
+        "id": "yolo-and-diff",
+        "label": "YOLO Detection & Anomaly Delta",
+        "focus": ["roi_crop", "yolo_det", "comp_diff", "struct_card"],
+        "note": "Scale drift solved by localized cropping; component matching computes missing and extra parts."
+      }
+    ]
+  },
+  "lanes": [
+    { "id": "input_lane", "label": "Reference Intelligence (S3)", "variant": "normal" },
+    { "id": "yolo_lane", "label": "Scale Normalization & YOLO11n", "variant": "normal" },
+    { "id": "diff_lane", "label": "Component Differential Engine", "variant": "normal" },
+    { "id": "evidence_lane", "label": "Forensic Evidence Output", "variant": "normal" }
+  ],
+  "phases": [
+    { "id": "search_phase", "label": "Reference Matching", "fromCol": 0, "toCol": 2 },
+    { "id": "yolo_phase", "label": "Crop & Localized Detection", "fromCol": 3, "toCol": 4, "variant": "emphasis" },
+    { "id": "diff_phase", "label": "Delta Analysis & Evidence", "fromCol": 5, "toCol": 5, "variant": "dashed" }
+  ],
+  "mainPath": ["input_img", "clip_search", "golden_ref", "roi_crop", "yolo_det", "comp_diff", "struct_card"],
+  "nodes": [
+    { "id": "input_img", "lane": "input_lane", "col": 0, "type": "frontend", "label": "Inspection Scan", "sublabel": "Raw 4K Board Capture", "tag": "Target PCB", "width": 130 },
+    { "id": "clip_search", "lane": "input_lane", "col": 1, "type": "backend", "label": "Vector Search", "sublabel": "Open_CLIP ViT-B/32", "tag": "512-Dim FAISS", "width": 130 },
+    { "id": "golden_ref", "lane": "input_lane", "col": 2, "type": "database", "label": "Golden Reference", "sublabel": "Verified OEM Blueprint", "tag": "Sim >= 0.75", "width": 130 },
+    { "id": "roi_crop", "lane": "yolo_lane", "col": 3, "type": "backend", "label": "Stage 4 ROI Crop", "sublabel": "Sub-Region Extraction", "tag": "8-12x Scale Zoom", "width": 130 },
+    { "id": "yolo_det", "lane": "yolo_lane", "col": 4, "type": "backend", "label": "YOLO11n Engine", "sublabel": "Dual Target & Ref Run", "tag": "8 Unified Classes", "width": 130 },
+    { "id": "comp_diff", "lane": "diff_lane", "col": 5, "type": "backend", "label": "Component Delta", "sublabel": "Missing / Extra / Drift", "tag": "Hungarian Match", "width": 130 },
+    { "id": "struct_card", "lane": "evidence_lane", "col": 5, "type": "security", "label": "Structural Card", "sublabel": "Delta Counts & Heatmap", "tag": "Normalized JSON", "width": 130 }
+  ],
+  "edges": [
+    { "id": "e1", "from": "input_img", "to": "clip_search", "label": "extract embedding", "variant": "emphasis" },
+    { "id": "e2", "from": "clip_search", "to": "golden_ref", "label": "cos sim query", "variant": "default" },
+    { "id": "e3", "from": "golden_ref", "to": "roi_crop", "label": "paired images", "variant": "emphasis" },
+    { "id": "e4", "from": "roi_crop", "to": "yolo_det", "label": "zoomed crops", "variant": "default" },
+    { "id": "e5", "from": "yolo_det", "to": "comp_diff", "label": "detected bboxes", "variant": "emphasis" },
+    { "id": "e6", "from": "comp_diff", "to": "struct_card", "label": "discrepancy score", "variant": "security" }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Reference Retrieval",
+      "items": [
+        "Extracts 512-dimensional visual embedding vector in < 15ms via Open_CLIP ViT-B/32",
+        "Queries FAISS index against verified OEM golden library, rejecting unknown boards below 0.75 cosine similarity"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Scale Drift & Localized YOLO",
+      "items": [
+        "Stage 4 crops localized sub-regions (e.g. 260x180), expanding tiny 0402 resistors by 8x-12x",
+        "Ultralytics YOLO11n (5.2 MB) runs inference across 8 classes: capacitor, ic_chip, connector, resistor, screw, seal, battery_cell, gold_pin"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Component Differential Forensics",
+      "items": [
+        "Hungarian bipartite matching pairs target detections against reference detections",
+        "Identifies missing components (unpopulated pads), extra components (tampering), and count discrepancies",
+        "Emits normalized Structural Evidence Card with exact bounding box coordinates and anomaly confidence"
+      ]
+    }
+  ]
+}
