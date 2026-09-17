@@ -1,333 +1,264 @@
-# 📐 VisionForge AI — System Architecture Specification
+# 📐 System Architecture
 
-> **Status:** Authoritative (Reflects Actual Implemented Codebase)  
-> **Authors:** Disha & Anil Pradhan  
-> **Target Audience:** Systems Architects, Backend Engineers, ML Engineers, Line Integrators
+> **How VisionForge AI turns raw hardware images into verified forensic verdicts in under 4 seconds.**
 
 ---
 
-## 📑 Table of Contents
+## 📖 Table of Contents
 
-- [1. Executive Architectural Overview](#1-executive-architectural-overview)
-- [2. Core Design Principles](#2-core-design-principles)
-- [3. End-to-End System Topology](#3-end-to-end-system-topology)
-- [4. Component Decomposition](#4-component-decomposition)
-  - [4.1 Frontend Client Layer](#41-frontend-client-layer)
-  - [4.2 API Gateway & Controller Layer](#42-api-gateway--controller-layer)
-  - [4.3 LangGraph Orchestration & Working Memory](#43-langgraph-orchestration--working-memory)
-  - [4.4 Forensic Computer Vision & ML Engines](#44-forensic-computer-vision--ml-engines)
-  - [4.5 Multi-Agent Evidence Swarm & AI Judge](#45-multi-agent-evidence-swarm--ai-judge)
-  - [4.6 Persistence, Vector Store & Artifact Storage](#46-persistence-vector-store--artifact-storage)
-- [5. System State Machine & Lifecycle](#5-system-state-machine--lifecycle)
-- [6. Telemetry & Real-Time Event Streaming (SSE)](#6-telemetry--real-time-event-streaming-sse)
-- [7. Concurrency, Fault Tolerance & Load Balancing](#7-concurrency-fault-tolerance--load-balancing)
-- [8. Implemented Architecture vs. Initial Specification](#8-implemented-architecture-vs-initial-specification)
+- [1. The Journey of One Inspection](#1-the-journey-of-one-inspection)
+- [2. High-Level System Topology](#2-high-level-system-topology)
+- [3. Core Architectural Layers](#3-core-architectural-layers)
+  - [3.1 Frontend Client Layer](#31-frontend-client-layer)
+  - [3.2 API Gateway Layer](#32-api-gateway-layer)
+  - [3.3 LangGraph Pipeline Orchestrator](#33-langgraph-pipeline-orchestrator)
+  - [3.4 Specialized AI Agent Swarm](#34-specialized-ai-agent-swarm)
+  - [3.5 Storage & Vector Intelligence](#35-storage--vector-intelligence)
+- [4. Complete Data Flow Lifecycle](#4-complete-data-flow-lifecycle)
+- [5. Concurrency & Failover Strategy](#5-concurrency--failover-strategy)
+- [6. Architecture Decisions & Trade-Offs](#6-architecture-decisions--trade-offs)
 
 ---
 
-## 1. Executive Architectural Overview
+## 1. The Journey of One Inspection
 
-VisionForge AI is engineered as a **hybrid deterministic-AI inspection platform**. In industrial production environments, pure rule-based computer vision is too brittle to handle variable lighting and packaging changes, while monolithic Vision-Language Models (VLMs) are too slow, prone to hallucinations, and subject to cloud API quota exhaustion.
+Before looking at individual source files, it helps to understand the journey of a single inspection.
 
-VisionForge solves this by decomposing inspection into a **hierarchical 8-stage pipeline**:
-1. **Deterministic CV Gates** filter bad or tampered imagery early (sub-100ms).
-2. **Vector Retrieval (FAISS)** binds the input image to an authoritative golden blueprint.
-3. **Targeted Agent Swarm** executes micro-inspections across specific Regions of Interest (ROIs).
-4. **Single-Pass AI Judge** on ultra-fast LPU hardware resolves evidence conflicts and issues an auditable verdict.
+Imagine a factory operator standing at a receiving dock in an electronics plant:
 
-```mermaid
-graph TB
-    subgraph Client["🖥️ Client Workstation"]
-        Web["React 18 Client (Desktop)"]
-        Mobile["Mobile Camera (WebRTC/Stream)"]
-    end
-
-    subgraph Gateway["⚡ API Gateway (FastAPI)"]
-        AuthSvc["Auth & RBAC (JWT)"]
-        InspectRouter["Inspection Router"]
-        ProductRouter["Product Catalog Router"]
-        ReportRouter["Report Router"]
-        SSEServer["SSE Event Streamer"]
-    end
-
-    subgraph Pipeline["🔄 LangGraph Pipeline Engine"]
-        StateMem["Working Memory State"]
-        Stage1["Stage 1: Quality Check"]
-        Stage2["Stage 2: Forensic ELA"]
-        Stage3["Stage 3: Reference Intelligence"]
-        Stage4["Stage 4: ROI Scheduler"]
-        Stage5["Stage 5: Multi-Agent Execution"]
-        Stage6["Stage 6: Evidence Fusion"]
-        Stage7["Stage 7: AI Judge Reasoning"]
-        Stage8["Stage 8: Policy & Verdict"]
-    end
-
-    subgraph Swarm["🤖 Specialized Agent Swarm"]
-        OCR["OCR Agent (PaddleOCR / EasyOCR)"]
-        Label["Label Agent (OpenCV Template)"]
-        Structural["Structural Agent (YOLO11n + SSIM)"]
-        VLM["VLM Agent (Gemini 3.5 / Groq Round-Robin)"]
-    end
-
-    subgraph Storage["💾 Persistence Layer"]
-        SQL[(SQLite / PostgreSQL DB)]
-        FAISS[(FAISS Dual Vector Index)]
-        DiskStore[(Image & PDF Report Store)]
-    end
-
-    Client -->|REST & Multipart| Gateway
-    InspectRouter -->|Spawn Graph| Pipeline
-    Pipeline -.->|Emit Events| SSEServer
-    SSEServer -.->|Stream SSE| Client
-    
-    Stage1 --> Stage2 --> Stage3 --> Stage4 --> Stage5 --> Stage6 --> Stage7 --> Stage8
-    StateMem <--> Pipeline
-    Stage3 <--> FAISS
-    Stage5 --> Swarm
-    Swarm --> Stage6
-    Stage8 --> SQL
-    Stage8 --> DiskStore
+```text
+1. The operator places a circuit board under a macro camera and clicks "Inspect".
+                           ↓
+2. The browser uploads the image to the FastAPI backend.
+                           ↓
+3. Fast computer vision checks sharpness and lighting in 30ms.
+                           ↓
+4. Error Level Analysis (ELA) verifies the photo was not edited in Photoshop.
+                           ↓
+5. FAISS vector search looks up the matching manufacturer blueprint in 15ms.
+                           ↓
+6. The image is cropped into Regions of Interest (ROIs).
+                           ↓
+7. Four specialized agents run in parallel:
+   • OCR reads chip serial numbers
+   • Label Agent checks safety certifications
+   • YOLO counts capacitors and chips
+   • VLM inspects solder joints and surface burns
+                           ↓
+8. Anomaly Max-Pooling ensures a single missing part is never diluted by clean parts.
+                           ↓
+9. The AI Forensic Judge explains the root cause on ultra-fast Groq LPU hardware.
+                           ↓
+10. The operator sees the verdict on their screen, and a signed PDF report is generated.
 ```
 
 ---
 
-## 2. Core Design Principles
+## 2. High-Level System Topology
 
-1. **Deterministic First, AI Last (Fast-Fail):**  
-   Never send an image to a costly Vision-Language Model if OpenCV detects motion blur, extreme underexposure, or digital image tampering in Stage 1/2.
-2. **Specialized Micro-Agents over Monolithic Prompts:**  
-   Instead of asking a VLM to inspect an entire 4K motherboard image in one prompt, VisionForge crops the board into bounded ROIs and delegates tasks to domain-specific tools (OCR for text, YOLO for component geometry, VLM for physical surface burns).
-3. **Dual-Provider Round-Robin Balancing:**  
-   To prevent HTTP 429 quota exhaustion on free-tier and enterprise cloud APIs, VLM traffic is split 50/50 across Google Gemini and Groq Cloud with instantaneous mutual failover.
-4. **Deterministic Fusion & Auditable AI Judge:**  
-   Discrete agent findings are mathematically aggregated using confidence weighting and anomaly max-pooling before being passed to an AI Judge for final causal synthesis.
-5. **Stateful Working Memory with Event Streaming:**  
-   The inspection state is maintained in a LangGraph `WorkingMemory` graph, allowing granular step-by-step telemetry via Server-Sent Events (SSE) to the frontend workstation.
-
----
-
-## 3. End-to-End System Topology
-
-```mermaid
-flowchart LR
-    subgraph Frontend["Frontend Tier (Vite / React 18)"]
-        UI["SPA Interface"]
-        SSEHook["usePipelineSSE"]
-        AuthCtx["AuthContext (JWT Auto-Refresh)"]
-    end
-
-    subgraph Backend["Backend Tier (FastAPI Async)"]
-        API["FastAPI REST Engine"]
-        LGraph["LangGraph Workflow Runner"]
-        Mem["Working Memory State"]
-        LLM["Dual LLM Client (Gemini + Groq)"]
-    end
-
-    subgraph Compute["Local CV & ML Engines"]
-        CVEngine["OpenCV 4.10 / ELA Engine"]
-        YOLO["Ultralytics YOLO11n (component_detector.pt)"]
-        OCREngine["PaddleOCR / EasyOCR"]
-        CLIP["OpenCLIP ViT-B-32"]
-    end
-
-    subgraph CloudAI["Cloud Multimodal LPU / TPU"]
-        GeminiFlash["Google Gemini 3.5 Flash"]
-        GeminiEmbed["Google gemini-embedding-2"]
-        GroqLPU["Groq LPU (gpt-oss-20b & qwen3.8-27b)"]
-    end
-
-    subgraph DataTier["Data Tier"]
-        DB[(SQLite / PostgreSQL)]
-        FAISSIdx[(FAISS Index)]
-        FS[(Local File Storage)]
-    end
-
-    UI -->|HTTP POST Image| API
-    API --> LGraph
-    LGraph --> Mem
-    LGraph --> CVEngine
-    LGraph --> YOLO
-    LGraph --> OCREngine
-    LGraph --> CLIP
-    LGraph --> LLM
-    LLM --> GeminiFlash & GeminiEmbed & GroqLPU
-    LGraph --> DB & FAISSIdx & FS
-    API -.->|SSE Events| SSEHook
-```
-
----
-
-## 4. Component Decomposition
-
-### 4.1 Frontend Client Layer
-The user interface is a dark-mode industrial workstation built in React 18 with Vite and Tailwind CSS.
-- **Intake Workstation (`NewInspectionPage.jsx`):** Supports drag-and-drop file upload, live mobile rear-camera capture, and auto-pairing via the `DesktopGuardModal`.
-- **Live Inspection Telemetry (`InspectionDetailPage.jsx`):** Visualizes the 8 pipeline stages in real time using the `PipelineProgress` component powered by `usePipelineSSE`.
-- **Forensic Evidence Explorer (`DualImageCanvas.jsx` & `EvidenceCard.jsx`):** Renders synchronized side-by-side golden reference vs. test image overlays with interactive bounding boxes and anomaly callouts.
-- **Authentication & Token Rotation (`AuthContext.jsx` & `api.js`):** Intercepts all REST calls, auto-refreshes JWT access tokens 60 seconds before expiration, and enforces 2-role RBAC (`ADMIN` and `OPERATOR`).
-
-### 4.2 API Gateway & Controller Layer
-Built with FastAPI, the API gateway enforces strict Pydantic v2 validation, CORS policies, and rate-resilient asynchronous execution.
-- **`/api/v1/auth`:** Issues JWT access tokens (30m expiry) and refresh tokens (7d). Handles registration, login, and token refresh.
-- **`/api/v1/inspections`:** Handles multipart image intake, launches background LangGraph inspection runs, streams SSE telemetry (`GET /{id}/events`), queries status (`GET /{id}/status`), and processes human review overrides.
-- **`/api/v1/products`:** Golden catalog management, reference image uploads, ROI template definitions, and vector re-indexing.
-- **`/api/v1/reports`:** Generates and serves tamper-proof ReportLab PDF audit certificates.
-- **`/api/v1/analytics` & `/api/v1/system`:** Computes aggregate fraud metrics, vendor risk distributions, and network interface IP discovery for mobile tunneling.
-
-### 4.3 LangGraph Orchestration & Working Memory
-The inspection pipeline is compiled as a LangGraph state graph in `backend/app/pipeline/workflow.py`.
-- **Working Memory (`state.py`):** A centralized typed dictionary holding:
-  - Raw image paths and metadata.
-  - Image quality and forensic authenticity scores.
-  - Golden product ID, revision, and similarity score.
-  - Scheduled ROIs and dispatch queues.
-  - Normalized evidence cards collected from all agents.
-  - Fused multi-view scores and anomaly max-pooling outputs.
-  - AI Judge reasoning, fraud probability, and final policy verdict.
-- **Stage Progression:** Execution moves strictly from Stage 1 through Stage 8. If Stage 1 (Quality) or Stage 2 (Authenticity) fails critically, execution fast-fails directly to Stage 8, marking the inspection `REJECTED` or `NEEDS_RETAKE`.
-
-### 4.4 Forensic Computer Vision & ML Engines
-- **Quality Engine (`quality_check.py`):** Calculates Laplacian variance (`cv2.Laplacian`) to detect motion blur (threshold > 100.0) and evaluates grayscale pixel histograms for exposure (mean brightness 40–220).
-- **Authenticity Engine (`authenticity.py`):** Performs Error Level Analysis (ELA) by resaving the image at JPEG quality 95, computing `cv2.absdiff`, and analyzing compression artifacts for digital cloning or screen moiré. Parses EXIF metadata via `exifread`.
-- **Embedding & Vector Match Engine (`embedding_service.py` & `reference_match.py`):** Computes visual embeddings using Google `gemini-embedding-2` (3072-dim) with an instant local fallback to OpenCLIP `ViT-B-32` (512-dim). Queries a local FAISS index (`faiss-cpu`) to match the hardware component against golden references (`SIMILARITY_THRESHOLD = 0.75`).
-- **Object Detection Engine (`structural_agent.py`):** Loads the fine-tuned **Ultralytics YOLO11n** model (`component_detector.pt`) to detect 8 hardware component classes: `capacitor`, `resistor`, `ic_chip`, `connector`, `screw`, `seal`, `battery_cell`, and `gold_pin_connector`.
-
-### 4.5 Multi-Agent Evidence Swarm & AI Judge
-- **`OCRAgent`:** Runs PaddleOCR (with EasyOCR fallback) on serialized ROIs. Computes Levenshtein edit distance against expected catalog strings.
-- **`LabelAgent`:** Computes normalized template correlation (`cv2.matchTemplate`) against golden logos and certification stamps.
-- **`StructuralAgent`:** Combines YOLO11n bounding-box delta calculations (missing/extra/drift) with SSIM structural similarity scores.
-- **`VLMAgent`:** Executes multimodal prompts via the 50/50 Round-Robin LLM client to detect physical solder burns, corrosion, and scratches.
-- **`AIJudge`:** Synthesizes all collected evidence cards into a single-pass causal prompt on Groq LPU (`openai/gpt-oss-20b` with Gemini `3.5-flash` fallback), calculating fraud probability and assigning the final verdict.
-
-### 4.6 Persistence, Vector Store & Artifact Storage
-- **Relational DB:** SQLite 3 (default for local zero-config execution) or PostgreSQL via SQLAlchemy 2.0.
-- **Vector Index:** FAISS index storing golden hardware embeddings.
-- **File System Storage:**
-  - `data/golden/`: Authoritative golden reference images.
-  - `data/uploads/`: Ingested inspection images.
-  - `data/reports/`: Generated ReportLab PDF audit certificates.
-
----
-
-## 5. System State Machine & Lifecycle
-
-```mermaid
-stateDiagram-v2
-    [*] --> INTAKE_PENDING: Upload Image
-    
-    INTAKE_PENDING --> QUALITY_CHECK: Start Pipeline
-    
-    QUALITY_CHECK --> FAILED_QUALITY: Blur / Underexposed
-    QUALITY_CHECK --> AUTHENTICITY_CHECK: Quality Pass
-    
-    FAILED_QUALITY --> POLICY_ENGINE: Fast Fail (Retake)
-    
-    AUTHENTICITY_CHECK --> FAILED_AUTHENTICITY: ELA / EXIF Tampering
-    AUTHENTICITY_CHECK --> REFERENCE_MATCH: Authentic Pass
-    
-    FAILED_AUTHENTICITY --> POLICY_ENGINE: Fast Fail (Fraud Reject)
-    
-    REFERENCE_MATCH --> UNKNOWN_PRODUCT: Similarity < 0.75
-    REFERENCE_MATCH --> ROI_SCHEDULER: Matched Golden Blueprint
-    
-    UNKNOWN_PRODUCT --> POLICY_ENGINE: Fast Fail (Unknown Part)
-    
-    ROI_SCHEDULER --> EVIDENCE_EXECUTION: Dispatched ROIs
-    
-    state EVIDENCE_EXECUTION {
-        [*] --> OCR_AGENT
-        [*] --> LABEL_AGENT
-        [*] --> STRUCTURAL_AGENT
-        [*] --> VLM_AGENT
-        OCR_AGENT --> AGENT_COLLECT
-        LABEL_AGENT --> AGENT_COLLECT
-        STRUCTURAL_AGENT --> AGENT_COLLECT
-        VLM_AGENT --> AGENT_COLLECT
-        AGENT_COLLECT --> [*]
-    }
-    
-    EVIDENCE_EXECUTION --> EVIDENCE_FUSION: Collect Evidence Cards
-    EVIDENCE_FUSION --> AI_JUDGE: Fused Anomaly Context
-    AI_JUDGE --> POLICY_ENGINE: Causal Verdict & Fraud Score
-    
-    state POLICY_ENGINE {
-        [*] --> EVAL_RULES
-        EVAL_RULES --> ACCEPTED: Fraud < 0.20 & No Criticals
-        EVAL_RULES --> REJECTED: Fraud >= 0.70 or Critical Drift
-        EVAL_RULES --> REVIEW: Fraud 0.20 - 0.69
-        EVAL_RULES --> QUARANTINE: Severe Counterfeit Risk
-    }
-    
-    POLICY_ENGINE --> REPORT_GENERATION: Persist & Build PDF
-    REPORT_GENERATION --> [*]: Terminal Complete
-```
-
----
-
-## 6. Telemetry & Real-Time Event Streaming (SSE)
-
-To provide millisecond-accurate feedback to line operators, VisionForge implements Server-Sent Events (SSE) over HTTP:
-
-1. **Client Subscription:** Upon initiating an inspection, the frontend opens an `EventSource` connection to `GET /api/v1/inspections/{inspection_id}/events`.
-2. **Event Dispatch:** As each stage in `backend/app/pipeline/workflow.py` executes, it yields a structured JSON event:
-   ```json
-   {
-     "event": "stage_progress",
-     "data": {
-       "stage": 3,
-       "stage_name": "Reference Intelligence",
-       "status": "COMPLETED",
-       "duration_ms": 142,
-       "details": {
-         "matched_product": "Industrial ATX Motherboard V1",
-         "similarity_score": 0.942
-       }
-     }
-   }
-   ```
-3. **Resilience & Polling Fallback:** If the browser or network drops the SSE connection, the frontend's `usePipelineSSE` hook automatically falls back to 2-second interval polling against `GET /api/v1/inspections/{inspection_id}/status`.
-
----
-
-## 7. Concurrency, Fault Tolerance & Load Balancing
+VisionForge separates responsibilities across five distinct layers:
 
 ```mermaid
 flowchart TD
-    subgraph VLM_Load_Balancer["⚖️ Dual-Provider VLM Load Balancer"]
-        InReq["ROI Inspection Request"] --> Check{"ROI Index % 2 == 1?"}
-        
-        Check -->|Yes (Odd ROI)| GemPri["Primary: Gemini 3.5 Flash"]
-        Check -->|No (Even ROI)| GroqPri["Primary: Groq Qwen 3.8-27B"]
-        
-        GemPri -->|HTTP 429 / Error| GemToGroq["Failover to Groq Qwen"]
-        GemPri -->|Success| Ret1["Return Evidence"]
-        GemToGroq --> Ret1
-        
-        GroqPri -->|HTTP 429 / Error| GroqToGem["Failover to Gemini Flash"]
-        GroqPri -->|Success| Ret2["Return Evidence"]
-        GroqToGem --> Ret2
+    subgraph Client["🖥️ Client Workstation Layer"]
+        Desktop["React 18 Desktop HUD (localhost:5173)"]
+        Mobile["Smartphone Camera Intake (WebRTC / Tunnel)"]
     end
+
+    subgraph Gateway["⚡ API Gateway Layer (FastAPI :8000)"]
+        Auth["JWT Auth & Role Guards (Admin / Operator)"]
+        InspectRouter["Inspection Intake & Status Router"]
+        ProdRouter["Product Blueprint & Catalog Router"]
+        ReportRouter["Report & Analytics Router"]
+        SSEHub["Server-Sent Events (SSE) Telemetry Stream"]
+    end
+
+    subgraph Engine["🔄 LangGraph Inspection Pipeline"]
+        S1["1. Quality Gate (Laplacian Blur & Exposure)"]
+        S2["2. Tamper Gate (Error Level Analysis)"]
+        S3["3. Blueprint Match (Dual Embeddings + FAISS)"]
+        S4["4. ROI Priority Scheduler"]
+        S5["5. Multi-Agent Swarm (Parallel Execution)"]
+        S6["6. Evidence Max-Pooling Fusion"]
+        S7["7. AI Forensic Judge (Groq LPU / Gemini)"]
+        S8["8. Policy Engine & PDF Generator"]
+    end
+
+    subgraph Swarm["🤖 Specialized Forensic Swarm"]
+        OCR["🔤 OCR Agent (PaddleOCR / EasyOCR)"]
+        LBL["🏷️ Label Agent (OpenCV Template Match)"]
+        YOLO["🧩 Structural Agent (YOLO11n + SSIM)"]
+        VLM["👁️ VLM Agent (Gemini 3.5 & Groq Qwen)"]
+    end
+
+    subgraph Storage["💾 Persistence Layer"]
+        DB[(SQLite / PostgreSQL DB)]
+        FAISS[(FAISS Vector Index)]
+        Files[(Inspection Images & PDF Reports)]
+    end
+
+    Client -->|REST & Multipart Upload| Gateway
+    Gateway -->|Spawn Background Task| Engine
+    Engine -.->|Stream Real-Time Progress| SSEHub
+    SSEHub -.->|Push Telemetry| Client
+
+    S1 --> S2 --> S3 --> S4 --> S5 --> S6 --> S7 --> S8
+    S3 <--> FAISS
+    S5 --> Swarm
+    Swarm --> S6
+    S8 --> DB
+    S8 --> Files
 ```
 
-### Key Fault-Tolerance Strategies
-- **Zero-Quota-Lockout Round-Robin:** By interleaving odd and even ROI calls across Google Gemini and Groq Cloud, VisionForge cuts per-provider request volume in half, completely bypassing free-tier rate limits.
-- **Mutual Provider Failover:** If either provider returns HTTP 429 (Too Many Requests), HTTP 500, or a network timeout, `llm_client.py` transparently retries the payload on the alternate provider with exponential backoff.
-- **Local Embedding Fallback:** If the Google `gemini-embedding-2` cloud endpoint is unreachable or lacks an API key, the system automatically falls back to local OpenCLIP `ViT-B-32` execution on the CPU/GPU with zero pipeline interruption.
+---
+
+## 3. Core Architectural Layers
+
+### 3.1 Frontend Client Layer
+- **Framework:** React 18.3 with Vite 5.4 for sub-second hot reloading.
+- **Styling:** Custom Tailwind CSS Cyberpunk HUD design with high-contrast obsidian cards (`#070b12`), electric cyan highlights (`#00f0ff`), and emerald/crimson status chips.
+- **Real-Time Telemetry:** The `usePipelineSSE` hook subscribes to real-time execution events over Server-Sent Events (SSE) with an automatic 2.5-second polling fallback if the connection drops.
+- **Synchronized Canvas:** `DualImageCanvas.jsx` renders side-by-side zoom and pan comparison between the test board and the manufacturer's golden blueprint.
 
 ---
 
-## 8. Implemented Architecture vs. Initial Specification
-
-To maintain strict documentation accuracy, the table below highlights key differences between the original theoretical planning specification and the final production implementation:
-
-| Architectural Dimension | Initial Concept Specification | Final Production Codebase | Architectural Rationale |
-|:---|:---|:---|:---|
-| **Pipeline Stages** | 14 Fine-Grained Stages | **8 Consolidated Stages** | 14 stages introduced excessive LangGraph checkpointing latency (~12s). Consolidating into 8 stages reduced inspection latency to **3.2s** without losing forensic fidelity. |
-| **Evidence Agents** | 9 Specialized Agents | **4 High-Impact Agents + AI Judge** | Narrowed down to the 4 essential industrial modalities (OCR, Label, Structural YOLO, VLM). Redundant material/usage agents were merged into the VLM agent. |
-| **YOLO Classes** | 10 Hardware Classes | **8 Unified Classes** | Dataset cleaning revealed high visual overlap between `terminal`/`connector` and `ram_ic_chip`/`ic_chip`. Merging them increased model mAP@50 from 0.74 to **0.88**. |
-| **Multi-Agent Debate** | Multi-Turn Agent Debate | **Single-Pass Causal AI Judge** | Multi-turn debate cost 4x more tokens and took 8+ seconds per inspection. A single-pass causal judge on Groq LPU achieved superior verdict consistency in **450ms**. |
-| **Database Engine** | PostgreSQL + Redis (Required) | **SQLite (Default) / PostgreSQL (Supported)** | SQLite provides zero-dependency local developer and edge device setup while maintaining full SQLAlchemy compatibility for PostgreSQL cloud scaling. |
+### 3.2 API Gateway Layer
+- **Framework:** FastAPI 0.115 on top of Uvicorn ASGI.
+- **Authentication:** Dual-token JSON Web Token (JWT) architecture.
+  - 30-minute Access Token (HS256) refreshed automatically by a background timer at minute 29.
+  - 7-day Refresh Token stored securely for seamless session recovery.
+- **Role-Based Access Control (RBAC):** Restricts dangerous actions (like uploading or deleting golden blueprints) to `ADMIN` users while allowing `OPERATOR` users to run inspections.
 
 ---
 
-*For detailed specifications on each pipeline stage, refer to [`docs/PIPELINE.md`](PIPELINE.md).*
+### 3.3 LangGraph Pipeline Orchestrator
+The pipeline is modeled as a state machine using **LangGraph**:
+
+```python
+# Conceptual State Graph Flow
+class InspectionState(TypedDict):
+    inspection_id: str
+    image_bytes: bytes
+    quality_passed: bool
+    golden_reference_id: Optional[str]
+    roi_queue: List[ROIDefinition]
+    evidence: List[AgentEvidence]
+    anomaly_score: float
+    verdict: Optional[str]
+    judge_reasoning: Optional[str]
+```
+
+Each stage reads from and writes to this shared state. If Stage 1 (Blur Check) or Stage 2 (Tampering Check) fails, the graph exits early, saving cloud compute and returning actionable feedback to the operator immediately.
+
+---
+
+### 3.4 Specialized AI Agent Swarm
+
+Instead of asking one generic model to inspect an entire circuit board, VisionForge routes focused image crops to specialized agents:
+
+```mermaid
+flowchart LR
+    ROI["High-Priority ROI Crop"] --> ROUTE{"Agent Dispatcher"}
+    ROUTE -->|Text & Serial Numbers| OCR["🔤 OCR Agent"]
+    ROUTE -->|Logos & Hologram Seals| LBL["🏷️ Label Agent"]
+    ROUTE -->|Component Geometry & Count| YOLO["🧩 Structural Agent"]
+    ROUTE -->|Thermal Burns & Corrosion| VLM["👁️ VLM Agent"]
+```
+
+1. **OCR Agent:** Uses PaddleOCR and EasyOCR with Levenshtein string matching to detect altered lot numbers and date codes.
+2. **Label Agent:** Uses OpenCV normalized cross-correlation (`matchTemplate`) to detect cloned safety stamps and rotated stickers.
+3. **Structural Agent:** Uses our custom **YOLO11n 8-class model** to count components and Structural Similarity (SSIM) to flag positional drift.
+4. **VLM Agent:** Uses multimodal vision models load-balanced 50/50 between **Google Gemini 3.5 Flash** and **Groq Qwen 3.8 27B** to detect burn marks and physical damage.
+5. **AI Forensic Judge:** Runs on Groq LPU (`gpt-oss-20b`) to synthesize all agent outputs and write a clear explanation of what went wrong.
+
+---
+
+### 3.5 Storage & Vector Intelligence
+- **Relational Database:** SQLAlchemy 2.0 with async support. Works out-of-the-box on SQLite for zero-config local development and scales to PostgreSQL 16+ for factory-floor concurrency.
+- **Append-Only Evidence Schema:** Individual evidence records (`evidence` table) cannot be edited or deleted once written, preserving chain-of-custody for warranty disputes.
+- **Vector Search Engine:** FAISS (Facebook AI Similarity Search) index storing 3072-dimensional Gemini embeddings and 512-dimensional OpenCLIP embeddings for sub-15ms blueprint retrieval.
+
+---
+
+## 4. Complete Data Flow Lifecycle
+
+Here is what happens inside the system during an active inspection:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Op as 👷 Operator UI
+    participant API as ⚡ FastAPI Backend
+    participant Graph as 🔄 LangGraph Engine
+    participant Swarm as 🤖 Forensic Agents
+    participant Judge as ⚖️ AI Forensic Judge
+    participant DB as 💾 Database & Storage
+
+    Op->>API: POST /api/v1/inspections (Multipart Image)
+    API->>DB: Create inspection record (Status: PENDING)
+    API-->>Op: 200 OK (inspection_id returned)
+    
+    Op->>API: GET /api/v1/inspections/{id}/events (Open SSE Stream)
+    API->>Graph: Execute pipeline in background task
+
+    Graph->>API: SSE event: stage_start (Stage 1: Quality)
+    Graph->>Graph: Laplacian blur check & exposure validation
+    
+    Graph->>API: SSE event: stage_start (Stage 2: Authenticity)
+    Graph->>Graph: Error Level Analysis & EXIF parsing
+    
+    Graph->>API: SSE event: stage_start (Stage 3: Reference Match)
+    Graph->>DB: FAISS similarity search for Golden Master
+    
+    Graph->>API: SSE event: stage_start (Stage 5: Agents)
+    Graph->>Swarm: Run OCR, Label, YOLO, and VLM in parallel
+    Swarm-->>Graph: Return structured evidence objects
+    
+    Graph->>Graph: Stage 6: Anomaly Max-Pooling calculation
+    
+    Graph->>Judge: Stage 7: Evaluate causal root cause
+    Judge-->>Graph: Return verdict & reasoning text
+    
+    Graph->>DB: Stage 8: Save append-only evidence & generate PDF
+    Graph->>API: SSE event: pipeline_complete
+    API-->>Op: Push final verdict to screen
+```
+
+---
+
+## 5. Concurrency & Failover Strategy
+
+```text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    HIGH-AVAILABILITY FAILOVER DESIGN                        │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ 1. VLM Round-Robin:                                                         │
+│    Queries alternate evenly between Gemini 3.5 Flash and Groq Qwen 3.8.     │
+│    If Provider A returns HTTP 429 / 500, Provider B takes over instantly.  │
+│                                                                             │
+│ 2. Dual Embedding Fallback:                                                 │
+│    Primary: Gemini Cloud Embeddings (3072-dim).                             │
+│    Fallback: Local OpenCLIP ViT-B-32 (512-dim) if internet goes down.       │
+│                                                                             │
+│ 3. UI Resilient Telemetry:                                                  │
+│    Primary: Real-time Server-Sent Events (SSE).                             │
+│    Fallback: 2.5s HTTP polling if the SSE socket is closed by a proxy.      │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 6. Architecture Decisions & Trade-Offs
+
+> 🧠 **Engineering Decision: Why not use a single large VLM prompt?**
+> A single large vision prompt seems simpler, but in practice:
+> 1. It is slow (3-8 seconds per call).
+> 2. It misses small components on 4K boards because images get downscaled.
+> 3. It cannot count 40 tiny resistors reliably.
+> 4. It costs significantly more per inspection.
+>
+> VisionForge uses fast local models (OpenCV and YOLO11n) for 90% of spatial work and reserves multimodal LLMs only for complex surface analysis and final arbitration.
+
+---
+
+*To explore how each pipeline stage works mathematically and logically, read [`docs/PIPELINE.md`](PIPELINE.md).*

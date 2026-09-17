@@ -1,268 +1,224 @@
-# 🖥️ VisionForge AI — Frontend Architecture & UI Specification
+# 🖥️ VisionForge AI Tactical HUD & Frontend Architecture
 
-> **Status:** Authoritative (Reflects Actual Implemented Codebase)  
-> **Framework:** React 18.3 + Vite 5.4  
-> **Styling:** Tailwind CSS 3.4 (Cyberpunk / Industrial Dark HUD Theme)  
-> **Icons & Charts:** Lucide React + Recharts  
-> **Source Directory:** `frontend/src/`
+> **How React 18, Server-Sent Events, and a Cyberpunk Tactical HUD give factory operators sub-second forensic insights.**
 
 ---
 
-## 📑 Table of Contents
+## 📖 Table of Contents
 
-- [1. Frontend Architecture Overview](#1-frontend-architecture-overview)
-- [2. Component & Directory Topology](#2-component--directory-topology)
-- [3. Tactical HUD Design System & Theme Tokens](#3-tactical-hud-design-system--theme-tokens)
-- [4. Authentication Lifecycle & Proactive Token Rotation](#4-authentication-lifecycle--proactive-token-rotation)
-- [5. Real-Time Telemetry & The `usePipelineSSE` Hook](#5-real-time-telemetry--the-usepipelinesse-hook)
-- [6. Dual Intake Modalities (Desktop & Mobile QR Handoff)](#6-dual-intake-modalities-desktop--mobile-qr-handoff)
-- [7. Core Workstation Components](#7-core-workstation-components)
-  - [7.1 `DualImageCanvas.jsx` — Visual Comparison & ROI Overlays](#71-dualimagecanvasjsx--visual-comparison--roi-overlays)
-  - [7.2 `PipelineProgress.jsx` — 8-Stage Real-Time Stepper](#72-pipelineprogressjsx--8-stage-real-time-stepper)
-  - [7.3 `VerdictBanner.jsx` — AI Judge Causal Display](#73-verdictbannerjsx--ai-judge-causal-display)
-  - [7.4 `EvidenceCard.jsx` — Forensic Telemetry Breakdown](#74-evidencecardjsx--forensic-telemetry-breakdown)
-  - [7.5 `GoldenRepositoryDrawer.jsx` — Blueprint Management](#75-goldenrepositorydrawerjsx--blueprint-management)
-- [8. Application Pages & Route Architecture](#8-application-pages--route-architecture)
+- [1. The Story: The Operator Inspection Journey](#1-the-story-the-operator-inspection-journey)
+- [2. Frontend Tech Stack & Architectural Principles](#2-frontend-tech-stack--architectural-principles)
+- [3. Component & Directory Topology](#3-component--directory-topology)
+- [4. Real-Time Telemetry & The `usePipelineSSE` Hook](#4-real-time-telemetry--the-usepipelinesse-hook)
+- [5. Dual Intake Modalities (Desktop & Mobile QR Pairing)](#5-dual-intake-modalities-desktop--mobile-qr-pairing)
+- [6. Key Workstation UI Components](#6-key-workstation-ui-components)
+  - [🔍 6.1 `DualImageCanvas.jsx` — Synchronized Zoom & Pan](#-61-dualimagecanvasjsx--synchronized-zoom--pan)
+  - [⚡ 6.2 `PipelineProgress.jsx` — 8-Stage Real-Time Stepper](#-62-pipelineprogressjsx--8-stage-real-time-stepper)
+  - [⚖️ 6.3 `VerdictBanner.jsx` — AI Judge Causal Reasoner](#-63-verdictbannerjsx--ai-judge-causal-reasoner)
+  - [🛡️ 6.4 `EvidenceCard.jsx` — Anomaly Telemetry Cards](#-64-evidencecardjsx--anomaly-telemetry-cards)
+- [7. Proactive Token Refresh & 401 Interception Queue](#7-proactive-token-refresh--401-interception-queue)
 
 ---
 
-## 1. Frontend Architecture Overview
+## 1. The Story: The Operator Inspection Journey
 
-The VisionForge AI frontend is an industrial-grade Single Page Application (SPA) engineered for fast response times, high-contrast factory floor visibility, and zero latency during micro-electronic inspection.
+Imagine an operator on the factory receiving dock inspecting an incoming crate of automotive ECUs.
+
+They do not have time to read complex log files or wait for slow page reloads. They need a high-visibility, keyboard-accessible workstation interface:
 
 ```mermaid
 flowchart TD
-    subgraph Core["Frontend Core Architecture"]
-        Router[React Router DOM v6]
-        AuthCtx[AuthContext & Axios Interceptor]
-        ToastCtx[ToastContext Notification Hub]
-        SSEHook[usePipelineSSE Custom Hook]
-    end
+    Step1["1. Operator Login<br/>Authenticates via JWT; HUD loads in obsidian dark theme"]
+    Step2["2. Dual Intake Handoff<br/>Drop image on desktop or scan QR code to snap photo with phone"]
+    Step3["3. Real-Time Live HUD<br/>SSE stream lights up the 8-stage stepper in real time (2.5s)"]
+    Step4["4. Synchronized Canvas<br/>Zoom and pan across golden master vs test board simultaneously"]
+    Step5["5. Forensic Arbitration<br/>Read AI Judge's root cause, approve verdict, or download PDF report"]
 
-    subgraph Pages["Workstation Views"]
-        Landing[LandingPage.jsx]
-        Login[LoginPage.jsx]
-        Dash[DashboardPage.jsx]
-        NewInsp[NewInspectionPage.jsx]
-        Detail[InspectionDetailPage.jsx]
-        Reports[ReportsPage.jsx]
-        Analytics[AnalyticsPage.jsx]
-    end
-
-    subgraph BackendAPI["Backend Services (/api/v1)"]
-        AuthAPI["/auth/* (JWT + Refresh)"]
-        InspAPI["/inspections/* (Multipart + SSE)"]
-        ProdAPI["/products/* (Golden Blueprints)"]
-        VendAPI["/vendors/* (Supply Chain)"]
-        RepAPI["/reports/* (ReportLab PDF)"]
-        StatAPI["/analytics/* (KPI Metrics)"]
-    end
-
-    Router --> Pages
-    Pages --> AuthCtx
-    Detail --> SSEHook
-    Pages --> BackendAPI
+    Step1 --> Step2 --> Step3 --> Step4 --> Step5
 ```
 
 ---
 
-## 2. Component & Directory Topology
+## 2. Frontend Tech Stack & Architectural Principles
 
+```text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          FRONTEND TECHNICAL STACK                           │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  Framework:            React 18.3 (Component-Driven SPA)                    │
+│  Build Tool:           Vite 5.4 (Sub-Second Hot Module Replacement)         │
+│  Styling:              Tailwind CSS 3.4 (Cyberpunk Tactical HUD Theme)      │
+│  Icons & Charts:       Lucide React + Recharts (Data Visualizations)        │
+│  Routing:              React Router DOM v6 (RBAC Protected Routes)          │
+│  State & Telemetry:    React Context API + Server-Sent Events (SSE)         │
+│  HTTP Client:          Axios 1.7 (with Proactive JWT Token Renewal)         │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
+
+### Tactical HUD Design System
+- **Ground Color:** Deep obsidian black (`#070b12`) minimizing eye strain under harsh factory lighting.
+- **Card Surfaces:** Dark slate panels (`#0d1424`) with subtle 1px border glows (`#1e293b`).
+- **Signal Accents:** Electric cyan (`#00f0ff`) for active elements, emerald green (`#10b981`) for genuine parts, crimson red (`#ef4444`) for counterfeits, and amber (`#f59e0b`) for review flags.
+
+---
+
+## 3. Component & Directory Topology
+
+```text
 frontend/src/
-├── App.jsx                     # Route definitions & ProtectedRoute guards
-├── main.jsx                    # React 18 DOM mount point
-├── index.css                   # Tactical scrollbars, JetBrains Mono & Outfit fonts
-├── assets/                     # Hero graphics, branding SVGs
+├── App.jsx                     # Top-level routing & role-based route guards
+├── main.jsx                    # React 18 root mounting
+├── index.css                   # Tailwind directives, custom scrollbars & HUD tokens
 ├── context/
-│   ├── AuthContext.jsx         # User session state, RBAC role helpers, logout events
-│   └── ToastContext.jsx        # Non-blocking industrial notification toast system
+│   ├── AuthContext.jsx         # User authentication, RBAC roles, and session state
+│   └── ToastContext.jsx        # Non-blocking HUD toast notification system
 ├── hooks/
-│   └── usePipelineSSE.js       # Server-Sent Events subscriber with polling failover
+│   └── usePipelineSSE.js       # Real-time SSE stream subscriber with polling fallback
 ├── services/
-│   └── api.js                  # Axios instance, proactive JWT timer & 401 retry queue
+│   └── api.js                  # Axios instance, proactive JWT renewal & 401 retry queue
 ├── components/
 │   ├── common/                 # Button, Modal, StatCard, StatusChip, SkeletonLoader
-│   ├── inspection/             # DualCanvas, PipelineProgress, EvidenceCard, CameraModal
-│   ├── layout/                 # AppLayout, Sidebar (Mobile Drawer), Topbar
+│   ├── inspection/             # DualImageCanvas, PipelineProgress, EvidenceCard, CameraModal
+│   ├── layout/                 # AppLayout, Sidebar (Mobile Responsive Drawer), Topbar
 │   └── products/               # GoldenRepositoryDrawer blueprint manager
 └── pages/
     ├── LandingPage.jsx         # Public marketing & feature overview
-    ├── LoginPage.jsx           # Public authentication & demo account presets
-    ├── DashboardPage.jsx       # Real-time factory KPI dashboard
-    ├── NewInspectionPage.jsx   # Drag-and-drop & mobile camera intake
-    ├── InspectionDetailPage.jsx# Live 8-stage execution & evidence review
-    ├── ReportsPage.jsx         # Historical audit reports & PDF downloads
-    ├── AnalyticsPage.jsx       # Recharts supplier risk & operator analytics
-    └── NotFoundPage.jsx        # 404 tactical screen
+    ├── LoginPage.jsx           # Authentication screen with demo account quick-fill
+    ├── DashboardPage.jsx       # Real-time inspection queue & factory stats
+    ├── NewInspectionPage.jsx   # Desktop dropzone & mobile QR intake
+    ├── InspectionDetailPage.jsx# Live 8-stage pipeline telemetry & evidence review
+    ├── ReportsPage.jsx         # Historical audit certificates & PDF downloads
+    └── AnalyticsPage.jsx       # Recharts supplier risk & operator KPIs
 ```
 
 ---
 
-## 3. Tactical HUD Design System & Theme Tokens
+## 4. Real-Time Telemetry & The `usePipelineSSE` Hook
 
-The application uses a custom **Tailwind HUD Palette** optimized for low-light industrial inspection stations and OLED cleanroom tablets:
+When an inspection starts, the `usePipelineSSE` custom hook connects to the FastAPI backend over **Server-Sent Events (SSE)**:
 
 ```javascript
-// tailwind.config.js - Industrial Palette Tokens
-colors: {
-  hud: {
-    bg: '#070b12',           // Deep obsidian canvas ground
-    surface: '#0d1527',      // Primary container and navigation ground
-    card: '#121e36',         // Component evidence cards and panels
-    panel: '#162340',        // Elevated modal backgrounds
-    border: '#1f3154',       // Standard structural border
-    'border-light': '#2b4474',// Interactive highlight border
-    accent: '#06b6d4',       // Cyan-500 primary interaction accent
-    cyan: '#00f0ff',         // Electric cyan active telemetry glow
-    emerald: '#10b981',      // Green pass status indicator
-    crimson: '#ef4444',      // Red reject / fraud alarm
-    amber: '#f59e0b',        // Yellow human review / warning
-    muted: '#94a3b8',        // Secondary technical typography
-  }
+// frontend/src/hooks/usePipelineSSE.js (Conceptual Summary)
+export function usePipelineSSE(inspectionId) {
+  const [stages, setStages] = useState([]);
+  const [verdict, setVerdict] = useState(null);
+  const [isLive, setIsLive] = useState(false);
+
+  useEffect(() => {
+    if (!inspectionId) return;
+
+    const eventSource = new EventSource(`/api/v1/inspections/${inspectionId}/events`);
+
+    eventSource.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.type === 'STAGE_PROGRESS') {
+        updateStageProgress(data);
+      } else if (data.type === 'PIPELINE_COMPLETE') {
+        setVerdict(data.verdict);
+        eventSource.close();
+      }
+    };
+
+    // Automated 2.5s Polling Fallback if SSE drops
+    eventSource.onerror = () => {
+      eventSource.close();
+      startPollingFallback(inspectionId);
+    };
+
+    return () => eventSource.close();
+  }, [inspectionId]);
+
+  return { stages, verdict, isLive };
 }
 ```
 
-### Typography Hierarchy
-- **Technical Readouts & Telemetry:** `JetBrains Mono`, `monospace` (Used for part numbers, Levenshtein scores, YOLO confidence percentages, bounding box coordinates).
-- **Interface & Metrics:** `Outfit`, `sans-serif` (Used for KPI headers, navigation titles, and judge root-cause analysis).
+> 🛡️ **Resilience Guarantee:** If a corporate firewall or proxy closes the SSE stream, the hook automatically fails over to HTTP polling every 2.5 seconds without interrupting the operator.
 
 ---
 
-## 4. Authentication Lifecycle & Proactive Token Rotation
+## 5. Dual Intake Modalities (Desktop & Mobile QR Pairing)
 
-VisionForge implements a **two-tier proactive and reactive token management system** in `frontend/src/services/api.js`:
+Factory workers can submit circuit boards using two seamless workflows:
+
+```mermaid
+flowchart LR
+    subgraph Desktop["Workstation Workflow"]
+        Drop["Drag & Drop 4K Image on Desktop"] --> Run1["Instant Inspection"]
+    end
+
+    subgraph Mobile["Smartphone Intake Workflow"]
+        QR["Display Dynamic QR Code on HUD"] --> Scan["Scan with Phone Camera"]
+        Scan --> Tunnel["Connect via Cloudflare Quick Tunnel"]
+        Tunnel --> Macro["Snap Macro Photo on Phone"]
+        Macro --> Run2["Auto-Syncs to Desktop HUD"]
+    end
+```
+
+1. **Desktop Drag-and-Drop:** High-resolution images from industrial camera stations can be dropped directly into `NewInspectionPage.jsx`.
+2. **Mobile Smartphone Handoff:** Operators scanning boards on conveyor belts can click **"Use Mobile Camera"**, scan the on-screen QR code, and snap macro photos with their smartphone. The photo automatically streams into the desktop workstation via Cloudflare Quick Tunnel.
+
+---
+
+## 6. Key Workstation UI Components
+
+---
+
+### 🔍 6.1 `DualImageCanvas.jsx` — Synchronized Zoom & Pan
+
+Renders the test board side-by-side with the manufacturer's Golden Reference. When an operator zooms in on a suspicious microcontroller, **both images zoom and pan synchronously**, allowing instant visual verification of silkscreen markings and component placement.
+
+---
+
+### ⚡ 6.2 `PipelineProgress.jsx` — 8-Stage Real-Time Stepper
+
+Displays the real-time execution status of all 8 pipeline stages:
+- 🔵 **Pulsing Cyan:** Stage currently running.
+- 🟢 **Emerald Green:** Stage completed successfully.
+- 🔴 **Crimson Red:** Anomaly detected / Fast-fail triggered.
+- ⚪ **Muted Slate:** Pending downstream stage.
+
+---
+
+### ⚖️ 6.3 `VerdictBanner.jsx` — AI Judge Causal Reasoner
+
+Displays the final decision from Stage 7 on Groq LPU hardware:
+- **Verdict Badge:** `ACCEPT` (Green), `REJECT` (Red), or `FLAG FOR REVIEW` (Amber).
+- **Fraud Probability Bar:** Visual percentage risk bar ($0\%$ to $100\%$).
+- **Causal Explanation Box:** Clear, natural language summary of *why* the board was flagged.
+- **Operator Action Buttons:** "Approve Verdict", "Override Decision", and "Download Signed PDF".
+
+---
+
+### 🛡️ 6.4 `EvidenceCard.jsx` — Anomaly Telemetry Cards
+
+Collapsible accordion cards detailing the findings of each individual forensic agent (YOLO missing counts, OCR string differences, ELA tamper maps, and VLM surface burn reports).
+
+---
+
+## 7. Proactive Token Refresh & 401 Interception Queue
+
+To ensure operators are never logged out during active inspections:
 
 ```mermaid
 sequenceDiagram
     participant UI as 🖥️ Workstation UI
-    participant Timer as ⏱️ Auth Refresh Timer
+    participant Timer as ⏱️ Background Refresh Timer
     participant Interceptor as 🛡️ Axios Interceptor
     participant Backend as ⚡ FastAPI (/auth)
 
-    Note over UI,Timer: Login Successful (Token Exp: 30m)
-    Timer->>Timer: Schedule refresh in 29 minutes (60s before expiry)
-    
-    rect rgb(20, 35, 60)
-        Note over Timer,Backend: Pathway 1: Proactive Pre-Expiry Rotation
-        Timer->>Backend: POST /api/v1/auth/refresh (refresh_token)
-        Backend-->>Timer: 200 OK (New access_token + refresh_token)
-        Timer->>UI: Update localStorage & headers seamlessly
-    end
+    Note over UI,Backend: 1. Proactive Rotation (Every 29 Minutes)
+    Timer->>Backend: POST /api/v1/auth/refresh (refresh_token)
+    Backend-->>UI: 200 OK (new access_token)
 
-    rect rgb(40, 25, 30)
-        Note over Interceptor,Backend: Pathway 2: Reactive 401 Interception
-        UI->>Backend: GET /api/v1/inspections (Expired Token)
-        Backend-->>Interceptor: 401 Unauthorized
-        Interceptor->>Interceptor: Pause concurrent requests (failedQueue)
-        Interceptor->>Backend: POST /api/v1/auth/refresh
-        Backend-->>Interceptor: 200 OK (New Token)
-        Interceptor->>Backend: Replay paused requests with new Token
-        Backend-->>UI: 200 OK (Successful Data Load)
-    end
+    Note over UI,Backend: 2. Reactive 401 Fail-Safe (Network Glitch)
+    UI->>Backend: GET /api/v1/inspections (Token Expired)
+    Backend-->>Interceptor: 401 Unauthorized
+    Interceptor->>Backend: POST /api/v1/auth/refresh
+    Backend-->>Interceptor: 200 OK (new token)
+    Interceptor->>Backend: Transparently replay original request
+    Backend-->>UI: 200 OK
 ```
 
 ---
 
-## 5. Real-Time Telemetry & The `usePipelineSSE` Hook
-
-The `usePipelineSSE` hook (`frontend/src/hooks/usePipelineSSE.js`) manages the real-time visual progression across all 8 pipeline stages:
-
-1. **Native SSE Connection:** Connects to `GET /api/v1/inspections/{id}/events`.
-2. **Event Parsing:** Dispatches stage updates (`stage_start`, `agent_complete`, `stage_complete`, `verdict`).
-3. **Resilient Polling Fallback:** If the SSE socket is severed (e.g., intermediate proxy timeout or browser sleep), the hook automatically falls back to polling `GET /api/v1/inspections/{id}/status` every 2.5 seconds without crashing the user interface.
-
-```javascript
-// Usage Example in InspectionDetailPage.jsx
-const {
-  currentStage,
-  stageName,
-  completedStages,
-  status,
-  verdict,
-  policyAction,
-  detail,
-  isDone
-} = usePipelineSSE(inspectionId, (finalData) => {
-  toast.success('Inspection audit analysis completed.');
-  fetchInspectionDetails();
-});
-```
-
----
-
-## 6. Dual Intake Modalities (Desktop & Mobile QR Handoff)
-
-Factory inspection lines require flexible capture methods:
-
-```mermaid
-flowchart LR
-    subgraph Intake["Dual Image Intake Options"]
-        direction TB
-        Desktop["🖥️ Desktop Mode<br/>High-Res Drag-and-Drop File Upload"]
-        Mobile["📱 Mobile Camera Mode<br/>Live Rear-Facing Capture (facingMode)"]
-    end
-
-    subgraph Handoff["Desktop Guard & QR Handoff"]
-        Guard["DesktopGuardModal.jsx<br/>Discovers Network IP or Tunnel"]
-        QR["Generates Dynamic QR Code<br/>Points to Mobile Intake URL"]
-    end
-
-    Desktop --> IntakeAPI["POST /api/v1/inspections"]
-    Guard --> QR --> Mobile --> IntakeAPI
-```
-
-1. **Desktop Direct Upload:** Accepts high-resolution multi-angle JPEG/PNG/WebP captures directly from PC-connected industrial macro lenses.
-2. **Mobile Camera Modal (`CameraModal.jsx`):** Activates the operator's smartphone camera using `navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })` with real-time HUD crosshairs.
-3. **Desktop Guard Modal (`DesktopGuardModal.jsx`):** If an operator clicks "Capture with Mobile" on a desktop browser, the modal calls `GET /api/v1/system/network` to resolve the computer's reachable LAN IP or Cloudflare tunnel URL, generating a QR code that pairs the mobile phone directly to the inspection session.
-
----
-
-## 7. Core Workstation Components
-
-### 7.1 `DualImageCanvas.jsx` — Visual Comparison & ROI Overlays
-- Renders side-by-side synchronized comparison between the **Test Hardware Capture** and the **Golden Master Reference**.
-- Renders colored bounding boxes over flagged anomalies:
-  - 🔴 **Red Boxes:** Missing components or altered IC silk-screens.
-  - 🟡 **Yellow Boxes:** Positional drift (>15px deviation) or unverified passive parts.
-  - 🟢 **Green Boxes:** Validated authentic components.
-- Supports synchronized mouse drag panning and wheel zooming.
-
-### 7.2 `PipelineProgress.jsx` — 8-Stage Real-Time Stepper
-- Displays the linear 8-stage progress tracker.
-- Stages dynamically transition: `Upcoming` (dim border) $\to$ `Active` (pulsing electric cyan with spinning radar) $\to$ `Completed` (solid emerald check).
-- Displays real-time stage execution latencies and sub-agent status badges.
-
-### 7.3 `VerdictBanner.jsx` — AI Judge Causal Display
-- Displays high-visibility color-coded banners:
-  - `ACCEPTED` (Emerald Gradient): Hardware certified authentic.
-  - `REJECTED` (Crimson Gradient): Counterfeit / physical damage detected.
-  - `FLAGGED FOR REVIEW` (Amber Gradient): Borderline anomaly requiring supervisor sign-off.
-- Features animated dials for **Fraud Probability** and **AI Judge Confidence**.
-
-### 7.4 `EvidenceCard.jsx` — Forensic Telemetry Breakdown
-- Renders individual cards for every discrete agent finding (OCR, Label, Structural YOLO11n, VLM).
-- Shows exact Levenshtein ratios, SSIM delta percentages, and YOLO component counts (e.g., `Expected: 8 Capacitors | Detected: 7`).
-
-### 7.5 `GoldenRepositoryDrawer.jsx` — Blueprint Management
-- Slide-out drawer accessible by administrators.
-- Allows uploading new reference images, previewing extracted FAISS vector embeddings, and editing ROI bounding box templates.
-
----
-
-## 8. Application Pages & Route Architecture
-
-| Route Path | Page Component | Access Level | Description |
-|:---|:---|:---|:---|
-| `/` | `LandingPage.jsx` | Public | System marketing, value proposition, and interactive architecture summary. |
-| `/login` | `LoginPage.jsx` | Public | JWT authentication form with 1-click demo login buttons (`Admin`, `Operator`). |
-| `/dashboard` | `DashboardPage.jsx` | Authenticated | Live factory KPI metrics, quick intake shortcuts, and recent inspection feed. |
-| `/inspections/new` | `NewInspectionPage.jsx` | Authenticated | Intake form: Vendor selector, product SKU matcher, and drag-and-drop image dropzone. |
-| `/inspections/:id`| `InspectionDetailPage.jsx`| Authenticated | Live SSE progress viewer, dual canvas comparison, and AI Judge verdict review. |
-| `/reports` | `ReportsPage.jsx` | Authenticated | Paginated audit report repository with instant ReportLab PDF export buttons. |
-| `/analytics` | `AnalyticsPage.jsx` | Authenticated | Recharts analytics: Vendor risk rankings, monthly fraud trends, and operator throughput. |
-| `*` | `NotFoundPage.jsx` | Public | Tactical 404 error page. |
-
----
-
-*For backend REST API details, consult [`docs/API.md`](API.md).*
+*For instructions on running and deploying the frontend, read [`docs/DEPLOYMENT.md`](DEPLOYMENT.md).*

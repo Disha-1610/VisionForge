@@ -1,123 +1,131 @@
-# 📊 VisionForge AI — Training Dataset & Annotation Provenance
+# 📊 VisionForge AI Training Dataset & Annotation Provenance
 
-> **Status:** Authoritative (Reflects Actual Implemented Codebase)  
-> **Dataset Layout:** `data/dataset/`  
-> **Configuration File:** `data/dataset/data.yaml`
+> **How we curated, cleaned, and labeled 4,448 circuit board images and 59,773 micro-electronic components for industrial fraud detection.**
 
 ---
 
-## 📑 Table of Contents
+## 📖 Table of Contents
 
-- [1. Dataset Overview & Corpus Statistics](#1-dataset-overview--corpus-statistics)
-- [2. Hardware Categories & Imaging Modalities](#2-hardware-categories--imaging-modalities)
-- [3. Train / Validation / Test Splits](#3-train--validation--test-splits)
-- [4. Data Cleaning & Annotation Curation Pipeline](#4-data-cleaning--annotation-curation-pipeline)
-- [5. Dataset Configuration (`data.yaml`)](#5-dataset-configuration-datayaml)
-- [6. Class Distribution & Balance Analysis](#6-class-distribution--balance-analysis)
-- [7. Synthetic Augmentations & Environmental Robustness](#7-synthetic-augmentations--environmental-robustness)
+- [1. The Story: Why Generic Datasets Fail on Hardware](#1-the-story-why-generic-datasets-fail-on-hardware)
+- [2. Corpus Overview & Statistics](#2-corpus-overview--statistics)
+- [3. Hardware Categories in the Dataset](#3-hardware-categories-in-the-dataset)
+- [4. Data Curation & Cleaning Pipeline](#4-data-curation--cleaning-pipeline)
+- [5. Dataset Partitioning (Train / Val / Test)](#5-dataset-partitioning-train--val--test)
+- [6. Dataset Configuration (`data.yaml`)](#6-dataset-configuration-datayaml)
+- [7. Augmentations for Real-World Factory Lighting](#7-augmentations-for-real-world-factory-lighting)
 
 ---
 
-## 1. Dataset Overview & Corpus Statistics
+## 1. The Story: Why Generic Datasets Fail on Hardware
 
-The VisionForge AI visual dataset is a domain-specific corpus of micro-electronic hardware components, high-density printed circuit boards (PCBs), server memory modules, and industrial battery packs.
+Standard computer vision datasets like **COCO** and **ImageNet** contain millions of images of dogs, cars, bicycles, and coffee cups.
 
-```
+However, when you show a model trained on COCO an industrial server motherboard, it sees:
+- An 0402 ceramic capacitor as *"noise"* or *"texture"*.
+- A QFP-144 microcontroller as a generic *"square object"*.
+- Gold contact fingers as an abstract *"yellow stripe"*.
+
+To detect hardware counterfeiting and missing components, an AI model must be trained on the **exact visual language of electronics manufacturing**:
+- Microscopic solder pads.
+- Surface-mount passive components.
+- Laser-etched silicon packages.
+- Tamper-evident holographic stickers.
+
+VisionForge built and curated a dedicated **4,448-image corpus with 59,773 meticulously labeled bounding boxes** across real-world motherboards, server memory modules, and industrial battery packs.
+
+---
+
+## 2. Corpus Overview & Statistics
+
+```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                         CORPUS SUMMARY STATISTICS                           │
+│                          DATASET CORPUS AT A GLANCE                         │
 ├─────────────────────────────────────────────────────────────────────────────┤
-│  Total Annotated Images:       4,448 images                                 │
-│  Total Bounding Box Labels:    59,773 component instances                   │
-│  Average Labels per Image:     13.44 annotations / image                    │
-│  Target Resolution Range:      640×640 to 3840×2160 (4K UHD)                │
+│  Total Curated Images:         4,448 images                                 │
+│  Total Labeled Annotations:    59,773 component bounding boxes              │
+│  Average Labels per Image:     13.44 components / image                     │
+│  Native Image Resolution:      1080p Full HD to 4K UHD                      │
+│  Target Model Resolution:      640 × 640 pixels (with dynamic letterboxing) │
 │  Class Count:                  8 Unified Industrial Classes                 │
-│  Dataset Format:               YOLO Darknet Normalization (Normalized Float)│
+│  Annotation Format:            YOLO Darknet Normalized Float Coordinates    │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 2. Hardware Categories & Imaging Modalities
+## 3. Hardware Categories in the Dataset
 
-The dataset is partitioned into **three core industrial hardware categories**:
+The dataset covers three major hardware domains:
 
 ```mermaid
-graph TD
-    Corpus["📦 VisionForge Corpus (4,448 Images)"]
-    
-    Corpus --> Cat1["🖥️ Industrial Motherboards & Embedded PCBs<br/>(2,640 Images / 41,200 Annotations)"]
-    Corpus --> Cat2["🔋 Industrial Lithium Battery Packs<br/>(980 Images / 9,450 Annotations)"]
-    Corpus --> Cat3["💾 Server ECC RAM & Memory Modules<br/>(828 Images / 9,123 Annotations)"]
+pie title Hardware Domain Distribution
+    "Industrial Motherboards & Embedded PCBs (2,640 images)" : 2640
+    "Industrial Lithium Battery Packs (980 images)" : 980
+    "Server ECC RAM & Memory Sticks (828 images)" : 828
 ```
 
-### 1. Industrial Motherboards & Embedded PCBs
-- **Hardware Types:** Industrial ATX, Micro-ATX, Edge AI Carrier Boards, STM32 MCU Dev Boards, Power Supply Units.
-- **Defects Captured:** Desoldered capacitors, bridged solder pads, laser-scraped microcontroller markings, missing bypass resistors, corroded traces, photocopied QC warranty labels.
+### 🖥️ 1. Industrial Motherboards & Embedded PCBs (2,640 images)
+- **Hardware Types:** Industrial ATX motherboards, STM32 MCU dev boards, power inverter boards, IoT gateways.
+- **Defects Captured:** Desoldered capacitors, bridged solder pads, scraped microcontroller tops, missing bypass resistors, corroded traces, photocopied QC warranty labels.
 
-### 2. Industrial Lithium Battery Packs & Energy Storage
-- **Hardware Types:** 48V Telecom Backup Packs, 18650/21700 multi-cell arrays, Smart Battery Management Systems (BMS).
-- **Defects Captured:** Missing nickel strip weld joints, unbranded replacement cells, torn heat-shrink wrapping, missing cell temperature sensors, swelling.
+### 🔋 2. Industrial Lithium Battery Packs (980 images)
+- **Hardware Types:** 48V telecom backup packs, 18650/21700 multi-cell arrays, Smart Battery Management Systems (BMS).
+- **Defects Captured:** Missing nickel strip spot welds, unbranded clone battery cells, torn heat-shrink wrapping, missing thermistor sensors.
 
-### 3. Server ECC RAM & High-Density Memory
-- **Hardware Types:** DDR4 ECC Registered DIMMs, DDR5 Server Memory, SO-DIMM Industrial Sticks.
-- **Defects Captured:** Missing BGA flash chips, bent edge gold fingers, corroded contact pins, mismatched serial strings, altered SPD EEPROMs.
+### 💾 3. Server ECC RAM & High-Density Memory (828 images)
+- **Hardware Types:** DDR4 / DDR5 ECC Registered server DIMMs, industrial SO-DIMM memory.
+- **Defects Captured:** Missing BGA flash ICs, bent edge gold fingers, corroded contact pads, altered SPD EEPROM chips.
 
 ---
 
-## 3. Train / Validation / Test Splits
+## 4. Data Curation & Cleaning Pipeline
 
-The corpus is partitioned using a strict **70 / 20 / 10 stratified split** ensuring balanced class representation across all subsets:
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                         DATASET SPLIT PARTITIONING                          │
-├─────────────────────────────────────────────────────────────────────────────┤
-│  Partition   │ Image Count │ Percentage │ Purpose                           │
-├──────────────┼─────────────┼────────────┼───────────────────────────────────┤
-│  Train       │ 3,114       │ 70.0%      │ Model gradient backpropagation    │
-│  Validation  │   890       │ 20.0%      │ Hyperparameter tuning & early stop│
-│  Test        │   444       │ 10.0%      │ Final unseen benchmark evaluation │
-│  Total       │ 4,448       │ 100.0%     │ Complete Curated Corpus           │
-└──────────────┴─────────────┴────────────┴───────────────────────────────────┘
-```
-
----
-
-## 4. Data Cleaning & Annotation Curation Pipeline
-
-To achieve an authoritative, production-grade ground truth, raw captures underwent a 4-stage automated and manual curation pipeline:
+Raw photos taken in factories often contain motion blur, duplicate shots, and poor lighting. Every image in the VisionForge dataset passed through a 4-step curation pipeline:
 
 ```mermaid
 flowchart TD
-    Raw[Raw Hardware Imagery] --> Stage1[Stage 1: Perceptual Hash Deduplication]
-    Stage1 --> Stage2[Stage 2: Resolution & Color Calibration]
-    Stage2 --> Stage3[Stage 3: Bounding-Box Normalization]
-    Stage3 --> Stage4[Stage 4: 8-Class Unification & Merge]
-    Stage4 --> Final[Validated Dataset: 4,448 Images]
+    Raw[Raw Camera Captures] --> Step1[1. Perceptual Hash Deduplication<br/>Removes duplicate burst shots]
+    Step1 --> Step2[2. Glare & Lighting Normalization<br/>Histogram equalization for factory neon lights]
+    Step2 --> Step3[3. Bounding Box Alignment<br/>Tight boundaries around micro-SMD pins]
+    Step3 --> Step4[4. Class Merge & Validation<br/>Consolidates 10 draft classes into 8 unified classes]
+    Step4 --> Final[Clean Production Dataset: 4,448 Images]
 ```
 
-1. **Perceptual Hash Deduplication (`dHash`):** Eliminated burst captures and near-identical camera frames with Hamming distance $< 4$.
-2. **Resolution & Calibration:** Images normalized to a minimum baseline of $640 \times 640$ with histogram equalization to normalize factory fluorescent glare.
-3. **Bounding-Box Normalization:** All annotations converted to standardized YOLO format:
-   $$\text{Format: } \langle\text{class\_id}\rangle \quad \langle x_{\text{center}}\rangle \quad \langle y_{\text{center}}\rangle \quad \langle\text{width}\rangle \quad \langle\text{height}\rangle$$
-   *(All floating-point coordinates normalized in range $[0.0, 1.0]$)*.
-4. **Class Unification:** Consolidated redundant classes (`terminal` $\to$ `connector`, `ram_ic_chip` $\to$ `ic_chip`) to prevent multi-class oscillation during backpropagation.
+1. **Perceptual Hash Deduplication (`dHash`):** Removed near-identical burst shots with a Hamming distance $< 4$.
+2. **Glare Normalization:** Balanced harsh reflections from factory overhead fluorescent lights.
+3. **Micro-Bounding Precision:** Annotated down to tiny $12 \times 12$ pixel SMD passives.
+4. **Class Consolidation:** Unified redundant classes (`terminal` $\to$ `connector` and `ram_ic_chip` $\to$ `ic_chip`) to prevent model confusion.
 
 ---
 
-## 5. Dataset Configuration (`data.yaml`)
+## 5. Dataset Partitioning (Train / Val / Test)
+
+To prevent data leakage and evaluate real-world generalization, the dataset is split **70% / 20% / 10%**:
+
+| Split Subset | Image Count | Label Count | Purpose |
+| :--- | :---: | :---: | :--- |
+| **Train Set** | **3,114** images | 41,840 labels | Model weight training and gradient updates |
+| **Validation Set** | **890** images | 11,950 labels | Hyperparameter tuning and early stopping checkpoints |
+| **Test Set (Holdout)** | **444** images | 5,983 labels | Unseen benchmark evaluation before production deploy |
+| **Total Corpus** | **4,448** images | **59,773** labels | Complete ground truth dataset |
+
+---
+
+## 6. Dataset Configuration (`data.yaml`)
+
+The training configuration file (`data/dataset/data.yaml`) defines paths and the 8 unified classes:
 
 ```yaml
-# VisionForge Component Detector YOLO Configuration
-path: ../data/dataset
+# VisionForge AI - YOLO11n Dataset Configuration
+path: data/dataset
 train: images/train
 val: images/val
 test: images/test
 
-# Number of Classes
+# Number of unified classes
 nc: 8
 
-# Class Names
+# Class names
 names:
   0: capacitor
   1: resistor
@@ -131,37 +139,30 @@ names:
 
 ---
 
-## 6. Class Distribution & Balance Analysis
+## 7. Augmentations for Real-World Factory Lighting
 
+Factory intake docks do not have professional studio lighting. Cameras vibrate on conveyor belts, operators take photos at slight angles, and room lighting changes between morning and night shifts.
+
+To ensure the model never fails under these conditions, the training pipeline applied real-world synthetic augmentations:
+
+```mermaid
+flowchart LR
+    Original["Clean Board Image"] --> Aug1["Mosaic 4-Image Stitched Grid"]
+    Original --> Aug2["HSV Lighting & Glare Shifts"]
+    Original --> Aug3["Random Flips & 15° Rotation"]
+    Original --> Aug4["Scale Jitter (Zoom In / Out)"]
+
+    Aug1 --> Train["Robust YOLO11n Weights"]
+    Aug2 --> Train
+    Aug3 --> Train
+    Aug4 --> Train
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                        CLASS INSTANCE DISTRIBUTION                          │
-├─────────────────────────────────────────────────────────────────────────────┤
-│  Class Name           │ Total Instances │ Frequency % │ Avg Box Area (px²)  │
-├───────────────────────┼─────────────────┼─────────────┼─────────────────────┤
-│  capacitor            │ 18,450          │ 30.87%      │ 1,240 px²           │
-│  resistor             │ 16,210          │ 27.12%      │   380 px² (Micro)   │
-│  ic_chip              │  9,480          │ 15.86%      │ 5,820 px²           │
-│  connector            │  5,120          │  8.57%      │ 8,400 px²           │
-│  screw                │  4,200          │  7.03%      │   860 px²           │
-│  seal                 │  2,340          │  3.91%      │ 2,100 px²           │
-│  battery_cell         │  2,180          │  3.65%      │ 14,200 px² (Large)  │
-│  gold_pin_connector   │  1,793          │  3.00%      │ 3,450 px²           │
-│  Total                │ 59,773          │ 100.00%     │ —                   │
-└───────────────────────┴─────────────────┴─────────────┴─────────────────────┘
-```
+
+- **Mosaic Augmentation ($p = 1.0$):** Combines 4 different crops into one training image, teaching the model to find micro-components at varying spatial scales.
+- **HSV Color Jitter ($\text{Hue} \pm 0.015, \text{Sat} \pm 0.7, \text{Val} \pm 0.4$):** Simulates yellow halogen, white LED, and blueish fluorescent factory lighting.
+- **Random Horizontal Flip ($p = 0.5$):** Teaches orientation invariance for boards loaded upside down.
+- **Affine Scale & Perspective ($\pm 15\%$):** Simulates handheld phone camera tilt and varying lens distances.
 
 ---
 
-## 7. Synthetic Augmentations & Environmental Robustness
-
-To ensure the trained model performs reliably under severe factory environment fluctuations (dim warehouse lighting, angled hand-held mobile captures, lens flare), the following on-the-fly augmentations are applied during training:
-
-1. **Illumination Jitter:** Random brightness adjustments ($\pm 30\%$) and contrast shifts ($\pm 20\%$) to simulate changing shifts and LED light degradation.
-2. **Perspective & Rotational Tilt:** $\pm 10^\circ$ planar rotations and subtle 3D shear ($2.0^\circ$) replicating operators holding smartphone cameras at slight off-axis angles.
-3. **Mosaic Blending ($4\times$ Stitching):** Combines 4 random crops into a single $640\times 640$ training frame, forcing the model to detect tiny SMD resistors in cluttered contexts.
-4. **Gaussian Noise & Lens Blur:** Subtle kernel blurs to maintain feature sensitivity even on lower-grade mobile camera lenses.
-
----
-
-*For technical details on model inference, consult [`docs/YOLO_MODEL.md`](YOLO_MODEL.md).*
+*To see how this dataset trains our YOLO11n model, read [`docs/YOLO_MODEL.md`](YOLO_MODEL.md).*

@@ -1,19 +1,17 @@
-# 🗺️ VisionForge AI — Strategic Roadmap & Engineering Milestones
+# 🗺️ VisionForge AI Strategic Roadmap & Milestones
 
-> **Status:** Authoritative (Reflects Actual Implemented Codebase & Future Architecture)  
-> **Current Version:** `v0.1.0-production`  
-> **Engineering Phase:** Phase 1 (Production Complete) $\to$ Phase 2 (Edge & Hardware Acceleration)
+> **How VisionForge AI evolves from a production-ready software inspection workstation to an autonomous, edge-accelerated factory intelligence mesh.**
 
 ---
 
-## 📑 Table of Contents
+## 📖 Table of Contents
 
 - [1. Product Evolution & Horizon Strategy](#1-product-evolution--horizon-strategy)
 - [2. Feature Implementation Status Matrix](#2-feature-implementation-status-matrix)
 - [3. Phase 1: Production Baseline (Completed & Verified)](#3-phase-1-production-baseline-completed--verified)
 - [4. Phase 2: Edge Hardware Acceleration & Factory Integration (Near-Term)](#4-phase-2-edge-hardware-acceleration--factory-integration-near-term)
 - [5. Phase 3: Enterprise Supply Chain Mesh & Autonomous Governance (Long-Term)](#5-phase-3-enterprise-supply-chain-mesh--autonomous-governance-long-term)
-- [6. Feedback Loops & Feature Request Protocol](#6-feedback-loops--feature-request-protocol)
+- [6. Community Feedback & Technical Proposals](#6-community-feedback--technical-proposals)
 
 ---
 
@@ -145,7 +143,7 @@ flowchart LR
 
 ---
 
-## 6. Feedback Loops & Feature Request Protocol
+## 6. Community Feedback & Technical Proposals
 
 To submit technical proposals, report hardware edge cases, or request specialized component models:
 - **Issue Tracker:** Submit bug reports with captured test imagery and failure logs to the repository issue tracker.
