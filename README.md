@@ -8,7 +8,6 @@
 
 <br/>
 
-[![Dell FutureMin Finalist](https://img.shields.io/badge/Dell_Hackathon-National_Finalist-0076CE?style=flat-square&logo=dell&logoColor=white)](#-project-origin--from-dell-futuremin-ai-hackathon-finalist-to-production-architecture)
 [![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![React](https://img.shields.io/badge/React-18.3-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev)
