@@ -393,15 +393,15 @@ flowchart TD
     subgraph VLM_Load_Balancer["⚖️ Dual-Provider VLM Load Balancer"]
         InReq["ROI Inspection Request"] --> Check{"ROI Index % 2 == 1?"}
         
-        Check -->|Yes (Odd ROI)| GemPri["Primary: Gemini 3.5 Flash"]
-        Check -->|No (Even ROI)| GroqPri["Primary: Groq Qwen 3.8-27B"]
+        Check -->|"Yes: Odd ROI"| GemPri["Primary: Gemini 3.5 Flash"]
+        Check -->|"No: Even ROI"| GroqPri["Primary: Groq Qwen 3.8-27B"]
         
-        GemPri -->|HTTP 429 / Timeout| GemToGroq["Failover to Groq Qwen"]
-        GemPri -->|200 OK| Ret1["Return Evidence Card"]
+        GemPri -->|"HTTP 429 / Timeout"| GemToGroq["Failover to Groq Qwen"]
+        GemPri -->|"200 OK"| Ret1["Return Evidence Card"]
         GemToGroq --> Ret1
         
-        GroqPri -->|HTTP 429 / Timeout| GroqToGem["Failover to Gemini Flash"]
-        GroqPri -->|200 OK| Ret2["Return Evidence Card"]
+        GroqPri -->|"HTTP 429 / Timeout"| GroqToGem["Failover to Gemini Flash"]
+        GroqPri -->|"200 OK"| Ret2["Return Evidence Card"]
         GroqToGem --> Ret2
     end
 ```

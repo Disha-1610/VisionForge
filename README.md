@@ -574,39 +574,54 @@ VisionForge features an exhaustive 12-document technical specification suite:
 
 ---
 
-## 🏆 Project Origin — From Dell FutureMin AI Hackathon Finalist to Production Architecture
+## 🏆 Project Origin — From Dell FutureMind Hackathon Finalist to Production Architecture
 
-VisionForge AI originated from a real-world industrial challenge presented at the **Dell FutureMin AI Hackathon**, where **OUR TEAM ** reached the **National Finals**:
+VisionForge AI originated from a real-world industrial challenge presented at the **Dell FutureMind AI Hackathon (Grand Final 2026)**, where our team reached the national finals under the project name **VeriVision AI**:
 
-```
-┌──────────────────────────────────────────────────────────────────────────────────────────────────┐
-│                             THE ENGINEERING EVOLUTION JOURNEY                                    │
-├────────────────────────────────┬─────────────────────────────────────────────────────────────────┤
-│ 🥉 Hackathon Prototype (Day 0) │ • Naive, monolithic cloud VLM prompt over raw 4K board images.  │
-│                                │ • Severe latency (8-12 seconds), hallucinated capacitor counts. │
-│                                │ • Brittle CV rules that broke under slight angle or glare shifts│
-│                                │ • Fragile proof-of-concept without tests or audit persistence.  │
-├────────────────────────────────┼─────────────────────────────────────────────────────────────────┤
-│ 🚀 Production Re-Architecture  │ • Threw away naive approach; re-engineered entire system from 0.│
-│    (Weeks of Continuous Dev)   │ • Built 8-stage LangGraph state machine with 30ms defensive gates│
-│                                │ • Curated 4,448-image corpus; fine-tuned YOLO11n (5.2 MB model).│
-│                                │ • Engineered Anomaly Max-Pooling to prevent defect dilution.    │
-│                                │ • Implemented Groq LPU causal judge (~420ms root-cause).        │
-│                                │ • Built Tactical React 18 HUD with real-time SSE telemetry.     │
-│                                │ • Authored 23 automated Pytest test suites (203 passing tests). │
-└────────────────────────────────┴─────────────────────────────────────────────────────────────────┘
-```
+### The Original Hackathon Inception — Team IDEAFORG-E
 
-> *"Most hackathon projects die when the demo ends. For us, the Dell FutureMin Hackathon was simply Day 1. The original prototype had severe limitations, but the industrial problem was massive. We spent weeks completely re-architecting the system from the ground up to build what VisionForge AI is today: an enterprise-ready, sub-4-second autonomous hardware forensics workstation."*  
+| Contributor | Hackathon Role |
+|:---|:---|
+| **Disha** | Backend Dev |
+| **Anil** | Agents Dev |
+| **Priyanka** | Frontend Dev |
+| **Chaitanya** | DataSet Collection |
+| **Jagruti** | Frontend Dev |
+
+### Why We Completely Re-Architected the System
+The original hackathon proof-of-concept (**VeriVision AI**) demonstrated the feasibility of visual inspection using a 5-agent linear pipeline with Open_CLIP ViT-B/32, ORB homography, full-image SSIM, EasyOCR, and NVIDIA NIM cloud microservices (`meta/llama-3.2-11b-vision-instruct`). However, when tested against realistic factory conditions, the prototype revealed critical engineering bottlenecks:
+1. **Severe Latency & Rate Limits:** Relying on monolithic cloud VLM prompts took 8–12 seconds per scan and easily exceeded free-tier cloud quotas.
+2. **Scale Drift & Defect Dilution:** Resizing 4K motherboard images to fit VLM context windows washed out tiny 0402-size resistors. Full-image SSIM averages diluted single missing capacitors into false "CLEAN" verdicts.
+3. **Brittle Alignment:** Traditional ORB keypoint homography warped under slight camera perspective changes or PCB solder glare.
+4. **No Custom Hardware Detector:** The prototype had no dedicated object detection model trained on electronic components.
+
+Following the Grand Final, **Disha and Anil** decided that a billion-dollar supply chain problem deserved more than an ephemeral hackathon script. Over weeks of continuous engineering, we completely discarded the naive prototype and rebuilt **VisionForge AI** from the ground up as an enterprise-grade autonomous forensic workstation.
+
+### Engineering Evolution: Prototype vs. Enterprise Platform
+
+| Architectural Dimension | 🥉 VeriVision AI (Hackathon Grand Final Prototype) | 🚀 VisionForge AI (Production Platform) |
+|:---|:---|:---|
+| **Pipeline Architecture** | 5-Agent linear state script (`workflow.py`) | **8-Stage LangGraph State Machine** with 30ms defensive fast-fail gates |
+| **Component Detection** | None (heuristic CV / full-image VLM) | **Custom YOLO11n** (4,448 images, 8 hardware classes, 98.4% mAP@50) |
+| **Micro-Scale Forensics** | Full-image SSIM (diluted anomaly scores) | **Stage 4 Localized ROI Scheduler** ($8\times$–$12\times$ zoom) + **Anomaly Max-Pooling** |
+| **Inference Latency** | 8.0 – 12.0 seconds per inspection | **< 4.0 seconds** (sub-second on cached/fast-fail scans) |
+| **Reasoning Engine** | Single cloud VLM prompt (`llama-3.2-11b-vision`) | **Groq LPU Causal Judge** (`gpt-oss-20b` in ~420ms) + Dual-Provider Failover |
+| **Operator Interface** | Basic review workbench | **Tactical Cyberpunk HUD** (React 18, Dual-Image Canvas, SSE Telemetry) |
+| **Persistence & Audit** | Basic SQLite database | **SQLAlchemy 2.0 ORM** (PostgreSQL/SQLite), append-only evidence, PDF certs |
+| **Testing & Quality Gates**| 0 automated tests | **23 Pytest Test Modules (203 Passing Tests)** with hermetic offline mocking |
+
+> *"Most hackathon projects die when the demo ends. For us, the Dell FutureMind AI Hackathon was simply Day 1. The original prototype had severe real-world limitations, but the industrial counterfeit problem was real and massive. We spent weeks completely re-architecting the system from the ground up to build what VisionForge AI is today: a production-ready, sub-4-second autonomous hardware forensics workstation."*  
 > — **Disha & Anil**
 
 ---
 
 ## 👥 Authors & Core Contributors
 
+VisionForge AI was redesigned, engineered, and brought to production by:
+
 | Contributor | Primary Focus & Core Responsibilities |
 |:---|:---|
-| **Disha** | **Full-Stack Engineering & Data Architecture**<br/>• **Frontend Workstation:** Architected the entire React 18 SPA, Tactical Cyberpunk HUD, Tailwind design system, synchronized dual-image comparator canvas (`DualImageCanvas.jsx`), and interactive modals.<br/>• **Backend & APIs:** Developed complete FastAPI REST API routing (`/auth`, `/inspections`, `/products`, `/vendors`, `/reports`, `/analytics`), dual-token JWT authentication lifecycle with proactive token rotation, and real-time Server-Sent Events (SSE) telemetry.<br/>• **Database & Persistence:** Designed SQLAlchemy 2.0 relational models, dual-dialect PostgreSQL/SQLite compatibility, foreign key integrity constraints, and database seeding. |
+| **Disha** | **Full-Stack Engineering & Data Architecture**<br/>• **Frontend Workstation:** Architected the entire React 18 SPA, Tactical Cyberpunk HUD, Tailwind design system, synchronized dual-image comparator canvas (`DualImageCanvas.jsx`), ROI bounding box overlays, and analytics.<br/>• **Backend & APIs:** Developed complete FastAPI REST API routing (`/auth`, `/inspections`, `/products`, `/vendors`, `/reports`, `/analytics`), dual-token JWT authentication lifecycle with proactive token rotation, and real-time Server-Sent Events (SSE) telemetry.<br/>• **Database & Persistence:** Designed SQLAlchemy 2.0 relational models, dual-dialect PostgreSQL/SQLite compatibility, foreign key integrity constraints, database migrations, and forensic PDF certificate generation. |
 | **Anil** | **AI/ML, Computer Vision & Pipeline Engineering**<br/>• **Pipeline Architecture:** Designed and implemented the complete 8-stage LangGraph state machine orchestrator (`workflow.py`, `state.py`), 30ms defensive fast-fail gates, and mathematical Anomaly Max-Pooling algorithm.<br/>• **AI/ML & Object Detection:** Curated and cleaned the 4,448-image hardware corpus, unified the 8-class label space, and fine-tuned the Ultralytics YOLO11n component detector (`component_detector.pt`, 5.2 MB).<br/>• **Computer Vision & Agents:** Implemented OpenCV Laplacian blur, Error Level Analysis (ELA) forensics, FAISS vector retrieval, PaddleOCR lot code verifier, and AI Forensic Judge causal reasoning on Groq LPU (`gpt-oss-20b`).<br/>• **Quality Assurance & Testing:** Authored the hermetic 23-module automated Pytest test suite (203 passing tests) with zero-cost offline mocking. |
 
 ---
