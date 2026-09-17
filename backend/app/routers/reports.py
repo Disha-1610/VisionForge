@@ -3,9 +3,10 @@
 Reports Router — Inspection Reports API & PDF Downloads (Disha, W4 D3).
 
 Endpoints:
-  GET /api/v1/reports               - List/filter inspection audit reports
-  GET /api/v1/reports/{id}          - Fetch detailed report JSON
-  GET /api/v1/reports/{id}/pdf      - Download generated PDF audit report
+  GET  /api/v1/reports               - List/filter inspection audit reports
+  GET  /api/v1/reports/{id}          - Fetch detailed report JSON
+  GET  /api/v1/reports/{id}/pdf      - Download generated PDF audit report
+  DELETE /api/v1/reports/{id}        - Delete an inspection report
 """
 
 from __future__ import annotations
@@ -92,6 +93,55 @@ def _map_inspection_to_report_response(
         p_val = PolicyActionEnum.ACCEPT.value
     policy_enum = PolicyActionEnum(p_val)
 
+    golden = inspection.golden_reference
+    wm = inspection.working_memory or {}
+
+    # Extract part_code with working_memory fallback
+    resolved_part_code = (
+        getattr(golden, "part_id", None)
+        or getattr(golden, "part_code", None)
+        or (part_code if part_code and part_code != "N/A" else None)
+        or wm.get("part_code")
+        or wm.get("part_id")
+        or (wm.get("matched_reference") or {}).get("part_id")
+        or (wm.get("roi_template") or {}).get("part_code")
+        or "GEN-PART"
+    )
+
+    product_type = (
+        (golden.meta or {}).get("product_type")
+        if (golden and golden.meta)
+        else wm.get("product_type")
+        if isinstance(wm, dict)
+        else getattr(inspection, "product_type", None)
+    )
+    if not product_type:
+        p_upper = str(resolved_part_code).upper()
+        if "BAT" in p_upper:
+            product_type = "battery"
+        elif "RAM" in p_upper:
+            product_type = "ram"
+        elif "MTH" in p_upper:
+            product_type = "motherboard"
+        else:
+            product_type = "hardware"
+
+    part_name = (
+        getattr(golden, "part_name", None)
+        or wm.get("part_name")
+        or (wm.get("matched_reference") or {}).get("part_name")
+    )
+    if not part_name or part_name == "N/A":
+        pt_lower = str(product_type).lower()
+        if pt_lower == "battery" or "BAT" in str(resolved_part_code).upper():
+            part_name = "Smart Lithium Battery Pack 48V"
+        elif pt_lower == "ram" or "RAM" in str(resolved_part_code).upper():
+            part_name = "ECC DDR4 Server Module 16GB"
+        elif pt_lower == "motherboard" or "MTH" in str(resolved_part_code).upper():
+            part_name = "Industrial ATX Motherboard V1"
+        else:
+            part_name = f"{resolved_part_code} Component"
+
     return ReportResponse(
         id=inspection.id,
         case_id=inspection.case_number,
@@ -99,7 +149,9 @@ def _map_inspection_to_report_response(
         vendor_id=inspection.vendor_id,
         vendor_name=vendor_name,
         location=inspection.location,
-        part_id=part_code,
+        part_id=resolved_part_code,
+        part_name=part_name,
+        product_type=product_type,
         golden_image_path=golden_img,
         inspection_image_paths=inspection.image_paths or [],
         authenticity_score=float(inspection.authenticity_score or 1.0),
@@ -166,12 +218,17 @@ async def list_reports(
     items: list[ReportResponse] = []
     for insp in paged_inspections:
         v_name = insp.vendor.name if insp.vendor else "Unknown Vendor"
+        wm = insp.working_memory or {}
         part_code = (
             getattr(insp.golden_reference, "part_id", None)
             or getattr(insp.golden_reference, "part_code", None)
-            or "N/A"
-        ) if insp.golden_reference else "N/A"
-        golden_img = insp.golden_reference.image_path if insp.golden_reference else ""
+            or wm.get("part_code")
+            or wm.get("part_id")
+            or (wm.get("matched_reference") or {}).get("part_id")
+            or (wm.get("roi_template") or {}).get("part_code")
+            or "GEN-PART"
+        )
+        golden_img = insp.golden_reference.image_path if insp.golden_reference else (wm.get("golden_image_path") or "")
         ev_records = insp.evidence_records or []
         items.append(
             _map_inspection_to_report_response(
@@ -344,3 +401,21 @@ async def download_report_pdf(
         media_type="application/pdf",
         filename=f"{inspection.case_number}.pdf",
     )
+
+
+@router.delete("/{inspection_id}", status_code=http_status.HTTP_204_NO_CONTENT)
+async def delete_report(
+    inspection_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> None:
+    """Delete an inspection report and its associated evidence."""
+    query = select(Inspection).where(Inspection.id == inspection_id)
+    result = await db.execute(query)
+    inspection = result.scalar_one_or_none()
+
+    if inspection is None:
+        raise HTTPException(http_status.HTTP_404_NOT_FOUND, "Inspection report not found")
+
+    await db.delete(inspection)
+    await db.commit()

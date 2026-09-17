@@ -27,6 +27,7 @@ from app.shared.llm_client import (
     LLMCapability,
     LLMClient,
     LLMMessage,
+    LLMProvider,
     LLMRequest,
     LLMTask,
     ResponseFormat,
@@ -36,18 +37,52 @@ from app.utils.image_utils import ImageSource, load_pil_image
 
 logger = logging.getLogger("app.pipeline.agents.vlm")
 
-VLM_SYSTEM_PROMPT = """You are VisionForge AI's specialized Visual Language Model (VLM) Hardware Inspection Agent.
-Your objective is to inspect and compare two cropped images of industrial hardware components:
-- Image 1: Golden Reference ROI Crop (verified authentic, flawless standard)
-- Image 2: Inspection Sample ROI Crop (sample under inspection)
+VLM_SYSTEM_PROMPT = """You are VisionForge AI's specialized VLM Hardware Inspection Agent — an expert electronics quality engineer inspecting computer hardware components (RAM modules, laptop batteries, motherboards, GPUs, SSDs).
 
-Detect visual defects and tampering that classical computer vision might miss:
-1. Physical damage: scratches, cracks, edge chipping, puncture marks.
-2. Thermal / electrical damage: burn marks, heat discoloration, darkened traces.
-3. Chemical / surface contamination: flux residue, solder splatter, oxidation, corrosion, foreign debris.
-4. Physical alignment: skewed orientation, tilted ICs, bent connector pins, improper seating.
+You receive TWO images:
+- Image 1: GOLDEN REFERENCE (known authentic, factory-new, flawless standard)
+- Image 2: INSPECTION SAMPLE (hardware under inspection)
 
-Analyze carefully and return your evaluation strictly in the requested JSON format.
+## INSPECTION PROTOCOL — follow these steps IN ORDER for every ROI
+
+### Step 1: COMPONENTS & COUNT
+- Identify all discrete components: IC chips, capacitors, resistors, connectors, gold pins, mounting holes, shielding, cells, diodes, inductors
+- Count each type in BOTH images and compare
+- MISSING, EXTRA, or DIFFERENT component = HIGH severity defect
+
+### Step 2: POSITION & ALIGNMENT
+- Compare component placement between the two images
+- Skewed, tilted, rotated, shifted, or protruding components = defect
+- Bent / broken pins, lifted connectors, misaligned ICs = defect
+
+### Step 3: SURFACE & MATERIAL CONDITION
+- Physical damage: scratches, cracks, edge chipping, broken corners, deformed heatsink fins, dented pins
+- Thermal/electrical damage: burn marks, scorch, heat discoloration, darkened/melted traces, swollen or leaking cells (battery)
+- Chemical/contamination: flux residue, solder splatter, corrosion, oxidation, foreign debris, moisture stains
+
+### Step 4: SOLDER & CONNECTIONS
+- Compare solder joint density, wetness, and uniformity
+- Missing solder, cold joints, bridging, lifted pads, tombstoned components = defect
+
+### Step 5: SILKSCREEN, LABELS & TEXT
+- Compare visible printed text: part numbers, serials, logos, batch codes, capacity labels, certification marks (CE/FCC/RoHS), date codes
+- Faded / smudged / tampered / double-printed text or labels = defect
+- Note: another agent (OCR) handles precise text matching; focus on visual label integrity (peeling, bubbles, misplacement, re-labelling)
+
+### Step 6: PHYSICAL FORM & PROFILE (special concern per hardware type)
+- RAM modules: PCB edge uniformity, gold finger contacts, mounting notches, heat spreader alignment
+- Laptop batteries: cell swelling, wrapper wrinkles, labeling bubbles, connector damage, vent bulges
+- Motherboards: board bending/twist, capacitor bulge, heat sink seating, bracket/mount alignment, socket integrity
+
+## RESPONSE REQUIREMENTS (CRITICAL)
+1. NEVER write generic "verified normal" / "verified clean" — ALWAYS give specific reasoning tied to what you actually SEE
+2. ALWAYS state what Image 1 looks like and what Image 2 looks like, then the DIFFERENCE (or state "no visible difference" with observed evidence)
+3. Provide component counts when the ROI contains countable components
+4. Confidence must reflect visual evidence strength — if crops are too small/blurry/unclear, lower confidence and say why
+5. defect_type must be SPECIFIC: use one of: scratch, crack, burn_mark, discoloration, corrosion, misalignment, missing_component, extra_component, bent_pin, solder_defect, label_tampering, swelling, contamination, or none
+6. SIMPLE PLAIN ENGLISH: Always write descriptions, observations, and explanations in simple, clear everyday English. Avoid complex mathematical terms, statistical symbols, or obscure jargon so that anyone can immediately understand the findings.
+
+Return your evaluation strictly as valid JSON.
 """
 
 
@@ -59,12 +94,16 @@ class VLMAnomalyReport(BaseModel):
     has_defect: bool = Field(default=False, description="True if anomaly or tampering is detected")
     defect_type: str = Field(
         default="none",
-        description="Type: scratch, crack, burn_mark, discoloration, corrosion, misalignment, missing_component, or none",
+        description="Type: scratch, crack, burn_mark, discoloration, corrosion, misalignment, missing_component, extra_component, bent_pin, solder_defect, label_tampering, swelling, contamination, or none",
     )
     confidence: float = Field(default=0.85, ge=0.0, le=1.0, description="Confidence in finding")
     severity: str = Field(default="none", description="Severity: none, low, medium, high, critical")
-    description: str = Field(default="Visual appearance verified normal", description="Detailed visual explanation")
+    description: str = Field(default="No visual defects detected", description="Detailed visual explanation")
     affected_area: str = Field(default="none", description="Specific region or pin/component affected")
+    component_count_expected: int | None = Field(default=None, description="Expected component count from golden reference")
+    component_count_observed: int | None = Field(default=None, description="Observed component count in inspection sample")
+    specific_differences: list[str] = Field(default_factory=list, description="Exact differences found between golden and sample")
+    visual_evidence: str = Field(default="", description="What each image actually shows — golden vs sample")
 
 
 def _image_to_data_payload(pil_img: Image.Image) -> ImageInput:
@@ -196,12 +235,26 @@ class VLMAgent(BaseAgent):
             if descriptions:
                 checkpoints_info = f"Specific checkpoints to evaluate: {'; '.join(descriptions)}.\n"
 
+        hardware_type = roi_data.get("hardware_type") or roi_data.get("product_type") or "computer hardware"
+        roi_expected_count = str(roi_data.get("expected_count") or "") 
+        count_info = f"Expected component count in this ROI: {roi_expected_count}." if roi_expected_count else ""
+
         user_prompt = (
-            f"Inspecting ROI: '{roi_name}' (ID: {roi_id}).\n"
+            f"Inspecting ROI: '{roi_name}' (ID: {roi_id}) on a {hardware_type} unit.\n"
             f"{checkpoints_info}"
-            f"Image 1 is the Golden Reference. Image 2 is the Inspection Sample.\n"
-            f"Examine Image 2 against Image 1 and provide a structured anomaly report."
+            f"{count_info}\n"
+            f"Image 1 is the GOLDEN REFERENCE. Image 2 is the INSPECTION SAMPLE.\n"
+            f"Follow the inspection protocol and provide a detailed structured report "
+            f"describing the SPECIFIC differences you observe between the two images."
         )
+
+        pref_provider = None
+        if "preferred_provider" in roi_data and roi_data["preferred_provider"]:
+            val = str(roi_data["preferred_provider"]).lower()
+            if "groq" in val:
+                pref_provider = LLMProvider.GROQ
+            elif "gemini" in val:
+                pref_provider = LLMProvider.GEMINI
 
         request = LLMRequest(
             task=LLMTask.VLM,
@@ -215,6 +268,7 @@ class VLMAgent(BaseAgent):
             max_tokens=1024,
             response_format=ResponseFormat.JSON,
             stage_name="evidence_execution",
+            preferred_provider=pref_provider,
         )
 
         # 4. Call VLM via LLMClient
@@ -226,14 +280,51 @@ class VLMAgent(BaseAgent):
             severity = str(report.severity)
             description = str(report.description)
             affected_area = str(report.affected_area)
+            expected_count = report.component_count_expected
+            observed_count = report.component_count_observed
+            specific_diffs = list(report.specific_differences)
+            visual_evidence = str(report.visual_evidence)
+
+            # Safety check: enforce has_defect if anomalies, differences or defect keywords are reported
+            if not has_defect:
+                defect_keywords = (
+                    "missing", "damage", "scratch", "corrosion", "defect",
+                    "tamper", "counterfeit", "discrepanc", "broken", "burn", "peel"
+                )
+                desc_lower = description.lower()
+                has_keywords = any(kw in desc_lower for kw in defect_keywords)
+                has_sev = severity.lower() in ("critical", "high", "medium", "low")
+                has_type = defect_type.lower() not in ("none", "clean", "null", "normal", "unknown", "")
+                has_diffs = len(specific_diffs) > 0
+
+                if has_keywords or has_sev or has_type or has_diffs:
+                    has_defect = True
 
             if has_defect:
+                defect_title = defect_type if defect_type and defect_type.lower() not in ("none", "clean", "null", "unknown") else "Hardware Defect"
+                desc_clean = description.strip()
+                if not desc_clean or desc_clean.lower() in (
+                    "no visual defects detected",
+                    "no visual defects detected.",
+                    "no visual defect detected",
+                    "no defect detected",
+                    "no visible defect",
+                    "none",
+                    "clean",
+                    "normal",
+                ):
+                    if specific_diffs:
+                        desc_clean = f"Observed discrepancies: {'; '.join(specific_diffs[:2])}"
+                    elif affected_area and affected_area.lower() not in ("none", "unknown", "n/a"):
+                        desc_clean = f"Observed anomaly affecting {affected_area}."
+                    else:
+                        desc_clean = f"Observed hardware discrepancy during visual inspection."
                 explanation = (
-                    f"{roi_name}: Visual anomaly detected ({defect_type}, severity: {severity}) - "
-                    f"{description}"
+                    f"{roi_name}: {defect_title} detected (severity: {severity}) — "
+                    f"{desc_clean}"
                 )
             else:
-                explanation = f"{roi_name}: Visual appearance verified clean - {description}"
+                explanation = f"{roi_name}: No visible defect — {description}"
 
             evidence = {
                 "has_defect": has_defect,
@@ -241,6 +332,10 @@ class VLMAgent(BaseAgent):
                 "severity": severity,
                 "description": description,
                 "affected_area": affected_area,
+                "component_count_expected": expected_count,
+                "component_count_observed": observed_count,
+                "specific_differences": specific_diffs,
+                "visual_evidence": visual_evidence,
                 "vlm_confidence": round(confidence, 3),
                 "provider": llm_res.provider.value,
                 "model": llm_res.model,

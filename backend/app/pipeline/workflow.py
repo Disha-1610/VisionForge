@@ -274,6 +274,8 @@ async def run_inspection_pipeline(inspection_id: UUID, db: AsyncSession) -> None
 
         # 5. Update DB Inspection fields
         mem = state.memory
+        if mem.golden_reference_id:
+            inspection.golden_reference_id = mem.golden_reference_id
         inspection.quality_passed = bool(mem.quality_passed)
         qc_res = mem.last_stage_result(PipelineStageName.QUALITY_CHECK)
         if qc_res and qc_res.error:

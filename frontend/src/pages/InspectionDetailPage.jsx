@@ -142,8 +142,16 @@ export const InspectionDetailPage = () => {
     memory.fraud_category ??
     fusedEvidence.primary_category;
 
+  const judgeRecommendations =
+    Array.isArray(judgeData.recommendations) && judgeData.recommendations.length > 0
+      ? judgeData.recommendations
+      : (Array.isArray(memory?.judge_verdict?.recommendations) && memory.judge_verdict.recommendations.length > 0
+          ? memory.judge_verdict.recommendations
+          : (Array.isArray(fusedEvidence?.recommendations) && fusedEvidence.recommendations.length > 0
+              ? fusedEvidence.recommendations
+              : null));
   const effectiveRecommendations =
-    judgeData.recommendations ||
+    judgeRecommendations ||
     (effectiveVerdict === 'reject' || effectivePolicy === 'quarantine'
       ? [
           'Quarantine batch immediately from active production line',
@@ -158,6 +166,7 @@ export const InspectionDetailPage = () => {
       : ['Release batch for production assembly and fulfillment']);
 
   const effectiveDetectedIssues =
+    fusedEvidence.detected_issue_descriptions ||
     fusedEvidence.detected_issues ||
     (judgeData.detected_issues || []);
 
@@ -176,62 +185,90 @@ export const InspectionDetailPage = () => {
   const structuralRecord = findRecord(['structural', 'yolo']);
   const vlmRecord = findRecord(['vlm', 'visual', 'judge']);
 
-  const formatFinding = (rec, fallbackConfig) => {
+  const formatFinding = (rec, defaultConfig) => {
     if (rec) {
       const raw = rec.raw_output || {};
+      const ev = rec.evidence || {};
+      // Build dynamic engine/provider label from backend telemetry
+      let techLabel = null;
+      if (rec.detector_name && rec.detector_name.includes('ocr')) {
+        const engine = ev.engine_used;
+        techLabel = engine === 'paddleocr' ? 'PaddleOCR Engine' : engine === 'easyocr' ? 'EasyOCR Engine' : 'OCR Engine';
+      } else if (rec.detector_name && (rec.detector_name.includes('vlm') || rec.detector_name.includes('visual'))) {
+        const provider = ev.provider || raw.provider;
+        const model = ev.model || raw.model;
+        techLabel = provider
+          ? `${provider === 'gemini' ? 'Gemini' : 'Groq'}${model ? ` ${model}` : ''}`
+          : 'LLM Vision Analysis';
+      } else if (rec.detector_name && rec.detector_name.includes('structural')) {
+        techLabel = 'Ultralytics YOLO11n + SSIM';
+      } else if (rec.detector_name && rec.detector_name.includes('label')) {
+        techLabel = 'OpenCV matchTemplate';
+      }
+
       return {
         explanation:
           rec.explanation ||
           rec.evidence_summary ||
           raw.explanation ||
-          fallbackConfig.explanation,
-        confidence: rec.confidence ?? raw.confidence ?? fallbackConfig.confidence,
+          defaultConfig.explanation,
+        confidence: rec.confidence ?? raw.confidence ?? null,
         latency_ms:
-          rec.processing_time_ms ?? raw.processing_time_ms ?? fallbackConfig.latency_ms,
+          rec.processing_time_ms ?? raw.processing_time_ms ?? null,
+        inconclusive: ev.inconclusive === true || rec.inconclusive === true || ev.match_status === 'no_text_detected',
+        has_defect: ev.has_defect === true || rec.has_defect === true || raw.has_defect === true,
+        failed: rec.failed === true || raw.failed === true || ev.failed === true,
         is_suspicious:
           rec.failed ||
+          raw.failed ||
+          ev.failed ||
           (rec.confidence != null && rec.confidence < 0.65) ||
           raw.is_anomaly ||
           raw.is_suspicious ||
+          ev.is_anomaly ||
+          ev.is_suspicious ||
           false,
         component_findings:
           rec.component_findings || raw.component_findings || raw.counts || null,
-        roi_name: rec.roi_id || rec.roi_type || fallbackConfig.roi_name || 'Target ROI',
+        specific_differences: ev.specific_differences || raw.specific_differences || [],
+        component_count_expected: ev.component_count_expected ?? raw.component_count_expected ?? null,
+        component_count_observed: ev.component_count_observed ?? raw.component_count_observed ?? null,
+        roi_name: rec.roi_id || rec.roi_type || defaultConfig.roi_name || 'Target ROI',
+        techLabel,
       };
     }
-    return fallbackConfig;
+    return {
+      explanation: defaultConfig.explanation,
+      confidence: null,
+      latency_ms: null,
+      inconclusive: false,
+      has_defect: false,
+      is_suspicious: false,
+      roi_name: defaultConfig.roi_name,
+      techLabel: defaultConfig.techLabel,
+    };
   };
 
   const findings = {
     ocr_agent: formatFinding(ocrRecord, {
-      explanation: 'PaddleOCR analyzed text, batch codes, and serial markings.',
-      confidence: 0.98,
-      latency_ms: 38,
+      explanation: 'OCR engine extracts and validates markings and serial codes against reference baseline.',
       roi_name: 'Serial & Batch Block',
+      techLabel: 'OCR Engine',
     }),
     label_agent: formatFinding(labelRecord, {
-      explanation: 'OpenCV matchTemplate evaluated QC labels and logo typography.',
-      confidence: 0.96,
-      latency_ms: 15,
+      explanation: 'OpenCV template correlation inspects QC seals, logos, and print alignment.',
       roi_name: 'QC Label Region',
+      techLabel: 'OpenCV matchTemplate',
     }),
     structural_agent: formatFinding(structuralRecord, {
-      explanation: 'Ultralytics YOLO11n evaluated component placement & alignment.',
-      confidence: 0.95,
-      latency_ms: 62,
+      explanation: 'YOLO11n + SSIM verifies discrete components, counts, and spatial layout.',
       roi_name: 'Component Matrix',
-      component_findings: {
-        capacitors: 14,
-        resistors: 8,
-        ic_chips: 2,
-        connectors: 4,
-      },
+      techLabel: 'Ultralytics YOLO11n + SSIM',
     }),
     vlm_agent: formatFinding(vlmRecord, {
-      explanation: 'Multimodal VLM analyzed physical solder consistency and surface defects.',
-      confidence: 0.94,
-      latency_ms: 480,
-      roi_name: 'Surface Thermal Array',
+      explanation: 'Multimodal VLM performs cognitive reasoning over surface defects and physical anomalies.',
+      roi_name: 'Surface Inspection Field',
+      techLabel: 'LLM Vision Analysis',
     }),
   };
 
@@ -285,17 +322,17 @@ export const InspectionDetailPage = () => {
 
         {/* Metadata Badges */}
         <div className="flex flex-wrap items-center gap-2 text-xs font-mono text-slate-300">
-          <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-hud-surface border border-hud-border">
-            <Building2 className="w-3.5 h-3.5 text-cyan-400" />
-            <span>Vendor: {inspection?.vendor_name || 'Verified Supplier'}</span>
+          <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-hud-surface border border-hud-border min-w-0 max-w-full">
+            <Building2 className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+            <span className="truncate">Vendor: {inspection?.vendor_name || '—'}</span>
           </span>
           <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-hud-surface border border-hud-border">
             <MapPin className="w-3.5 h-3.5 text-amber-400" />
-            <span>Loc: {inspection?.location || 'Line 01'}</span>
+            <span>Loc: {inspection?.location || '—'}</span>
           </span>
           <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-hud-surface border border-hud-border">
             <Layers className="w-3.5 h-3.5 text-purple-400" />
-            <span>Type: {inspection?.product_type || memory.product_type || 'Motherboard'}</span>
+            <span>Type: {inspection?.product_type?.toUpperCase() || memory?.product_type?.toUpperCase() || '—'}</span>
           </span>
         </div>
       </div>
@@ -313,7 +350,7 @@ export const InspectionDetailPage = () => {
       {(effectivePolicy || effectiveVerdict) && (
         <VerdictBanner
           inspectionId={id}
-          reportId={inspection?.report_path || inspection?.report_id}
+          reportId={id}
           verdict={effectiveVerdict}
           policyAction={effectivePolicy}
           confidence={inspection?.judge_confidence || memory.overall_confidence}

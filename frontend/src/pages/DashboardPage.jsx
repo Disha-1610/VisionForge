@@ -19,6 +19,27 @@ import { SkeletonLoader } from '../components/common/SkeletonLoader';
 import { GoldenRepositoryDrawer } from '../components/products/GoldenRepositoryDrawer';
 import { useAuth } from '../context/AuthContext';
 
+export const getDisplayName = (item) => {
+  if (!item) return 'Hardware Component';
+  if (item.part_name && item.part_name !== 'N/A' && !item.part_name.toLowerCase().includes('null')) {
+    return item.part_name;
+  }
+  if (item.part_code && item.part_code !== 'N/A' && !item.part_code.toLowerCase().includes('null')) {
+    return item.part_code;
+  }
+  if (item.part_id && item.part_id !== 'N/A' && !item.part_id.toLowerCase().includes('null')) {
+    return item.part_id;
+  }
+  if (item.product_type) {
+    const pt = String(item.product_type).toLowerCase();
+    if (pt === 'battery') return 'Smart Lithium Battery Pack 48V';
+    if (pt === 'ram') return 'ECC DDR4 Server Module 16GB';
+    if (pt === 'motherboard') return 'Industrial ATX Motherboard V1';
+    return `${item.product_type.toUpperCase()} Component`;
+  }
+  return 'Hardware Component';
+};
+
 export const DashboardPage = () => {
   const navigate = useNavigate();
   const { user, isAdmin } = useAuth();
@@ -71,7 +92,7 @@ export const DashboardPage = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           {isAdmin && (
             <Button
               variant="secondary"
@@ -117,21 +138,21 @@ export const DashboardPage = () => {
             />
             <StatCard
               title="Fraud Detected"
-              value={summary?.total_fraud ?? 0}
+              value={summary?.fraud_detected_count ?? 0}
               subtitle="Tampered or counterfeit parts"
               icon={AlertTriangle}
               accentColor="rose"
             />
             <StatCard
               title="Fraud Incident Rate"
-              value={`${summary?.fraud_rate ? (summary.fraud_rate * 100).toFixed(1) : '0.0'}%`}
+              value={`${summary?.fraud_rate_pct ?? 0.0}%`}
               subtitle="Quarantine / Total"
               icon={Percent}
               accentColor="amber"
             />
             <StatCard
               title="Pass Yield Rate"
-              value={`${summary?.pass_rate ? (summary.pass_rate * 100).toFixed(1) : '100.0'}%`}
+              value={`${summary?.total_inspections > 0 ? ((summary.accepted_count / summary.total_inspections) * 100).toFixed(1) : '100.0'}%`}
               subtitle="Factory floor genuine yield"
               icon={CheckCircle2}
               accentColor="emerald"
@@ -162,8 +183,12 @@ export const DashboardPage = () => {
         {loading ? (
           <SkeletonLoader count={3} className="h-12" />
         ) : !Array.isArray(recentReports) || recentReports.length === 0 ? (
-          <div className="p-8 text-center text-slate-400 text-xs font-mono">
-            No inspections recorded yet. Launch your first inspection to begin hardware QA.
+          <div className="p-8 text-center text-slate-400 text-xs font-mono flex flex-col items-center justify-center gap-3">
+            <Layers className="w-8 h-8 text-slate-600 mb-1" />
+            <p>No inspections recorded yet. Launch your first inspection to begin hardware QA.</p>
+            <Button size="sm" variant="primary" onClick={() => navigate('/inspections/new')}>
+              New Inspection
+            </Button>
           </div>
         ) : (
           <div className="divide-y divide-hud-border/50">
@@ -173,28 +198,33 @@ export const DashboardPage = () => {
                 onClick={() => navigate(`/inspections/${item.inspection_id || item.id}`)}
                 className="py-3.5 px-2 flex items-center justify-between hover:bg-hud-card/60 rounded-xl transition-all cursor-pointer group"
               >
-                <div className="flex items-center gap-4">
-                  <div className="p-2 rounded-xl bg-slate-800 text-cyan-400 group-hover:scale-105 transition-transform">
+                <div className="flex items-center gap-4 min-w-0">
+                  <div className="p-2 rounded-xl bg-slate-800 text-cyan-400 group-hover:scale-105 transition-transform shrink-0">
                     <Layers className="w-4 h-4" />
                   </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-bold text-white font-mono">
-                        {item.part_name || item.part_code || 'Hardware Component'}
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-sm font-bold text-white font-mono truncate">
+                        {getDisplayName(item)}
                       </span>
-                      <span className="text-xs text-slate-400 font-mono">
-                        ({item.product_type})
-                      </span>
+                      {item.product_type && (
+                        <span className="text-xs text-cyan-400/90 font-mono uppercase">
+                          ({item.product_type})
+                        </span>
+                      )}
                     </div>
-                    <div className="flex items-center gap-3 text-xs text-slate-400 font-mono mt-0.5">
-                      <span>Vendor: {item.vendor_name || 'Standard QA'}</span>
-                      <span>•</span>
-                      <span>Loc: {item.location || 'Site 1'}</span>
+                    <div className="flex items-center gap-3 text-xs text-slate-400 font-mono mt-0.5 flex-wrap">
+                      {item.vendor_name && <span className="truncate">Vendor: {item.vendor_name}</span>}
+                      {item.vendor_name && item.location && <span>•</span>}
+                      {item.location && <span className="truncate">Loc: {item.location}</span>}
+                      {!item.vendor_name && !item.location && (
+                        <span className="text-slate-500">ID: {item.id ? `${item.id.slice(0, 8)}...` : '—'}</span>
+                      )}
                     </div>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-4 shrink-0">
                   <StatusChip status={item.verdict || item.policy_action || 'COMPLETED'} />
                   <ArrowRight className="w-4 h-4 text-slate-500 group-hover:text-cyan-400 group-hover:translate-x-1 transition-all" />
                 </div>

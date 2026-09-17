@@ -16,6 +16,16 @@ venv/
 # C extensions
 *.so
 
+# Node.js & Frontend
+node_modules/
+frontend/node_modules/
+.npm
+dist/
+dist-ssr/
+*.local
+.tunnel.url
+frontend/.tunnel.url
+
 # Distribution / packaging
 .Python
 build/
@@ -227,16 +237,36 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
-# VisionForge Datasets & Large Weights (Keep local / Colab)
+# VisionForge Datasets (Keep heavy training data local / Colab)
 visionforge-dataset/
-data/yolo_weights/*.pt
-!data/yolo_weights/.gitkeep
 
-# Claude AI local configs & state
+# Local databases & temp SQLite files
+*.db
+*.db-journal
+*.sqlite3
+*.sqlite3-journal
+backend/data/*.db
+backend/data/*.sqlite3
+
+# VisionForge Runtime Data (Keep folder via .gitkeep, ignore user uploads & generated PDFs)
+backend/data/inspection_uploads/*
+!backend/data/inspection_uploads/.gitkeep
+backend/data/reports/*
+!backend/data/reports/.gitkeep
+
+# Note: The following are essential and TRACKED in git:
+# backend/data/golden_images/       (Baseline hardware reference photos)
+# backend/data/roi_templates/       (Inspection region JSON schemas)
+# backend/data/faiss_index/         (Pre-computed vector embeddings)
+# backend/data/yolo_weights/        (Pre-trained component detector weights)
+
+# IDE, Agent & Tool state
+.kilo/
+.gemini/
 .claude/
 .cluade/
-
-# Local databases
-*.db
-*.sqlite3
-backend/data/
+.antigravity/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

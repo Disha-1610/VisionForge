@@ -18,6 +18,7 @@ import asyncio
 import json
 import logging
 import random
+import re
 import time
 from dataclasses import dataclass, field
 from enum import Enum
@@ -92,6 +93,7 @@ class LLMRequest(BaseModel):
     response_format: ResponseFormat = ResponseFormat.TEXT
     inspection_id: Optional[str] = None
     stage_name: Optional[str] = None
+    preferred_provider: Optional[LLMProvider] = None
 
 
 class LLMResponse(BaseModel, Generic[T]):
@@ -294,6 +296,39 @@ class BaseProviderClient:
                     retryable,
                     body_text,
                 )
+
+                # Check if provider explicitly reported a cooldown duration (e.g. Gemini / Groq 429)
+                retry_delay: float | None = None
+                if response.status_code == 429:
+                    retry_after_hdr = response.headers.get("retry-after")
+                    if retry_after_hdr:
+                        try:
+                            retry_delay = float(retry_after_hdr)
+                        except ValueError:
+                            pass
+                    if retry_delay is None:
+                        m = re.search(r"(?:retry|try again) in ([0-9.]+)\s*s", body_text, re.IGNORECASE)
+                        if m:
+                            try:
+                                retry_delay = float(m.group(1))
+                            except ValueError:
+                                pass
+
+                    # If quota requires a long wait (> 15s), fast-fail immediately so failover triggers instantly
+                    if retry_delay is not None and retry_delay > 15.0:
+                        logger.info(
+                            "provider=%s quota cooldown is %.1fs (>15s); fast-failing to trigger backup provider immediately",
+                            self.provider.value,
+                            retry_delay,
+                        )
+                        raise LLMProviderHTTPError(
+                            provider=self.provider,
+                            status_code=response.status_code,
+                            message=body_text,
+                            retryable=True,
+                            attempt=attempt,
+                        )
+
                 if not retryable or attempt >= self._config.max_retries:
                     raise LLMProviderHTTPError(
                         provider=self.provider,
@@ -320,10 +355,14 @@ class BaseProviderClient:
                         attempt=attempt,
                     ) from exc
 
-            sleep_for = min(
-                backoff + random.uniform(0, backoff * 0.25),
-                self._config.max_backoff_seconds,
-            )
+            # Calculate sleep: if provider requested a short delay (<=5s), wait that exact duration
+            if retry_delay is not None and retry_delay <= 5.0:
+                sleep_for = min(retry_delay + 0.5, self._config.max_backoff_seconds)
+            else:
+                sleep_for = min(
+                    backoff + random.uniform(0, backoff * 0.25),
+                    self._config.max_backoff_seconds,
+                )
             await asyncio.sleep(sleep_for)
             backoff = min(backoff * 2, self._config.max_backoff_seconds)
 
@@ -511,17 +550,20 @@ class GeminiProviderClient(BaseProviderClient):
 
         system_text = "\n".join(m.content for m in request.messages if m.role == "system")
 
+        gen_config: dict[str, Any] = {
+            "temperature": request.temperature,
+            "maxOutputTokens": max(request.max_tokens or 1024, 4096),
+        }
+        if request.response_format == ResponseFormat.JSON:
+            gen_config["responseMimeType"] = "application/json"
+            gen_config["thinkingConfig"] = {"thinkingBudget": 0}
+
         body: dict[str, Any] = {
             "contents": [{"role": "user", "parts": parts}],
-            "generationConfig": {
-                "temperature": request.temperature,
-                "maxOutputTokens": request.max_tokens,
-            },
+            "generationConfig": gen_config,
         }
         if system_text:
             body["systemInstruction"] = {"parts": [{"text": system_text}]}
-        if request.response_format == ResponseFormat.JSON:
-            body["generationConfig"]["responseMimeType"] = "application/json"
 
         raw, attempt, latency_ms = await self._post_with_retry(url, headers, body)
         return self._parse_gemini_response(raw, model, attempt, latency_ms, request)
@@ -587,20 +629,56 @@ def _map_finish_reason(raw: str) -> FinishReason:
 
 
 def _safe_json_loads(content: str) -> Optional[dict[str, Any]]:
+    """Robustly parse JSON from LLM responses that may contain markdown, prose, or trailing commas."""
+    import re
+
     cleaned = content.strip()
-    if cleaned.startswith("```"):
-        cleaned = cleaned.strip("`")
-        if cleaned.lower().startswith("json"):
-            cleaned = cleaned[4:].strip()
+
+    # 1. Strip markdown code fences: ```json ... ``` or ``` ... ```
+    fence_match = re.search(r"```(?:json)?\s*\n?(.*?)\n?\s*```", cleaned, re.DOTALL)
+    if fence_match:
+        cleaned = fence_match.group(1).strip()
+
+    # 2. Try direct parse first
     try:
         result = json.loads(cleaned)
         if isinstance(result, dict):
             return result
+        if isinstance(result, list) and result and isinstance(result[0], dict):
+            return result[0]
         logger.warning("parsed JSON is not an object: %s", type(result))
         return None
-    except json.JSONDecodeError as exc:
-        logger.warning("failed to parse JSON content: %s", exc)
-        return None
+    except json.JSONDecodeError:
+        pass
+
+    # 3. Extract the first { ... } block from surrounding prose
+    brace_match = re.search(r"\{.*\}", cleaned, re.DOTALL)
+    if brace_match:
+        candidate = brace_match.group(0)
+        # Fix trailing commas before } or ] (invalid JSON but common in LLM output)
+        candidate = re.sub(r",\s*([}\]])", r"\1", candidate)
+        try:
+            result = json.loads(candidate)
+            if isinstance(result, dict):
+                return result
+        except json.JSONDecodeError:
+            pass
+
+    # 4. One more attempt: fix trailing commas on the full cleaned text
+    try:
+        fixed = re.sub(r",\s*([}\]])", r"\1", cleaned)
+        result = json.loads(fixed)
+        if isinstance(result, dict):
+            return result
+    except json.JSONDecodeError:
+        pass
+
+    logger.warning(
+        "failed to parse JSON content after all recovery attempts. "
+        "Raw content (first 500 chars): %s",
+        content[:500],
+    )
+    return None
 
 
 # --------------------------------------------------------------------------- #
@@ -631,6 +709,7 @@ class LLMClient:
             LLMProvider.GROQ: GroqProviderClient(self._config.groq, self._http_client),
             LLMProvider.GEMINI: GeminiProviderClient(self._config.gemini, self._http_client),
         }
+        self._vlm_counter: int = 0
 
     async def aclose(self) -> None:
         if self._owns_http_client:
@@ -655,10 +734,52 @@ class LLMClient:
         capability: LLMCapability,
     ) -> LLMResponse:
         routing = self._route_for(request.task)
-        candidates: list[tuple[ModelRoute, bool]] = [
-            (routing.primary, False),
-            (routing.fallback, True),
-        ]
+
+        if request.task == LLMTask.VLM:
+            if request.preferred_provider == LLMProvider.GROQ:
+                primary_route = ModelRoute(
+                    provider=LLMProvider.GROQ,
+                    model=self._config.groq.vision_model,
+                )
+                fallback_route = ModelRoute(
+                    provider=LLMProvider.GEMINI,
+                    model=self._config.gemini.vision_model,
+                )
+            elif request.preferred_provider == LLMProvider.GEMINI:
+                primary_route = ModelRoute(
+                    provider=LLMProvider.GEMINI,
+                    model=self._config.gemini.vision_model,
+                )
+                fallback_route = ModelRoute(
+                    provider=LLMProvider.GROQ,
+                    model=self._config.groq.vision_model,
+                )
+            else:
+                # 50/50 Round-Robin Load Balancing between Gemini and Groq
+                self._vlm_counter += 1
+                if self._vlm_counter % 2 == 1:
+                    # Odd: Gemini primary, Groq fallback
+                    primary_route = routing.primary
+                    fallback_route = routing.fallback
+                else:
+                    # Even: Groq primary, Gemini fallback
+                    primary_route = ModelRoute(
+                        provider=LLMProvider.GROQ,
+                        model=self._config.groq.vision_model,
+                    )
+                    fallback_route = ModelRoute(
+                        provider=LLMProvider.GEMINI,
+                        model=self._config.gemini.vision_model,
+                    )
+            candidates: list[tuple[ModelRoute, bool]] = [
+                (primary_route, False),
+                (fallback_route, True),
+            ]
+        else:
+            candidates: list[tuple[ModelRoute, bool]] = [
+                (routing.primary, False),
+                (routing.fallback, True),
+            ]
         errors: list[LLMErrorInfo] = []
 
         for route, is_fallback in candidates:
@@ -681,6 +802,30 @@ class LLMClient:
                     response = await client.generate_vision(request, model)
                 else:
                     response = await client.generate_text(request, model)
+
+                # If JSON was requested but parsing failed, treat as provider error
+                # so we can failover to the next provider
+                if (
+                    request.response_format == ResponseFormat.JSON
+                    and response.parsed is None
+                ):
+                    repaired = _safe_json_loads(response.content)
+                    if repaired is None and not is_fallback:
+                        logger.warning(
+                            "provider=%s returned invalid JSON for task=%s; "
+                            "attempting failover",
+                            route.provider.value,
+                            request.task.value,
+                        )
+                        raise LLMProviderHTTPError(
+                            provider=route.provider,
+                            status_code=200,
+                            message="response content could not be parsed as JSON",
+                            retryable=True,
+                            attempt=response.attempt,
+                        )
+                    elif repaired is not None:
+                        response = response.model_copy(update={"parsed": repaired})
 
                 return response.model_copy(update={"used_fallback": is_fallback})
 

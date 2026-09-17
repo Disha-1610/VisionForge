@@ -92,36 +92,70 @@ def _extract_forensic_agent_findings(state: InspectionState) -> dict[str, Any]:
             missing = ev.get("missing_components", [])
             extra = ev.get("extra_components", [])
             ssim = ev.get("ssim_score") or ev.get("ssim")
-            if missing:
-                structural_findings.append(f"Missing components ({len(missing)}): {missing}")
-            if extra:
-                structural_findings.append(f"Counterfeit/Extra components ({len(extra)}): {extra}")
+            missing_names = []
+            for m in missing:
+                missing_names.append(str(m.get("class_name", m)) if isinstance(m, dict) else str(m))
+            extra_names = []
+            for e in extra:
+                extra_names.append(str(e.get("class_name", e)) if isinstance(e, dict) else str(e))
+            if missing_names:
+                names = ", ".join(missing_names[:4])
+                structural_findings.append(
+                    f"{len(missing_names)} component(s) are missing from the board ({names})."
+                )
+            if extra_names:
+                names = ", ".join(extra_names[:4])
+                structural_findings.append(
+                    f"{len(extra_names)} unexpected component(s) were found that should not be present ({names})."
+                )
             if isinstance(comp_findings, list):
                 for c in comp_findings:
                     if isinstance(c, dict) and c.get("status") in ("missing", "extra", "mismatch"):
-                        structural_findings.append(f"{c.get('class_name', 'component')}: {c.get('status')}")
+                        cls = c.get("class_name", "component")
+                        st = c.get("status")
+                        if st == "missing":
+                            structural_findings.append(f"A {cls} component is missing.")
+                        elif st == "extra":
+                            structural_findings.append(f"An extra {cls} component was found.")
+                        else:
+                            structural_findings.append(f"The {cls} component does not match the reference.")
             if ssim is not None and ssim < 0.85:
-                structural_findings.append(f"SSIM similarity drift: {float(ssim):.2f}")
+                structural_findings.append(
+                    f"The board surface shows a significant difference from the golden reference "
+                    f"(similarity {float(ssim):.2f})."
+                )
 
         elif r.agent_type.value == "ocr":
-            mismatches = ev.get("mismatches", [])
-            similarity = ev.get("similarity")
-            if mismatches:
-                structural_findings.append(f"OCR Serial/Text mismatch: {mismatches}")
-            elif similarity is not None and similarity < 0.90:
-                ocr_findings.append(f"OCR match similarity low: {float(similarity):.2f}")
+            has_defect = ev.get("has_defect", False)
+            similarity = ev.get("similarity", 1.0)
+            threshold = ev.get("threshold", 0.85)
+            if has_defect or (similarity is not None and similarity < threshold):
+                mismatches = ev.get("mismatches", [])
+                if mismatches:
+                    ocr_findings.append(
+                        f"The serial or text on the label does not match the golden reference "
+                        f"(similarity {float(similarity):.1%} below threshold {float(threshold):.1%})."
+                    )
+                else:
+                    ocr_findings.append(
+                        f"The OCR engine read the text with only {float(similarity):.0%} similarity to the reference.",
+                    )
 
         elif r.agent_type.value == "vlm":
             if ev.get("has_defect") or ev.get("anomaly_detected"):
-                dtype = ev.get("defect_type", "visual_anomaly")
+                dtype = str(ev.get("defect_type", "visual_anomaly")).replace("_", " ")
                 sev = ev.get("severity", "medium")
-                desc = ev.get("description") or r.explanation
-                vlm_findings.append(f"VLM Flag [{sev.upper()}]: {dtype} - {desc}")
+                desc = (ev.get("description") or r.explanation or "")
+                vlm_findings.append(
+                    f"The vision analysis flagged a {dtype} issue at {sev} severity. {desc}".strip()
+                )
 
         elif r.agent_type.value == "label":
             if not ev.get("match", True) or (ev.get("match_score", 1.0) < 0.70):
                 score = ev.get("match_score", 0.0)
-                label_findings.append(f"Label template deviation: correlation score {float(score):.2f}")
+                label_findings.append(
+                    f"The QC label template does not match the golden reference (correlation {float(score):.2f})."
+                )
 
     return {
         "structural": structural_findings,
@@ -140,6 +174,8 @@ def _build_judge_prompt(state: InspectionState) -> list[LLMMessage]:
     context_payload = {
         "part_code": mem.part_code or "UNKNOWN-PART",
         "product_type": mem.product_type or "Electronics",
+        "declared_product_type": getattr(mem, "declared_product_type", None) or mem.product_type,
+        "hardware_category_mismatch": getattr(mem, "hardware_category_mismatch", False),
         "location": mem.location or "Facility Floor",
         "authenticity_score": mem.authenticity_score,
         "authenticity_flagged": mem.authenticity_flagged,
@@ -158,11 +194,31 @@ def _build_judge_prompt(state: InspectionState) -> list[LLMMessage]:
         "Guidelines:\n"
         "- 'reject': Confirmed hardware counterfeit, missing/extra components, tampered serial number, "
         "or significant structural deviation.\n"
-        "- 'review': Borderline anomaly, minor solder bridge risk, low template match, or unverified vendor.\n"
+        "- 'review': Borderline anomaly, hardware category mismatch (e.g. declared motherboard but visual match is RAM), "
+        "minor solder bridge risk, low template match, or unverified vendor.\n"
         "- 'accept': All components and identifiers match golden engineering reference within tolerance.\n"
+        "- If hardware_category_mismatch is true, explain clearly that the operator declared one hardware type but visual intelligence "
+        "matched another, and recommend 'review' to verify intake classification.\n"
         "Be extremely specific in root_cause_reasoning, citing exact component names, serial mismatches, "
         "or visual anomalies so quality engineers understand the exact defect.\n"
-        "Return valid JSON adhering to the JudgeVerdictResponse schema."
+        "LANGUAGE RULES (very important):\n"
+        "- Write root_cause_reasoning in clear, simple, plain English sentences that anyone can read. "
+        "Imagine explaining the problem to a non-technical shop-floor worker.\n"
+        "- Never copy raw machine tags or codes like 'missing_components:2' or 'tampered_serial_major:0_diffs' "
+        "into your answer. Instead, describe them in words, for example: 'Two components were missing from the board.' "
+        "or 'The serial number appears to have been tampered with.'\n"
+        "- Use short paragraphs and natural sentences. No bullet-style log dumps, no colons-with-counts, "
+        "no underscore identifiers. Every sentence must read like human speech.\n"
+        "- Keep the analysis thorough but readable; prioritize clarity over jargon.\n\n"
+        "OUTPUT FORMAT (MANDATORY):\n"
+        "You must respond with ONLY a valid JSON object matching this schema. Do not output markdown backticks or text outside the JSON object:\n"
+        "{\n"
+        '  "verdict": "accept" | "reject" | "review",\n'
+        '  "confidence": 0.95,\n'
+        '  "fraud_category": "missing_components",\n'
+        '  "root_cause_reasoning": "Plain English description of what was inspected and why this verdict was reached.",\n'
+        '  "recommendations": ["Recommendation item 1", "Recommendation item 2"]\n'
+        "}"
     )
 
     user_prompt = (
@@ -170,7 +226,9 @@ def _build_judge_prompt(state: InspectionState) -> list[LLMMessage]:
         f"```json\n{json.dumps(context_payload, indent=2)}\n```\n\n"
         "Provide your evaluation in structured JSON with: "
         "verdict ('accept', 'reject', or 'review'), confidence (0.0-1.0), "
-        "fraud_category, root_cause_reasoning, and recommendations."
+        "fraud_category, root_cause_reasoning, and recommendations.\n"
+        "Remember: root_cause_reasoning must be simple, plain English sentences with short paragraphs. "
+        "Do not reproduce machine tags or technical codes."
     )
 
     return [
@@ -193,14 +251,15 @@ def _rule_based_fallback_verdict(state: InspectionState) -> JudgeVerdictResponse
     )
 
     if fraud_prob >= 0.65 or "missing_components" in category or "counterfeit" in category:
-        defect_details = "; ".join(all_findings[:3]) if all_findings else "Critical component or structural deviation"
+        defect_details = ". ".join(all_findings[:3]) if all_findings else "Critical component or structural deviation"
         return JudgeVerdictResponse(
             verdict="reject",
             confidence=0.92,
             fraud_category=category,
             root_cause_reasoning=(
-                f"Hardware anomaly threshold exceeded (fraud risk: {fraud_prob*100:.1f}%). "
-                f"Primary root cause: {defect_details}. Physical sample fails golden engineering specification."
+                f"This board does not meet the golden engineering specification. "
+                f"{defect_details} "
+                f"The overall fraud risk is {fraud_prob*100:.1f}%."
             ),
             recommendations=[
                 "Quarantine affected batch immediately to prevent assembly integration",
@@ -208,15 +267,33 @@ def _rule_based_fallback_verdict(state: InspectionState) -> JudgeVerdictResponse
             ],
         )
 
+    if getattr(state.memory, "hardware_category_mismatch", False):
+        declared = getattr(state.memory, "declared_product_type", "unknown")
+        matched = state.memory.product_type
+        return JudgeVerdictResponse(
+            verdict="review",
+            confidence=0.88,
+            fraud_category="category_mismatch",
+            root_cause_reasoning=(
+                f"A hardware category mismatch was detected. The operator declared '{declared}', "
+                f"but visual intelligence identified a '{matched}' module. "
+                "Manual review is required to verify intake classification."
+            ),
+            recommendations=[
+                "Confirm physical component part code on the intake tray",
+                "Re-submit with the matching product type if the wrong category was selected",
+            ],
+        )
+
     if fraud_prob >= 0.30 or state.memory.authenticity_flagged:
-        defect_details = "; ".join(all_findings[:3]) if all_findings else "Statistical variance or unverified lot marking"
+        defect_details = ". ".join(all_findings[:3]) if all_findings else "Some variance was found in the board"
         return JudgeVerdictResponse(
             verdict="review",
             confidence=0.78,
             fraud_category=category,
             root_cause_reasoning=(
-                f"Secondary anomaly detected (fraud risk: {fraud_prob*100:.1f}%). "
-                f"Findings: {defect_details}. Requires manual verification by Quality Assurance Lead."
+                f"Minor issue detected on this board. {defect_details}. "
+                f"Fraud risk is {fraud_prob*100:.1f}%. A Quality Assurance Lead should verify this manually."
             ),
             recommendations=[
                 "Perform high-magnification optical inspection on target ROIs",
@@ -229,8 +306,9 @@ def _rule_based_fallback_verdict(state: InspectionState) -> JudgeVerdictResponse
         confidence=0.95,
         fraud_category="clean",
         root_cause_reasoning=(
-            "All inspected hardware regions, discrete YOLO component counts, OCR markings, "
-            "and optical textures strictly conform to the golden reference specification within certified tolerance limits."
+            "All inspected areas match the golden engineering specification. "
+            "Every component is present and correctly placed, the serial markings and labels are genuine, "
+            "and the surface quality is within the allowed tolerance."
         ),
         recommendations=["Release batch to production assembly / fulfillment"],
     )

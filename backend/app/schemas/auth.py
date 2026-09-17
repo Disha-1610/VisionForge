@@ -2,8 +2,11 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
+from typing import Optional
 
 from pydantic import BaseModel, EmailStr, Field
+
+from app.models.user import UserRole
 
 
 # ── Request Schemas ───────────────────────────────────────────────────────────
@@ -12,6 +15,7 @@ class UserRegister(BaseModel):
     email: EmailStr
     password: str = Field(min_length=8, max_length=128)
     full_name: str = Field(min_length=1, max_length=255)
+    role: UserRole = Field(default=UserRole.OPERATOR)
 
 
 class UserLogin(BaseModel):

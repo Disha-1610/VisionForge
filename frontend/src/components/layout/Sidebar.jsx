@@ -8,11 +8,12 @@ import {
   LogOut,
   ShieldCheck,
   UserCheck,
+  Menu,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { Logo } from '../common/Logo';
 
-export const Sidebar = () => {
+export const Sidebar = ({ onClose }) => {
   const { user, role, isAdmin, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -29,11 +30,18 @@ export const Sidebar = () => {
   };
 
   return (
-    <aside className="w-64 bg-hud-surface border-r border-hud-border flex flex-col justify-between shrink-0 select-none">
+    <aside className="w-64 bg-hud-surface border-r border-hud-border flex flex-col justify-between shrink-0 select-none h-full overflow-y-auto">
       <div>
         {/* Brand Header */}
         <div className="p-5 border-b border-hud-border/70 flex items-center justify-between">
           <Logo size="md" subtitle="online" animate={true} />
+          <button
+            onClick={onClose}
+            aria-label="Close navigation"
+            className="lg:hidden p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
         </div>
 
         {/* Navigation Items */}
@@ -47,6 +55,7 @@ export const Sidebar = () => {
               <NavLink
                 key={item.path}
                 to={item.path}
+                onClick={onClose}
                 className={({ isActive }) =>
                   `flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
                     isActive

@@ -2,7 +2,6 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
-import { ThemeProvider } from './context/ThemeContext';
 
 import { AppLayout } from './components/layout/AppLayout';
 import { LandingPage } from './pages/LandingPage';
@@ -37,10 +36,9 @@ const ProtectedRoute = ({ children }) => {
 
 export default function App() {
   return (
-    <ThemeProvider>
-      <ToastProvider>
-        <AuthProvider>
-          <BrowserRouter>
+    <ToastProvider>
+      <AuthProvider>
+        <BrowserRouter>
             <Routes>
               {/* Public Routes */}
               <Route path="/" element={<LandingPage />} />
@@ -66,7 +64,6 @@ export default function App() {
             </Routes>
           </BrowserRouter>
         </AuthProvider>
-      </ToastProvider>
-    </ThemeProvider>
+    </ToastProvider>
   );
 }

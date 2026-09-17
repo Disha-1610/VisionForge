@@ -11,7 +11,7 @@ from fastapi.staticfiles import StaticFiles
 from app.core.config import get_settings
 from app.core.database import engine, init_db
 from app.core.exceptions import register_exception_handlers
-from app.routers import analytics, auth, inspections, products, reports, vendors
+from app.routers import analytics, auth, inspections, products, reports, system, vendors
 from app.services.embedding_service import embedding_service
 
 logging.basicConfig(
@@ -84,6 +84,7 @@ app.include_router(vendors.router, prefix=API_PREFIX)
 app.include_router(inspections.router, prefix=API_PREFIX)
 app.include_router(reports.router, prefix=API_PREFIX)
 app.include_router(analytics.router, prefix=API_PREFIX)
+app.include_router(system.router, prefix=API_PREFIX)
 
 
 # ── Static File Serving ───────────────────────────────────────────────────────

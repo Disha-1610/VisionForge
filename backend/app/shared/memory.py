@@ -72,6 +72,8 @@ class WorkingMemory:
     golden_image_path: str | None = None
     part_code: str | None = None
     product_type: str | None = None
+    declared_product_type: str | None = None
+    hardware_category_mismatch: bool = False
     roi_template: dict[str, Any] | None = None
 
     quality_passed: bool | None = None
@@ -134,6 +136,8 @@ class WorkingMemory:
             "golden_image_path": self.golden_image_path,
             "part_code": self.part_code,
             "product_type": self.product_type,
+            "declared_product_type": self.declared_product_type,
+            "hardware_category_mismatch": self.hardware_category_mismatch,
             "roi_template": _sanitize_for_json(self.roi_template),
             "quality_passed": self.quality_passed,
             "authenticity_score": self.authenticity_score,

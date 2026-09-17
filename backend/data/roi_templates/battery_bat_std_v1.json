@@ -1,0 +1,82 @@
+{
+  "id": "roi-battery-bat-std-v1",
+  "productType": "battery",
+  "partCode": "BAT-STD-V1",
+  "version": 1,
+  "coordinateSystem": "pixel",
+  "referenceImageWidth": 1672,
+  "referenceImageHeight": 941,
+  "regions": [
+    {
+      "id": "serial_label",
+      "name": "Serial Number",
+      "type": "text",
+      "bbox": {"x": 1045, "y": 575, "width": 170, "height": 80},
+      "agent": "ocr",
+      "priority": "critical",
+      "expectedComponents": [],
+      "checkpoints": [
+        {
+          "id": "serial_match",
+          "description": "Serial number text must match golden reference",
+          "expectedValue": "CN-033YDH-72438 294-0827-AOO DPIN 033YDH"
+        }
+      ]
+    },
+    {
+      "id": "brand_logo",
+      "name": "Brand Logo",
+      "type": "label",
+      "bbox": {"x": 130, "y": 320, "width": 175, "height": 80},
+      "agent": "label",
+      "priority": "high",
+      "expectedComponents": []
+    },
+    {
+      "id": "tamper_seal",
+      "name": "Caution/Spec Label",
+      "type": "label",
+      "bbox": {"x": 350, "y": 330, "width": 760, "height": 190},
+      "agent": "label",
+      "priority": "critical",
+      "expectedComponents": []
+    },
+    {
+      "id": "terminal_pair",
+      "name": "Terminal Connector",
+      "type": "structural",
+      "bbox": {"x": 600, "y": 140, "width": 300, "height": 100},
+      "agent": "structural",
+      "priority": "critical",
+      "expectedComponents": []
+    },
+    {
+      "id": "cell_pack",
+      "name": "Battery Cell Pack",
+      "type": "structural",
+      "bbox": {"x": 60, "y": 200, "width": 1560, "height": 630},
+      "agent": "structural",
+      "priority": "critical",
+      "expectedComponents": [
+        {"className": "battery_cell", "expectedCount": 4, "required": true}
+      ]
+    },
+    {
+      "id": "outer_seal_ring",
+      "name": "Outer Frame & Seal",
+      "type": "structural",
+      "bbox": {"x": 50, "y": 180, "width": 1580, "height": 680},
+      "agent": "structural",
+      "priority": "high",
+      "expectedComponents": []
+    },
+    {
+      "id": "general_casing_check",
+      "name": "General Casing Surface",
+      "type": "visual",
+      "bbox": {"x": 50, "y": 50, "width": 1572, "height": 841},
+      "agent": "vlm",
+      "priority": "normal"
+    }
+  ]
+}

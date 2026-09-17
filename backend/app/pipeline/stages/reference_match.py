@@ -150,12 +150,28 @@ async def run_reference_match(
     # 5. Lock in the pairing
     golden_meta = golden.meta or {}
     matched_product_type = golden_meta.get("product_type") or infer_product_type(golden.part_id).value
+    declared_product_type = state.memory.product_type
+
+    category_mismatch = False
+    if declared_product_type and declared_product_type.lower().strip() != matched_product_type.lower().strip():
+        category_mismatch = True
+        logger.warning(
+            "Stage 3 Category Mismatch on inspection %s: declared product_type='%s' but visual embedding matched '%s' (part_id=%s, score=%.4f)",
+            inspection_id,
+            declared_product_type,
+            matched_product_type,
+            golden.part_id,
+            best_score,
+        )
+
     await state.memory.update(
         similarity_score=float(best_score),
         golden_reference_id=golden.id,
         golden_image_path=golden.image_path,
         part_code=golden.part_id,
         product_type=matched_product_type,
+        declared_product_type=declared_product_type,
+        hardware_category_mismatch=category_mismatch,
     )
 
     logger.info(
@@ -174,6 +190,15 @@ async def run_reference_match(
         "view_angle": golden.view_angle,
         "image_path": golden.image_path,
     }
+    if category_mismatch:
+        detail["category_mismatch"] = {
+            "declared_product_type": declared_product_type,
+            "matched_product_type": matched_product_type,
+            "warning": (
+                f"Declared product type is '{declared_product_type}', but visual embedding "
+                f"matched '{matched_product_type}' ({golden.part_name})."
+            ),
+        }
     return await state.record_stage(
         StageResult(
             stage=PipelineStageName.REFERENCE_MATCH,

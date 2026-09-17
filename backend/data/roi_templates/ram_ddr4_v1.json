@@ -1,0 +1,66 @@
+{
+  "id": "roi-ram-ddr4-v1",
+  "productType": "ram",
+  "partCode": "RAM-DDR4-V1",
+  "version": 1,
+  "coordinateSystem": "pixel",
+  "referenceImageWidth": 1672,
+  "referenceImageHeight": 941,
+  "regions": [
+    {
+      "id": "serial_label",
+      "name": "Serial Number",
+      "type": "text",
+      "bbox": {"x": 400, "y": 505, "width": 400, "height": 55},
+      "agent": "ocr",
+      "priority": "critical",
+      "expectedComponents": [],
+      "checkpoints": [
+        {
+          "id": "serial_match",
+          "description": "Serial number text must match golden reference",
+          "expectedValue": "S/N K4B8G 16460 12,44"
+        }
+      ]
+    },
+    {
+      "id": "spec_label",
+      "name": "Spec/Vendor Label",
+      "type": "label",
+      "bbox": {"x": 370, "y": 345, "width": 590, "height": 120},
+      "agent": "label",
+      "priority": "high",
+      "expectedComponents": []
+    },
+    {
+      "id": "memory_chip_bank",
+      "name": "Memory Chip Bank",
+      "type": "structural",
+      "bbox": {"x": 170, "y": 220, "width": 1360, "height": 430},
+      "agent": "structural",
+      "priority": "critical",
+      "expectedComponents": [
+        {"className": "ram_ic_chip", "expectedCount": 8, "required": true}
+      ]
+    },
+    {
+      "id": "gold_pin_edge_connector",
+      "name": "Gold Pin Edge Connector",
+      "type": "structural",
+      "bbox": {"x": 80, "y": 760, "width": 1510, "height": 160},
+      "agent": "structural",
+      "priority": "critical",
+      "expectedComponents": [
+        {"className": "gold_pin_connector", "expectedCount": 1, "required": true}
+      ]
+    },
+    {
+      "id": "general_module_check",
+      "name": "General Module Surface",
+      "type": "visual",
+      "bbox": {"x": 0, "y": 0, "width": 1672, "height": 941},
+      "agent": "vlm",
+      "priority": "normal"
+    }
+  ]
+}

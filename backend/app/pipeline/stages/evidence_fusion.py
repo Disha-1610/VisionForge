@@ -33,6 +33,50 @@ from app.shared.memory import PipelineStageName, StageResult
 logger = logging.getLogger("app.pipeline.evidence_fusion")
 
 
+def describe_issue(tag: str) -> str:
+    """Converts a machine-style issue tag into plain, simple English."""
+    if not tag:
+        return "Unknown finding."
+    text = str(tag)
+
+    if text.startswith("missing_components:"):
+        return f"{text.split(':', 1)[1]} component(s) are missing from the inspected board."
+    if text.startswith("counterfeit_extra_components:"):
+        return f"{text.split(':', 1)[1]} unexpected component(s) were found that should not be present."
+    if text.startswith("component_count_mismatch:"):
+        return f"{text.split(':', 1)[1]} component count mismatch(es) were detected against the golden reference."
+    if text.startswith("severe_ssim_drift:"):
+        return f"The board surface looks very different from the golden reference (similarity {text.split(':', 1)[1]})."
+    if text.startswith("moderate_ssim_drift:"):
+        return f"The board surface looks somewhat different from the golden reference (similarity {text.split(':', 1)[1]})."
+    if text.startswith("minor_ssim_drift:"):
+        return f"A minor surface texture difference was detected (similarity {text.split(':', 1)[1]})."
+    if text == "structural_defect":
+        return "A structural defect was found in the component layout."
+    if text.startswith("tampered_serial_major:"):
+        return f"The serial number seems to have been altered ({text.split(':', 1)[1].replace('_diffs', '')} character difference(s))."
+    if text.startswith("tampered_serial_minor:"):
+        return f"Small differences were found in the serial number ({text.split(':', 1)[1].replace('_diffs', '')} character difference(s))."
+    if text == "ocr_unreadable_serial":
+        return "The serial markings could not be confirmed by OCR and require visual inspection."
+    if text == "tampered_serial_absence":
+        return "The serial markings appear missing or completely illegible on the inspected board."
+    if text.startswith("vlm_anomaly:"):
+        parts = text.split(":", 2)
+        defect_type = parts[1].replace("_", " ") if len(parts) > 1 else "visual"
+        severity = parts[2] if len(parts) > 2 else "medium"
+        return f"The vision analysis flagged a {defect_type} issue at {severity} severity."
+    if text.startswith("label_mismatch_low_conf:"):
+        return f"The QC label does not match the golden template (correlation {text.split(':', 1)[1]})."
+    if text == "authenticity_flagged":
+        return "The image authenticity check flagged the inspected photo."
+    if text.startswith("low_reference_similarity:"):
+        return f"Overall similarity to the reference is low ({text.split(':', 1)[1]})."
+    if text.startswith("agent_failure:"):
+        return f"One of the inspection modules failed to run ({text.split(':', 1)[1]})."
+    return text.replace("_", " ").replace(":", ": ")
+
+
 # Signal weights per agent type for anomaly contributions
 AGENT_WEIGHTS: dict[AgentType, float] = {
     AgentType.STRUCTURAL: 0.45,
@@ -118,14 +162,24 @@ def _extract_agent_anomaly_score(record: EvidenceRecord) -> tuple[float, str | N
         return 0.0, None
 
     if record.agent_type == AgentType.OCR:
-        mismatches = evidence_data.get("mismatches", [])
-        similarity = evidence_data.get("similarity", 1.0)
-        match = evidence_data.get("match", True)
+        inconclusive = evidence_data.get("inconclusive") or evidence_data.get("no_text_detected")
+        if inconclusive:
+            return 0.20, "ocr_unreadable_serial"
 
-        if not match or len(mismatches) > 0 or similarity < 0.85:
-            if similarity < 0.5:
-                return 0.95, f"tampered_serial_major:{len(mismatches)}_diffs"
-            return 0.75, f"tampered_serial_minor:{len(mismatches)}_diffs"
+        has_defect = evidence_data.get("has_defect", False)
+        match_status = evidence_data.get("match_status", "match")
+        mismatches = evidence_data.get("mismatches", [])
+        similarity = float(evidence_data.get("similarity", 1.0))
+        threshold = float(evidence_data.get("threshold", 0.85))
+
+        # Only flag tampering if OCR agent found a defect or similarity fell below threshold
+        if has_defect or match_status == "mismatch" or similarity < threshold:
+            if len(mismatches) > 0:
+                if similarity < 0.5:
+                    return 0.95, f"tampered_serial_major:{len(mismatches)}_diffs"
+                return 0.75, f"tampered_serial_minor:{len(mismatches)}_diffs"
+            # Text absent on one side
+            return 0.65, "tampered_serial_absence"
 
         return 0.0, None
 
@@ -137,6 +191,9 @@ def _extract_agent_anomaly_score(record: EvidenceRecord) -> tuple[float, str | N
             severity = str(evidence_data.get("severity", "medium")).lower()
             mult = VLM_SEVERITY_MULTIPLIER.get(severity, 0.5)
             defect_type = evidence_data.get("defect_type", "visual_anomaly")
+            # Missing/extra component findings from VLM are high confidence signals
+            if defect_type in ("missing_component", "extra_component"):
+                return min(1.0, 0.90 * mult + 0.25), f"vlm_anomaly:{defect_type}:{severity}"
             return min(1.0, 0.75 * mult + 0.25), f"vlm_anomaly:{defect_type}:{severity}"
 
         return 0.0, None
@@ -164,8 +221,10 @@ def determine_primary_fraud_category(issues: list[str]) -> str:
         return "missing_components"
     if "counterfeit_extra" in issue_str or "rework" in issue_str:
         return "counterfeit_rework"
-    if "tampered_serial" in issue_str or "serial" in issue_str:
+    if "tampered_serial" in issue_str:
         return "tampered_serial"
+    if "ocr_unreadable" in issue_str or "unreadable_serial" in issue_str:
+        return "unreadable_serial"
     if "vlm_anomaly" in issue_str:
         return "visual_anomaly"
     if "label_mismatch" in issue_str:
@@ -274,6 +333,7 @@ async def run_evidence_fusion(state: InspectionState) -> StageResult:
         "total_rois_evaluated": len(roi_groups),
         "roi_summaries": roi_summaries,
         "detected_issues": detected_issues,
+        "detected_issue_descriptions": [describe_issue(i) for i in detected_issues],
         "fraud_score": fraud_score_pct,
         "fraud_probability": composite_prob,
         "confidence": composite_conf,

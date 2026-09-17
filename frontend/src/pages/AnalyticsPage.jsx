@@ -111,21 +111,21 @@ export const AnalyticsPage = () => {
             />
             <StatCard
               title="Intercepted Fraud Units"
-              value={summary?.total_fraud ?? 0}
+              value={summary?.fraud_detected_count ?? 0}
               subtitle="Quarantined from supply chain"
               icon={ShieldAlert}
               accentColor="rose"
             />
             <StatCard
               title="Systemic Defect Rate"
-              value={`${summary?.fraud_rate ? (summary.fraud_rate * 100).toFixed(1) : '0.0'}%`}
+              value={`${summary?.fraud_rate_pct ?? 0.0}%`}
               subtitle="Global anomaly percentage"
               icon={TrendingUp}
               accentColor="amber"
             />
             <StatCard
               title="Station Compliance"
-              value={`${summary?.pass_rate ? (summary.pass_rate * 100).toFixed(1) : '100.0'}%`}
+              value={`${summary?.total_inspections > 0 ? ((summary.accepted_count / summary.total_inspections) * 100).toFixed(1) : '100.0'}%`}
               subtitle="Genuine components accepted"
               icon={CheckCircle}
               accentColor="emerald"
@@ -154,7 +154,7 @@ export const AnalyticsPage = () => {
               </div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={monthlyTrend} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <AreaChart data={monthlyTrend} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                   <defs>
                     <linearGradient id="colorFraud" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#ef4444" stopOpacity={0.8} />
@@ -166,7 +166,7 @@ export const AnalyticsPage = () => {
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#1e2e4f" />
-                  <XAxis dataKey="month" stroke="#64748b" tick={{ fontSize: 10, fill: '#94a3b8' }} />
+                  <XAxis dataKey="period" stroke="#64748b" tick={{ fontSize: 10, fill: '#94a3b8' }} />
                   <YAxis stroke="#64748b" tick={{ fontSize: 10, fill: '#94a3b8' }} />
                   <Tooltip content={<CustomTooltip />} />
                   <Area
@@ -179,7 +179,7 @@ export const AnalyticsPage = () => {
                   />
                   <Area
                     type="monotone"
-                    dataKey="total_count"
+                    dataKey="total_inspections"
                     name="Total Inspected"
                     stroke="#06b6d4"
                     fillOpacity={1}
@@ -217,7 +217,8 @@ export const AnalyticsPage = () => {
                     type="category"
                     stroke="#64748b"
                     tick={{ fontSize: 10, fill: '#94a3b8' }}
-                    width={90}
+                    width={80}
+                    tickFormatter={(v) => (v && v.length > 12 ? `${v.slice(0, 11)}…` : v)}
                   />
                   <Tooltip content={<CustomTooltip />} />
                   <Bar dataKey="fraud_count" name="Fraud Findings" fill="#f59e0b" radius={[0, 6, 6, 0]} />
@@ -244,13 +245,13 @@ export const AnalyticsPage = () => {
               <p className="text-slate-500 text-center py-4">No location risk logs recorded.</p>
             ) : (
               locationBreakdown.map((loc, i) => (
-                <div key={i} className="py-2.5 flex items-center justify-between">
-                  <span className="text-white font-bold">{loc.location}</span>
-                  <div className="flex items-center gap-3">
-                    <span className="text-slate-400">Total: {loc.total}</span>
-                    <span className="text-rose-400 font-bold">Fraud: {loc.fraud}</span>
+                <div key={i} className="py-2.5 flex items-center justify-between gap-3">
+                  <span className="text-white font-bold min-w-0 break-all leading-snug">{loc.location}</span>
+                  <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                    <span className="text-slate-400">Total: {loc.total_inspections}</span>
+                    <span className="text-rose-400 font-bold">Fraud: {loc.fraud_count}</span>
                     <span className="px-2 py-0.5 rounded bg-hud-card border border-hud-border text-[10px] text-cyan-300">
-                      {loc.rate ? `${(loc.rate * 100).toFixed(1)}%` : '0%'}
+                      {loc.fraud_rate_pct ? `${loc.fraud_rate_pct.toFixed(1)}%` : '0%'}
                     </span>
                   </div>
                 </div>
@@ -277,18 +278,17 @@ export const AnalyticsPage = () => {
                   No per-operator inspection metrics recorded.
                 </p>
               ) : (
-                operatorBreakdown.map((op, i) => (
-                  <div key={i} className="py-2.5 flex items-center justify-between">
-                    <div>
-                      <span className="text-white font-bold">{op.operator_name || op.email}</span>
-                      <p className="text-[10px] text-slate-500">{op.role}</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-slate-400">Cases: {op.inspections_count}</span>
-                      <span className="text-amber-400">Overrides: {op.overrides_count || 0}</span>
-                    </div>
+              operatorBreakdown.map((op, i) => (
+                <div key={i} className="py-2.5 flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <span className="text-white font-bold break-all">{op.operator_name || op.operator_email}</span>
                   </div>
-                ))
+                  <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                    <span className="text-slate-400">Cases: {op.total_inspections}</span>
+                    <span className="text-amber-400">Overrides: {op.overridden_count || 0}</span>
+                  </div>
+                </div>
+              ))
               )}
             </div>
           </div>

@@ -6,7 +6,7 @@ export const STAGES = [
   { id: 2, name: 'authenticity_check', label: 'Authenticity Check', description: 'EXIF metadata, ELA & noise consistency' },
   { id: 3, name: 'reference_match', label: 'Reference Intelligence', description: 'CLIP/FAISS golden template retrieval' },
   { id: 4, name: 'roi_scheduler', label: 'ROI Scheduler', description: 'Multi-agent region priority dispatch' },
-  { id: 5, name: 'evidence_execution', label: 'Evidence Execution', description: 'PaddleOCR, Label, YOLO11n & VLM agents' },
+  { id: 5, name: 'evidence_execution', label: 'Evidence Execution', description: 'OCR, Label, YOLO11n & VLM agents' },
   { id: 6, name: 'evidence_fusion', label: 'Evidence Fusion', description: 'Multi-view signal weighting & max-pooling' },
   { id: 7, name: 'ai_judge', label: 'AI Judge', description: 'Multimodal root-cause reasoning' },
   { id: 8, name: 'policy_engine', label: 'Policy Engine', description: 'Industrial action mapping & audit report' },

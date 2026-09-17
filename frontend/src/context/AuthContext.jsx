@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { authAPI } from '../services/api';
+import { authAPI, startAuthTimer, stopAuthTimer } from '../services/api';
 
 const AuthContext = createContext(null);
 
@@ -12,6 +12,7 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   const logout = useCallback(() => {
+    stopAuthTimer();
     localStorage.removeItem('vf_access_token');
     localStorage.removeItem('vf_refresh_token');
     localStorage.removeItem('vf_user');
@@ -34,12 +35,18 @@ export const AuthProvider = ({ children }) => {
       const storedToken = localStorage.getItem('vf_access_token');
       if (storedToken) {
         try {
+          // The axios interceptor will auto-refresh expired tokens
           const me = await authAPI.getMe();
           setUser(me);
           localStorage.setItem('vf_user', JSON.stringify(me));
+          startAuthTimer();
         } catch (err) {
-          console.warn('Session restoration failed:', err);
-          logout();
+          // Only logout if interceptor failed to refresh (refresh token also expired)
+          const refreshToken = localStorage.getItem('vf_refresh_token');
+          if (!refreshToken || err.response?.status === 401) {
+            console.warn('Session restoration failed:', err);
+            logout();
+          }
         }
       }
       setLoading(false);
@@ -55,6 +62,7 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('vf_refresh_token', data.refresh_token);
     }
     setToken(data.access_token);
+    startAuthTimer();
 
     const me = await authAPI.getMe();
     setUser(me);

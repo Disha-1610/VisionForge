@@ -12,7 +12,7 @@ import {
   AlertCircle,
   FileImage,
 } from 'lucide-react';
-import { vendorsAPI, inspectionsAPI } from '../services/api';
+import { vendorsAPI, inspectionsAPI, productsAPI } from '../services/api';
 import { Button } from '../components/common/Button';
 import { Modal } from '../components/common/Modal';
 import { CameraModal } from '../components/inspection/CameraModal';
@@ -26,11 +26,16 @@ export const NewInspectionPage = () => {
 
   // Form fields
   const [productType, setProductType] = useState('motherboard');
+  const [selectedPartCode, setSelectedPartCode] = useState('');
   const [vendorId, setVendorId] = useState('');
   const [location, setLocation] = useState('Assembly Line 01');
   const [files, setFiles] = useState([]);
   const [previews, setPreviews] = useState([]);
   const [submitting, setSubmitting] = useState(false);
+
+  // Products list from backend
+  const [products, setProducts] = useState([]);
+  const [loadingProducts, setLoadingProducts] = useState(true);
 
   // Vendors list
   const [vendors, setVendors] = useState([]);
@@ -63,8 +68,27 @@ export const NewInspectionPage = () => {
     }
   };
 
+  const fetchProducts = async () => {
+    setLoadingProducts(true);
+    try {
+      const data = await productsAPI.list();
+      setProducts(data || []);
+      if (data && data.length > 0) {
+        const first = data[0];
+        const pt = (first.meta?.product_type || first.product_type || 'motherboard').toLowerCase();
+        setProductType(pt);
+        setSelectedPartCode(first.part_id);
+      }
+    } catch (err) {
+      console.error('Failed to load products:', err);
+    } finally {
+      setLoadingProducts(false);
+    }
+  };
+
   useEffect(() => {
     fetchVendors();
+    fetchProducts();
   }, []);
 
   const handleFilesAdded = (incomingFiles) => {
@@ -150,6 +174,9 @@ export const NewInspectionPage = () => {
       formData.append('images', file);
     });
     formData.append('product_type', productType);
+    if (selectedPartCode) {
+      formData.append('part_code', selectedPartCode);
+    }
     formData.append('vendor_id', vendorId);
     formData.append('location', location);
 
@@ -190,16 +217,38 @@ export const NewInspectionPage = () => {
               <span>Target Hardware</span>
             </label>
             <select
-              value={productType}
-              onChange={(e) => setProductType(e.target.value)}
+              value={selectedPartCode || productType}
+              onChange={(e) => {
+                const found = products.find((p) => p.part_id === e.target.value);
+                if (found) {
+                  setSelectedPartCode(found.part_id);
+                  const pt = (found.meta?.product_type || found.product_type || 'motherboard').toLowerCase();
+                  setProductType(pt);
+                } else {
+                  setProductType(e.target.value);
+                  setSelectedPartCode('');
+                }
+              }}
+              disabled={loadingProducts}
               className="w-full px-3 py-2 rounded-xl bg-hud-card border border-hud-border text-sm text-white font-mono focus:border-cyan-400"
             >
-              <option value="motherboard">Motherboard / Microcontroller</option>
-              <option value="battery">Industrial Battery Pack</option>
-              <option value="ram">High-Speed DDR4 RAM</option>
+              {loadingProducts ? (
+                <option value="">Loading master models...</option>
+              ) : products.length === 0 ? (
+                <option value="motherboard">Motherboard / Standard</option>
+              ) : (
+                products.map((p) => {
+                  const pt = (p.meta?.product_type || p.product_type || 'hardware').toUpperCase();
+                  return (
+                    <option key={p.id} value={p.part_id}>
+                      {p.part_name} ({p.part_id}) — {pt}
+                    </option>
+                  );
+                })
+              )}
             </select>
             <p className="text-[11px] text-slate-500 font-mono">
-              Sets YOLO11n object classes & ROI templates
+              Dynamically loads golden reference & calibration templates
             </p>
           </div>
 

@@ -1,0 +1,97 @@
+{
+  "id": "roi-motherboard-pcb-mcu-v2",
+  "productType": "motherboard",
+  "partCode": "PCB-MCU-V2",
+  "version": 1,
+  "coordinateSystem": "pixel",
+  "referenceImageWidth": 1536,
+  "referenceImageHeight": 1024,
+  "regions": [
+    {
+      "id": "serial_label",
+      "name": "CPU / Part ID Label",
+      "type": "text",
+      "bbox": {"x": 290, "y": 460, "width": 100, "height": 115},
+      "agent": "ocr",
+      "priority": "critical",
+      "expectedComponents": [],
+      "checkpoints": [
+        {
+          "id": "serial_match",
+          "description": "Serial number text must match golden reference",
+          "expectedValue": "intel SRBLB X337k620 K8O2E723"
+        }
+      ]
+    },
+    {
+      "id": "qc_seal",
+      "name": "QC / Port Markings",
+      "type": "label",
+      "bbox": {"x": 180, "y": 870, "width": 60, "height": 40},
+      "agent": "label",
+      "priority": "critical",
+      "expectedComponents": []
+    },
+    {
+      "id": "capacitor_bank_1",
+      "name": "Capacitor Bank 1",
+      "type": "structural",
+      "bbox": {"x": 480, "y": 240, "width": 140, "height": 110},
+      "agent": "structural",
+      "priority": "critical",
+      "expectedComponents": [
+        {"className": "capacitor", "expectedCount": 4, "required": true}
+      ]
+    },
+    {
+      "id": "resistor_array",
+      "name": "Resistor Array",
+      "type": "structural",
+      "bbox": {"x": 550, "y": 420, "width": 200, "height": 180},
+      "agent": "structural",
+      "priority": "high",
+      "expectedComponents": []
+    },
+    {
+      "id": "ic_chip_main",
+      "name": "Main IC Chip",
+      "type": "structural",
+      "bbox": {"x": 270, "y": 435, "width": 160, "height": 165},
+      "agent": "structural",
+      "priority": "critical",
+      "expectedComponents": [
+        {"className": "ic_chip", "expectedCount": 1, "required": true}
+      ]
+    },
+    {
+      "id": "io_connector_bank",
+      "name": "I/O Connector Bank",
+      "type": "structural",
+      "bbox": {"x": 1300, "y": 700, "width": 160, "height": 120},
+      "agent": "structural",
+      "priority": "high",
+      "expectedComponents": [
+        {"className": "connector", "expectedCount": 3, "required": false}
+      ]
+    },
+    {
+      "id": "mounting_screws",
+      "name": "Mounting Screws",
+      "type": "structural",
+      "bbox": {"x": 100, "y": 830, "width": 70, "height": 60},
+      "agent": "structural",
+      "priority": "normal",
+      "expectedComponents": [
+        {"className": "screw", "expectedCount": 1, "required": false}
+      ]
+    },
+    {
+      "id": "general_surface_check",
+      "name": "General Board Surface",
+      "type": "visual",
+      "bbox": {"x": 50, "y": 50, "width": 1436, "height": 924},
+      "agent": "vlm",
+      "priority": "normal"
+    }
+  ]
+}

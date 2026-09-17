@@ -337,14 +337,14 @@ class StructuralAgent(BaseAgent):
             explanation_parts.append(f"YOLO detected: {extra_desc}")
 
         if ssim_defect:
-            explanation_parts.append(f"Structural anomaly detected: SSIM similarity {ssim_score:.3f} below threshold {threshold:.2f} (diff {diff_pct:.1f}%, MSE {mse:.1f})")
+            explanation_parts.append(f"Structural anomaly detected: Visual match is {ssim_score * 100:.1f}% (below standard {threshold * 100:.0f}%, layout difference {diff_pct:.1f}%)")
         elif not yolo_defect:
-            explanation_parts.append(f"Structural integrity verified: SSIM similarity {ssim_score:.3f} meets threshold {threshold:.2f}")
+            explanation_parts.append(f"Structural integrity verified: Visual match is {ssim_score * 100:.1f}% (meets standard {threshold * 100:.0f}%)")
             if component_findings:
-                matched_summary = ", ".join(f"{f['class_name']}: {f['inspection_count']}" for f in component_findings if f["status"] == "match")
-                explanation_parts.append(f"components verified ({matched_summary})")
+                matched_summary = ", ".join(f"{f['class_name'].replace('_', ' ')}: {f['inspection_count']}" for f in component_findings if f["status"] == "match")
+                explanation_parts.append(f"Components verified ({matched_summary})")
         elif yolo_defect and not ssim_defect:
-            explanation_parts.append(f"Structural anomaly detected via component counts (SSIM: {ssim_score:.3f})")
+            explanation_parts.append(f"Structural anomaly detected via component counts (Visual match: {ssim_score * 100:.1f}%)")
 
         explanation = f"{roi_name}: " + "; ".join(explanation_parts)
 

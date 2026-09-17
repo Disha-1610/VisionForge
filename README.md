@@ -84,41 +84,90 @@ VisionForge/
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Quick Start (Team Setup Guide)
 
 ### Prerequisites
-- Python 3.11+
-- PostgreSQL 15+
-- Node.js 18+ (for frontend)
-- Ollama (for LLM inference)
+- **Python 3.11+**
+- **Node.js 18+** & npm
+- Free API Keys:
+  - [Google Gemini API Key](https://aistudio.google.com/) (Required for primary VLM agent)
+  - [Groq API Key](https://console.groq.com/) (Required for AI Judge & VLM round-robin)
+- *(Note: SQLite is configured by default for zero-setup local development — PostgreSQL is optional)*
 
-### Setup
+---
 
+### Option A: 1-Click Master Launcher (Windows)
+
+1. Double-click `run_visionforge.bat` in the root folder.
+2. The launcher will automatically check prerequisites, start the backend on port `8000`, launch the frontend on port `5173`, and open your browser!
+
+---
+
+### Option B: Step-by-Step Manual Setup (Windows / macOS / Linux)
+
+#### 1. Clone the Repository
 ```bash
-# 1. Clone the repo
 git clone https://github.com/Disha-1610/VisionForge.git
 cd VisionForge
-
-# 2. Create virtual environment & install dependencies
-make setup
-
-# 3. Activate the virtual environment
-# Windows:
-venv\Scripts\activate
-# Linux/Mac:
-source venv/bin/activate
-
-# 4. Configure environment variables
-# Edit .env with your database credentials and API keys
-
-# 5. Run database migrations
-make migrate
-
-# 6. Start the development server
-make dev
 ```
 
-The API will be available at `http://localhost:8000` with Swagger docs at `http://localhost:8000/docs`.
+#### 2. Backend Setup
+```bash
+cd backend
+
+# Create & activate virtual environment
+python -m venv venv
+# On Windows:
+venv\Scripts\activate
+# On macOS/Linux:
+source venv/bin/activate
+
+# Install dependencies (FastAPI, PyTorch, FAISS, LangGraph, etc.)
+pip install -r requirements.txt
+
+# Create your .env config from template
+# On Windows (cmd):
+copy .env.example .env
+# On Linux/macOS:
+cp .env.example .env
+
+# Edit backend/.env and paste your GEMINI_API_KEY and GROQ_API_KEY
+# (All other settings work out-of-the-box with local SQLite)
+
+# Start backend server
+python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+Backend API will be running at [http://localhost:8000](http://localhost:8000) with interactive Swagger Docs at [http://localhost:8000/docs](http://localhost:8000/docs).
+
+#### 3. Frontend Setup
+In a new terminal window:
+```bash
+cd frontend
+
+# Install Node dependencies
+npm install
+
+# Start Vite React development server
+npm run dev
+```
+Frontend Workstation will be live at [http://localhost:5173](http://localhost:5173).
+
+---
+
+### 🔑 Default Demo Accounts
+
+The local database automatically auto-initializes and seeds these accounts on first launch:
+
+| Role | Email | Password |
+|:---|:---|:---|
+| **System Admin** | `admin@visionforge.ai` | `adminpassword123` |
+| **Line Operator** | `operator@visionforge.ai` | `operatorpassword123` |
+
+### 📦 Pre-Indexed Hardware Components
+On startup, 3 baseline golden reference components and their vector embeddings are pre-loaded:
+1. **Industrial ATX Motherboard V1** (`PCB-MCU-V2`)
+2. **Smart Lithium Battery Pack 48V** (`BAT-STD-V1`)
+3. **ECC DDR4 Server Module 16GB** (`RAM-DDR4-V1`)
 
 ---
 

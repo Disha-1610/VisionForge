@@ -81,6 +81,8 @@ def _crop_roi_pair_safe(
     inspection_img: Image.Image,
     bbox_data: Any,
     coordinate_system: str,
+    ref_width: int = 0,
+    ref_height: int = 0,
 ) -> tuple[Image.Image, Image.Image, list[float]]:
     """
     Safely crop paired ROIs from golden and inspection images,
@@ -102,7 +104,17 @@ def _crop_roi_pair_safe(
         pair = crop_normalized_roi_pair(golden_img, inspection_img, norm_bbox)
         return pair.golden, pair.inspection, [nx, ny, nw, nh]
 
-    # Pixel coordinates
+    # If reference canvas dimensions are provided, normalize with respect to reference canvas
+    if ref_width > 0 and ref_height > 0:
+        nx = max(0.0, min(1.0, x / ref_width))
+        ny = max(0.0, min(1.0, y / ref_height))
+        nw = max(0.001, min(1.0 - nx, w / ref_width))
+        nh = max(0.001, min(1.0 - ny, h / ref_height))
+        norm_bbox = NormalizedBoundingBox(x=nx, y=ny, width=nw, height=nh)
+        pair = crop_normalized_roi_pair(golden_img, inspection_img, norm_bbox)
+        return pair.golden, pair.inspection, [nx, ny, nw, nh]
+
+    # Pixel coordinates fallback (direct pixel indexing)
     gw_size = get_image_size(golden_img)
     iw_size = get_image_size(inspection_img)
     max_w = min(gw_size.width, iw_size.width)
@@ -147,6 +159,8 @@ async def _execute_single_roi(
     agent_registry: dict[AgentType, BaseAgent],
     state: InspectionState,
     semaphore: asyncio.Semaphore,
+    ref_width: int = 0,
+    ref_height: int = 0,
 ) -> dict[str, Any]:
     """Execute a single ROI crop analysis with error isolation."""
     raw_agent = region_info.get("agent") or region_info.get("type") or "structural"
@@ -165,6 +179,8 @@ async def _execute_single_roi(
                 inspection_img=inspection_img,
                 bbox_data=bbox_data,
                 coordinate_system=coordinate_system,
+                ref_width=ref_width,
+                ref_height=ref_height,
             )
         except Exception as exc:
             elapsed_ms = (time.perf_counter() - start_time) * 1000
@@ -330,6 +346,8 @@ async def run_evidence_execution(
         str(r.get("id")): r for r in regions_list if isinstance(r, dict) and "id" in r
     }
     coord_system = str(roi_template_data.get("coordinate_system") or roi_template_data.get("coordinateSystem") or "pixel")
+    ref_width = int(roi_template_data.get("reference_image_width") or roi_template_data.get("referenceImageWidth") or 0)
+    ref_height = int(roi_template_data.get("reference_image_height") or roi_template_data.get("referenceImageHeight") or 0)
 
     semaphore = asyncio.Semaphore(max_concurrency)
 
@@ -356,6 +374,8 @@ async def run_evidence_execution(
                         agent_registry=registry,
                         state=state,
                         semaphore=semaphore,
+                        ref_width=ref_width,
+                        ref_height=ref_height,
                     )
                 )
             if tasks:
@@ -373,11 +393,59 @@ async def run_evidence_execution(
                 agent_registry=registry,
                 state=state,
                 semaphore=semaphore,
+                ref_width=ref_width,
+                ref_height=ref_height,
             )
             for r in regions_list
         ]
         if tasks:
             executed_results = await asyncio.gather(*tasks, return_exceptions=False)
+
+    # 6. VLM Validation Pass — run VLM on structural ROIs to validate YOLO findings
+    vlm_agent = registry.get(AgentType.VLM)
+    if vlm_agent is not None:
+        structural_roi_ids = [
+            str(r.get("id"))
+            for r in regions_list
+            if isinstance(r, dict)
+            and r.get("agent") in ("structural", "yolo")
+            and "id" in r
+        ]
+        if structural_roi_ids:
+            vlm_results = []
+            for idx, roi_id in enumerate(structural_roi_ids):
+                region_info = regions_by_id.get(roi_id)
+                if not region_info:
+                    continue
+                # Explicit 50/50 Round-Robin Load Balancing between Gemini and Groq
+                pref_provider = "gemini" if idx % 2 == 0 else "groq"
+                # Force VLM agent for this validation pass by overriding the agent field
+                vlm_region = {**region_info, "agent": "vlm", "preferred_provider": pref_provider}
+
+                # Stagger multimodal calls with 1.2s pacing to prevent millisecond quota bursts
+                if idx > 0:
+                    await asyncio.sleep(1.2)
+
+                res = await _execute_single_roi(
+                    roi_id=roi_id,
+                    region_info=vlm_region,
+                    golden_img=pil_golden,
+                    inspection_img=pil_inspection,
+                    coordinate_system=coord_system,
+                    agent_registry=registry,
+                    state=state,
+                    semaphore=semaphore,
+                    ref_width=ref_width,
+                    ref_height=ref_height,
+                )
+                vlm_results.append(res)
+
+            if vlm_results:
+                executed_results.extend(vlm_results)
+                logger.info(
+                    "VLM validation pass completed on %d structural ROIs",
+                    len(vlm_results),
+                )
 
     total_time_ms = round((time.perf_counter() - stage_start) * 1000, 2)
     defects_count = sum(1 for r in executed_results if r.get("has_defect"))

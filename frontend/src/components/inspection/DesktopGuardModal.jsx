@@ -1,11 +1,61 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Smartphone, MonitorX, ArrowRight } from 'lucide-react';
 import { Modal } from '../common/Modal';
 import { Button } from '../common/Button';
 
+const isLocalHost = () => {
+  const h = window.location.hostname;
+  return h === 'localhost' || h === '127.0.0.1' || h === '0.0.0.0';
+};
+
 export const DesktopGuardModal = ({ isOpen, onClose, onContinueDesktop }) => {
-  const currentUrl = window.location.href;
+  const [qrUrl, setQrUrl] = useState(window.location.href);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    let cancelled = false;
+
+    const resolveQrUrl = async () => {
+      // 1) Explicit override wins (e.g. ngrok/cloudflared public tunnel URL)
+      const override = import.meta.env.VITE_PUBLIC_URL;
+      if (override) {
+        setQrUrl(override);
+        return;
+      }
+
+      const { protocol, port, pathname, search } = window.location;
+
+      // 2) Production / non-local host → use the current URL as-is
+      if (!isLocalHost()) {
+        setQrUrl(window.location.href);
+        return;
+      }
+
+      // 3) Dev on localhost → substitute host with this machine's LAN IP
+      //    so a phone on the same Wi-Fi can actually reach the server.
+      try {
+        const res = await fetch('/api/v1/system/network');
+        const data = await res.json();
+        if (!cancelled && data?.ip && data.ip !== 'localhost') {
+          const p = port || '5173';
+          setQrUrl(`${protocol}//${data.ip}:${p}${pathname}${search}`);
+          return;
+        }
+      } catch (err) {
+        console.warn('Could not resolve LAN IP for QR handoff:', err);
+      }
+
+      if (!cancelled) setQrUrl(window.location.href);
+    };
+
+    resolveQrUrl();
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen]);
+
+  const displayUrl = qrUrl.replace(/^https?:\/\//, '');
 
   return (
     <Modal
@@ -28,10 +78,13 @@ export const DesktopGuardModal = ({ isOpen, onClose, onContinueDesktop }) => {
         </div>
 
         <div className="flex flex-col items-center justify-center p-5 rounded-2xl bg-white text-slate-900 shadow-inner">
-          <QRCodeSVG value={currentUrl} size={160} level="M" includeMargin />
+          <QRCodeSVG value={qrUrl} size={160} level="M" includeMargin />
           <p className="text-[11px] font-mono font-bold mt-2 text-slate-600 flex items-center gap-1.5">
             <Smartphone className="w-3.5 h-3.5 text-cyan-600" />
             <span>Scan with Smartphone Rear Camera</span>
+          </p>
+          <p className="mt-1.5 px-2 py-0.5 rounded bg-slate-100 text-[10px] font-mono text-slate-500 max-w-full break-all">
+            {displayUrl}
           </p>
         </div>
 

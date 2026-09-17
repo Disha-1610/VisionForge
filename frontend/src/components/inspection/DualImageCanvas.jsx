@@ -5,21 +5,26 @@ import { Button } from '../common/Button';
 /**
  * Universal bounding box normalizer.
  * Supports:
+ *  - YOLO xywhn: [x_center, y_center, width, height] normalized (0..1)
  *  - Array: [x, y, width, height] or [x1, y1, x2, y2]
  *  - Object: {x, y, width, height}, {x, y, w, h}, {x_min, y_min, x_max, y_max}
- *  - Normalized coordinates (0..1) or Percentages (0..100)
+ *  - Pixel coordinates scaled to reference image dimensions
  */
-export const normalizeBoundingBox = (rawBbox) => {
+export const normalizeBoundingBox = (rawBbox, refWidth = 1672, refHeight = 941) => {
   if (!rawBbox) return { left: 10, top: 10, width: 20, height: 20 };
 
   let x = 0;
   let y = 0;
   let w = 0;
   let h = 0;
+  let isYoloCenter = false;
 
   if (Array.isArray(rawBbox)) {
     if (rawBbox.length >= 4) {
       [x, y, w, h] = rawBbox;
+      if (x <= 1 && y <= 1 && w <= 1 && h <= 1 && (w > 0 || h > 0)) {
+        isYoloCenter = true;
+      }
     }
   } else if (typeof rawBbox === 'object') {
     x = rawBbox.x ?? rawBbox.left ?? rawBbox.x_min ?? rawBbox.xmin ?? 0;
@@ -33,19 +38,41 @@ export const normalizeBoundingBox = (rawBbox) => {
   w = Number(w) || 0;
   h = Number(h) || 0;
 
-  // Convert 0..1 normalized coords to percentages (0..100)
-  if (x > 0 && x <= 1 && w > 0 && w <= 1) {
-    x *= 100;
-    y *= 100;
-    w *= 100;
-    h *= 100;
-  } else if (x <= 1 && y <= 1 && w <= 1 && h <= 1 && (w > 0 || h > 0)) {
-    x *= 100;
-    y *= 100;
-    w *= 100;
-    h *= 100;
+  // Case 1: YOLO normalized center format [xc, yc, w, h]
+  if (isYoloCenter) {
+    const leftPct = (x - w / 2) * 100;
+    const topPct = (y - h / 2) * 100;
+    return {
+      left: Math.max(0, Math.min(100, leftPct)),
+      top: Math.max(0, Math.min(100, topPct)),
+      width: Math.max(1, Math.min(100, w * 100)),
+      height: Math.max(1, Math.min(100, h * 100)),
+    };
   }
 
+  // Case 2: Normalized top-left format (0..1)
+  if (x <= 1 && y <= 1 && w <= 1 && h <= 1 && (w > 0 || h > 0)) {
+    return {
+      left: Math.max(0, Math.min(100, x * 100)),
+      top: Math.max(0, Math.min(100, y * 100)),
+      width: Math.max(1, Math.min(100, w * 100)),
+      height: Math.max(1, Math.min(100, h * 100)),
+    };
+  }
+
+  // Case 3: Pixel coordinates (coordinates in reference resolution like 1536x1024 or 1672x941)
+  if (x > 100 || y > 100 || (x + w > 100)) {
+    const actualW = refWidth > 0 ? refWidth : 1672;
+    const actualH = refHeight > 0 ? refHeight : 941;
+    return {
+      left: Math.max(0, Math.min(100, (x / actualW) * 100)),
+      top: Math.max(0, Math.min(100, (y / actualH) * 100)),
+      width: Math.max(1, Math.min(100, (w / actualW) * 100)),
+      height: Math.max(1, Math.min(100, (h / actualH) * 100)),
+    };
+  }
+
+  // Case 4: Already percentage (0..100)
   if (w <= 0) w = 15;
   if (h <= 0) h = 15;
 
@@ -87,6 +114,9 @@ export const DualImageCanvas = ({
   const handleResetZoom = () => {
     setZoomLevel(1);
   };
+
+  const defaultRefWidth = partCode?.toUpperCase().includes('PCB') ? 1536 : 1672;
+  const defaultRefHeight = partCode?.toUpperCase().includes('PCB') ? 1024 : 941;
 
   const filteredDetections =
     selectedClass === 'all'
@@ -227,7 +257,9 @@ export const DualImageCanvas = ({
                       classColorMap[clsName] ||
                       'border-cyan-400 text-cyan-300 bg-cyan-500/20';
                     const normalized = normalizeBoundingBox(
-                      box.bounding_box || box.bbox || box.box
+                      box.bounding_box || box.bbox || box.box,
+                      defaultRefWidth,
+                      defaultRefHeight
                     );
 
                     return (
@@ -252,7 +284,9 @@ export const DualImageCanvas = ({
                 {showRoi &&
                   roiRegions.map((roi, i) => {
                     const normalized = normalizeBoundingBox(
-                      roi.bounding_box || roi.bbox || roi.box
+                      roi.bounding_box || roi.bbox || roi.box,
+                      roi.referenceImageWidth || defaultRefWidth,
+                      roi.referenceImageHeight || defaultRefHeight
                     );
                     return (
                       <div

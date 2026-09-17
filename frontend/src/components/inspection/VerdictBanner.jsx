@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { Button } from '../common/Button';
 import { StatusChip } from '../common/StatusChip';
+import MarkdownText from './MarkdownText';
 import { reportsAPI } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 
@@ -255,36 +256,54 @@ export const VerdictBanner = ({
         </div>
 
         {/* Detailed Root Cause Narrative */}
-        <div className="space-y-1.5">
+        <div className="space-y-2.5">
           <span className="text-[11px] font-mono uppercase text-slate-400 font-bold">
             Technical Justification & Root Cause:
           </span>
-          <p className="text-xs sm:text-sm text-slate-200 leading-relaxed font-mono bg-hud-card/60 p-3.5 rounded-xl border border-hud-border/80">
-            {displayRootCause ||
-              'All inspected regions strictly match the golden engineering specification. Component counts, serial markings, and surface textures conform to certified industrial tolerances.'}
-          </p>
+          <div className="bg-hud-card/60 p-4 sm:p-5 rounded-xl border border-hud-border/80 overflow-x-auto">
+            <MarkdownText
+              text={
+                displayRootCause ||
+                'All inspected regions strictly match the golden engineering specification. Component counts, serial markings, and surface textures conform to certified industrial tolerances.'
+              }
+            />
+          </div>
         </div>
 
         {/* Discrete Detected Issues Badges */}
-        {Array.isArray(detectedIssues) && detectedIssues.length > 0 && (
-          <div className="space-y-2 pt-1">
-            <span className="text-[11px] font-mono uppercase text-rose-400 font-bold flex items-center gap-1.5">
-              <AlertOctagon className="w-4 h-4" />
-              <span>Discrete Anomalies Flagged ({detectedIssues.length}):</span>
-            </span>
-            <div className="flex flex-wrap gap-2">
-              {detectedIssues.map((issue, idx) => (
-                <span
-                  key={idx}
-                  className="px-3 py-1.5 rounded-xl bg-rose-950/60 border border-rose-500/40 text-rose-200 text-xs font-mono flex items-center gap-1.5"
-                >
-                  <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
-                  {typeof issue === 'object' ? JSON.stringify(issue) : String(issue)}
-                </span>
-              ))}
+        {Array.isArray(detectedIssues) && detectedIssues.length > 0 && (() => {
+          const issueCounts = new Map();
+          detectedIssues.forEach((issue) => {
+            const text = (typeof issue === 'object' ? JSON.stringify(issue) : String(issue)).trim();
+            if (!text) return;
+            issueCounts.set(text, (issueCounts.get(text) || 0) + 1);
+          });
+
+          return (
+            <div className="space-y-2 pt-1">
+              <span className="text-[11px] font-mono uppercase text-rose-400 font-bold flex items-center gap-1.5">
+                <AlertOctagon className="w-4 h-4" />
+                <span>Discrete Anomalies Flagged ({detectedIssues.length}):</span>
+              </span>
+              <div className="flex flex-wrap gap-2">
+                {Array.from(issueCounts.entries()).map(([text, count], idx) => (
+                  <span
+                    key={idx}
+                    className="px-3 py-1.5 rounded-xl bg-rose-950/60 border border-rose-500/40 text-rose-200 text-xs font-mono flex items-center gap-2"
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-rose-400 shrink-0" />
+                    <span>{text}</span>
+                    {count > 1 && (
+                      <span className="px-1.5 py-0.5 rounded-full bg-rose-900/90 border border-rose-400/50 text-rose-300 font-bold text-[10px]">
+                        ×{count}
+                      </span>
+                    )}
+                  </span>
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* Recommendations */}
         {Array.isArray(recommendations) && recommendations.length > 0 && (
@@ -300,7 +319,9 @@ export const VerdictBanner = ({
                   className="p-3 rounded-xl bg-hud-surface/80 border border-hud-border text-xs font-mono text-slate-200 flex items-start gap-2"
                 >
                   <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
-                  <span>{typeof rec === 'object' ? JSON.stringify(rec) : String(rec)}</span>
+                  <div className="flex-1">
+                    <MarkdownText text={typeof rec === 'object' ? JSON.stringify(rec) : String(rec)} />
+                  </div>
                 </div>
               ))}
             </div>
@@ -317,9 +338,9 @@ export const VerdictBanner = ({
               </strong>
             </div>
             {displayReviewerNotes && (
-              <span className="text-slate-300 italic">
-                Notes: "{String(displayReviewerNotes)}"
-              </span>
+              <div className="text-slate-300 flex-1 sm:text-right">
+                <MarkdownText text={`*Inspector Notes:* ${String(displayReviewerNotes)}`} />
+              </div>
             )}
           </div>
         )}

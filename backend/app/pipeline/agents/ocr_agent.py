@@ -136,12 +136,27 @@ class OCRAgent(BaseAgent):
         return combined_text, avg_conf
 
     def _extract_with_easyocr(self, img: np.ndarray) -> tuple[str, float]:
-        """Extract text and confidence using EasyOCR."""
+        """Extract text and confidence using EasyOCR.
+
+        Uses automatic contrast adjustment + low contrast threshold so faint
+        stamped/baked serials on hardware are detected more reliably.
+        """
         if self._easyocr_reader is None:
             raise RuntimeError("EasyOCR not initialized")
 
-        # EasyOCR accepts RGB or BGR numpy array
-        results = self._easyocr_reader.readtext(img)
+        # EasyOCR accepts RGB or BGR numpy array; enable auto-contrast for faint text
+        try:
+            results = self._easyocr_reader.readtext(img, adjust_contrast=0.7, contrast_ths=0.1, paragraph=False)
+        except TypeError:
+            # Fallback for readers/mocks that don't support contrast kwargs (e.g. test mocks)
+            results = self._easyocr_reader.readtext(img)
+
+        if not results:
+            # Retry raw if contrast enhancement suppresses text (e.g., already high-contrast)
+            try:
+                results = self._easyocr_reader.readtext(img, adjust_contrast=0.0, contrast_ths=0.3, paragraph=False)
+            except TypeError:
+                results = self._easyocr_reader.readtext(img)
         if not results:
             return "", 0.0
 
@@ -194,10 +209,28 @@ class OCRAgent(BaseAgent):
 
     @staticmethod
     def _preprocess_crop(img: np.ndarray) -> np.ndarray:
-        """Preprocess crop for enhanced OCR readability."""
+        """Preprocess crop for enhanced OCR readability.
+
+        Improves EasyOCR accuracy on low-contrast / noisy hardware crops:
+        1. Convert RGBA -> BGR.
+        2. Convert to grayscale.
+        3. Adaptive contrast normalization (CLAHE) to lift stamped text.
+        """
         if img.ndim == 3 and img.shape[2] == 4:
             img = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
-        return img
+
+        if img.ndim == 2:
+            gray = img
+        elif img.shape[2] == 3:
+            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        else:
+            return img
+
+        # CLAHE boosts local contrast of printed/stamped serials on PCB/build materials
+        clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8, 8))
+        enhanced = clahe.apply(gray)
+
+        return cv2.cvtColor(enhanced, cv2.COLOR_GRAY2BGR)
 
     async def _analyze(
         self,
@@ -249,12 +282,14 @@ class OCRAgent(BaseAgent):
         expected_text = ""
         checkpoints = roi_data.get("checkpoints") or []
         for cp in checkpoints:
-            if isinstance(cp, dict) and cp.get("expected_value"):
-                expected_text = str(cp["expected_value"])
-                break
+            if isinstance(cp, dict):
+                val = cp.get("expected_value") or cp.get("expectedValue")
+                if val:
+                    expected_text = str(val)
+                    break
 
         if not expected_text:
-            expected_text = str(roi_data.get("expected_text") or "")
+            expected_text = str(roi_data.get("expected_text") or roi_data.get("expectedText") or "")
 
         # 3. Perform OCR Extraction
         golden_cv_pre = self._preprocess_crop(golden_cv)
@@ -291,21 +326,27 @@ class OCRAgent(BaseAgent):
         norm_actual = normalize_text(actual_text)
 
         if not norm_expected and not norm_actual:
-            # Both images have no readable text
-            similarity = 1.0
+            # Both images have no readable text — inconclusive, not confirmed tampering
+            similarity = 0.5
             has_defect = False
-            explanation = f"No text detected in both golden and inspection crops for {roi_id}"
+            no_text_detected = True
+            explanation = (
+                f"INCONCLUSIVE on {roi_id}: No text detected in either golden or inspection crop. "
+                f"OCR cannot verify serial/part markings — manual inspection recommended."
+            )
             mismatches: list[dict[str, Any]] = []
         elif not norm_expected or not norm_actual:
             # One has text, one does not -> defect
             similarity = 0.0
             has_defect = True
+            no_text_detected = False
             explanation = (
                 f"Text absence mismatch on {roi_id}: expected '{norm_expected}', "
                 f"extracted '{norm_actual}'"
             )
             mismatches = find_character_mismatches(norm_expected, norm_actual)
         else:
+            no_text_detected = False
             matcher = difflib.SequenceMatcher(None, norm_expected, norm_actual)
             similarity = float(matcher.ratio())
             has_defect = similarity < threshold
@@ -314,18 +355,21 @@ class OCRAgent(BaseAgent):
             if has_defect:
                 explanation = (
                     f"Text mismatch on {roi_id}: expected '{norm_expected}', "
-                    f"extracted '{norm_actual}' (similarity {similarity:.1%} below threshold {threshold:.1%})"
+                    f"extracted '{norm_actual}' (text match is {similarity:.1%}, required standard is {threshold:.1%})"
                 )
             else:
                 explanation = (
                     f"Text verified on {roi_id}: '{norm_actual}' matches expected '{norm_expected}' "
-                    f"(similarity {similarity:.1%} >= {threshold:.1%})"
+                    f"(text match is {similarity:.1%})"
                 )
 
         # Standardize confidence
         # When defect detected, confidence in the defect finding is high when similarity is low.
         # When matching, confidence reflects both OCR extraction quality and text similarity.
-        if has_defect:
+        if no_text_detected:
+            # Inconclusive: we cannot verify text, so confidence in the finding is LOW
+            result_confidence = 0.2
+        elif has_defect:
             result_confidence = max(0.6, min(1.0, 1.0 - similarity))
         else:
             result_confidence = max(0.0, min(1.0, (similarity + actual_conf) / 2.0 if actual_conf > 0 else similarity))
@@ -337,10 +381,11 @@ class OCRAgent(BaseAgent):
             "normalized_extracted": norm_actual,
             "similarity": round(similarity, 4),
             "threshold": round(threshold, 4),
-            "match_status": "mismatch" if has_defect else "match",
+            "match_status": "no_text_detected" if no_text_detected else ("mismatch" if has_defect else "match"),
             "mismatches": mismatches,
             "ocr_confidence": round(actual_conf, 3),
             "engine_used": engine_used,
+            "inconclusive": no_text_detected,
         }
 
         return AgentResult(

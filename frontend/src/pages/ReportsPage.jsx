@@ -6,11 +6,13 @@ import {
   Filter,
   FileDown,
   Eye,
+  Trash2,
   Calendar,
   Building2,
   MapPin,
   RefreshCw,
   Loader2,
+  AlertTriangle,
 } from 'lucide-react';
 import { reportsAPI } from '../services/api';
 import { Button } from '../components/common/Button';
@@ -18,6 +20,7 @@ import { StatusChip } from '../components/common/StatusChip';
 import { SkeletonLoader } from '../components/common/SkeletonLoader';
 import { EmptyState } from '../components/common/EmptyState';
 import { useToast } from '../context/ToastContext';
+import { getDisplayName } from './DashboardPage';
 
 export const ReportsPage = () => {
   const navigate = useNavigate();
@@ -69,6 +72,7 @@ export const ReportsPage = () => {
   });
 
   const [downloadingId, setDownloadingId] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
 
   const handleDownloadPdf = async (e, reportId) => {
     e.stopPropagation();
@@ -85,6 +89,28 @@ export const ReportsPage = () => {
       toast.error('Failed to download PDF report');
     } finally {
       setDownloadingId(null);
+    }
+  };
+
+  const handleDelete = async (e, reportId) => {
+    e.stopPropagation();
+    if (!reportId) {
+      toast.error('No valid report ID');
+      return;
+    }
+    if (!window.confirm('Delete this inspection report permanently?')) {
+      return;
+    }
+    setDeletingId(reportId);
+    try {
+      await reportsAPI.delete(reportId);
+      setReports((prev) => prev.filter((r) => r.id !== reportId));
+      toast.success('Report deleted successfully');
+    } catch (err) {
+      console.error('Failed to delete report:', err);
+      toast.error('Failed to delete report');
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -136,9 +162,9 @@ export const ReportsPage = () => {
               className="px-3 py-1.5 rounded-xl bg-hud-card border border-hud-border text-xs text-white font-mono focus:border-cyan-400"
             >
               <option value="ALL">All Verdicts</option>
-              <option value="GENUINE">Genuine</option>
-              <option value="FRAUD">Fraud</option>
-              <option value="SUSPICIOUS">Suspicious</option>
+              <option value="accept">Genuine</option>
+              <option value="reject">Fraud</option>
+              <option value="review">Suspicious</option>
             </select>
           </div>
 
@@ -150,10 +176,10 @@ export const ReportsPage = () => {
               className="px-3 py-1.5 rounded-xl bg-hud-card border border-hud-border text-xs text-white font-mono focus:border-cyan-400"
             >
               <option value="ALL">All Actions</option>
-              <option value="ACCEPT">ACCEPT</option>
-              <option value="QUARANTINE">QUARANTINE</option>
-              <option value="RETAKE">RETAKE</option>
-              <option value="VENDOR_VERIFICATION">VENDOR VERIFY</option>
+              <option value="accept">ACCEPT</option>
+              <option value="quarantine">QUARANTINE</option>
+              <option value="retake">RETAKE</option>
+              <option value="vendor_verification">VENDOR VERIFY</option>
             </select>
           </div>
         </div>
@@ -202,34 +228,38 @@ export const ReportsPage = () => {
                   >
                     <td className="py-3 px-4">
                       <div className="font-bold text-white">
-                        {report.part_name || report.part_code || 'Industrial Component'}
+                        {getDisplayName(report)}
                       </div>
                       <span className="text-[10px] text-slate-500">
-                        ID: {report.id.slice(0, 8)}...
+                        ID: {report.id ? `${report.id.slice(0, 8)}...` : '—'}
                       </span>
                     </td>
 
                     <td className="py-3 px-4 text-cyan-300 uppercase">
-                      {report.product_type || 'Motherboard'}
+                      {report.product_type ? report.product_type.toUpperCase() : (report.part_id || 'HARDWARE')}
                     </td>
 
                     <td className="py-3 px-4">
-                      <div>{report.vendor_name || 'Global SMT'}</div>
+                      <div>{report.vendor_name || '—'}</div>
                       <span className="text-[10px] text-slate-500">
-                        {report.location || 'Facility 01'}
+                        {report.location || '—'}
                       </span>
                     </td>
 
                     <td className="py-3 px-4">
-                      <StatusChip status={report.verdict || 'COMPLETED'} size="sm" />
+                      <StatusChip status={report.verdict || 'PENDING'} size="sm" />
                     </td>
 
                     <td className="py-3 px-4">
-                      <StatusChip status={report.policy_action || 'ACCEPT'} size="sm" />
+                      <StatusChip status={report.policy_action || 'REVIEW'} size="sm" />
                     </td>
 
                     <td className="py-3 px-4 font-bold text-white">
-                      {report.confidence ? `${(report.confidence * 100).toFixed(1)}%` : '96.5%'}
+                      {report.confidence_score != null
+                        ? `${Number(report.confidence_score).toFixed(1)}%`
+                        : (report.confidence != null
+                            ? `${(Number(report.confidence) * (Number(report.confidence) <= 1 ? 100 : 1)).toFixed(1)}%`
+                            : '—')}
                     </td>
 
                     <td className="py-3 px-4 text-right">
@@ -248,13 +278,27 @@ export const ReportsPage = () => {
                         </button>
 
                         <button
-                          onClick={() =>
-                            navigate(`/inspections/${report.inspection_id || report.id}`)
-                          }
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/inspections/${report.inspection_id || report.id}`);
+                          }}
                           className="p-1.5 rounded-lg bg-hud-card hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
                           title="Inspect Workspace"
                         >
                           <Eye className="w-4 h-4" />
+                        </button>
+
+                        <button
+                          onClick={(e) => handleDelete(e, report.id)}
+                          disabled={deletingId === report.id}
+                          className="p-1.5 rounded-lg bg-hud-card hover:bg-rose-950/60 text-slate-300 hover:text-rose-400 disabled:opacity-50 transition-colors"
+                          title="Delete Report"
+                        >
+                          {deletingId === report.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin text-rose-400" />
+                          ) : (
+                            <Trash2 className="w-4 h-4" />
+                          )}
                         </button>
                       </div>
                     </td>

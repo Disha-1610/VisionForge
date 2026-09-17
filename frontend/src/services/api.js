@@ -2,6 +2,71 @@ import axios from 'axios';
 
 const API_BASE_URL = '/api/v1';
 
+// ── JWT Utilities ────────────────────────────────────────────────────────────
+const decodeJwtPayload = (token) => {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    return JSON.parse(jsonPayload);
+  } catch {
+    return null;
+  }
+};
+
+let refreshTimer = null;
+
+const scheduleTokenRefresh = () => {
+  if (refreshTimer) clearTimeout(refreshTimer);
+  refreshTimer = null;
+
+  const token = localStorage.getItem('vf_access_token');
+  if (!token) return;
+
+  const payload = decodeJwtPayload(token);
+  if (!payload?.exp) return;
+
+  const expiresAt = payload.exp * 1000;
+  const now = Date.now();
+  // Refresh 60 seconds before expiry
+  const refreshIn = Math.max(expiresAt - now - 60_000, 5_000);
+
+  refreshTimer = setTimeout(async () => {
+    const refreshToken = localStorage.getItem('vf_refresh_token');
+    if (!refreshToken) return;
+    try {
+      const { data } = await axios.post(`${API_BASE_URL}/auth/refresh`, {
+        refresh_token: refreshToken,
+      });
+      localStorage.setItem('vf_access_token', data.access_token);
+      if (data.refresh_token) {
+        localStorage.setItem('vf_refresh_token', data.refresh_token);
+      }
+      apiClient.defaults.headers.common.Authorization = `Bearer ${data.access_token}`;
+      scheduleTokenRefresh();
+    } catch {
+      localStorage.removeItem('vf_access_token');
+      localStorage.removeItem('vf_refresh_token');
+      localStorage.removeItem('vf_user');
+      window.dispatchEvent(new Event('vf-auth-logout'));
+    }
+  }, refreshIn);
+};
+
+export const startAuthTimer = () => scheduleTokenRefresh();
+export const stopAuthTimer = () => {
+  if (refreshTimer) clearTimeout(refreshTimer);
+  refreshTimer = null;
+};
+
+// Start timer on module load if token exists
+scheduleTokenRefresh();
+
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
   timeout: 45000,
@@ -9,6 +74,13 @@ export const apiClient = axios.create({
     'Content-Type': 'application/json',
   },
 });
+
+// Re-schedule after login sets a new token
+const origSetItem = localStorage.setItem.bind(localStorage);
+localStorage.setItem = (key, value) => {
+  origSetItem(key, value);
+  if (key === 'vf_access_token' && value) scheduleTokenRefresh();
+};
 
 // Request Interceptor: Attach JWT Token
 apiClient.interceptors.request.use(
@@ -209,6 +281,9 @@ export const reportsAPI = {
     link.click();
     link.remove();
     window.URL.revokeObjectURL(url);
+  },
+  delete: async (id) => {
+    await apiClient.delete(`/reports/${id}`);
   },
 };
 

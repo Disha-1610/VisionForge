@@ -96,6 +96,25 @@ VALID_MODES = {"1", "L", "LA", "P", "RGB", "RGBA", "CMYK"}
 # Loading
 # --------------------------------------------------------------------------
 
+def _resolve_image_path(path: Path) -> Path:
+    if path.exists():
+        return path
+    try:
+        from app.core.config import get_settings
+        settings = get_settings()
+        for cand in [
+            Path(settings.GOLDEN_DIR) / path.name,
+            Path(settings.UPLOAD_DIR) / path.name,
+            Path("data/golden_images") / path.name,
+            Path("backend/data/golden_images") / path.name,
+        ]:
+            if cand.exists():
+                return cand
+    except Exception:
+        pass
+    raise InvalidImageSourceError(f"Image path does not exist: {path}")
+
+
 def load_pil_image(source: ImageSource) -> Image.Image:
     try:
         if isinstance(source, Image.Image):
@@ -107,9 +126,7 @@ def load_pil_image(source: ImageSource) -> Image.Image:
             img.load()
             return img
         if isinstance(source, (str, Path)):
-            path = Path(source)
-            if not path.exists():
-                raise InvalidImageSourceError(f"Image path does not exist: {path}")
+            path = _resolve_image_path(Path(source))
             img = Image.open(path)
             img.load()
             return img
@@ -133,9 +150,7 @@ def load_cv_image(source: ImageSource) -> np.ndarray:
                 raise InvalidImageSourceError("Failed to decode image bytes with OpenCV")
             return img
         if isinstance(source, (str, Path)):
-            path = Path(source)
-            if not path.exists():
-                raise InvalidImageSourceError(f"Image path does not exist: {path}")
+            path = _resolve_image_path(Path(source))
             img = cv2.imread(str(path), cv2.IMREAD_UNCHANGED)
             if img is None:
                 raise InvalidImageSourceError(f"OpenCV failed to read image: {path}")

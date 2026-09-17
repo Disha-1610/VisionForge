@@ -225,6 +225,77 @@ async def test_vlm_primary_gemini_success():
 
 
 @pytest.mark.asyncio
+async def test_vlm_round_robin_alternates_between_gemini_and_groq():
+    """VLM task alternates 50/50 between Gemini (odd calls) and Groq (even calls)."""
+    config = make_test_config()
+    mock_http = AsyncMock(spec=httpx.AsyncClient)
+
+    gemini_response = {
+        "candidates": [{"content": {"parts": [{"text": "Gemini detection"}]}, "finishReason": "STOP"}]
+    }
+    groq_response = {
+        "choices": [{"message": {"content": "Groq detection"}, "finish_reason": "stop"}]
+    }
+
+    mock_http.post.side_effect = [
+        httpx.Response(status_code=200, json=gemini_response, request=httpx.Request("POST", "https://api.gemini.test")),
+        httpx.Response(status_code=200, json=groq_response, request=httpx.Request("POST", "https://api.groq.test")),
+        httpx.Response(status_code=200, json=gemini_response, request=httpx.Request("POST", "https://api.gemini.test")),
+        httpx.Response(status_code=200, json=groq_response, request=httpx.Request("POST", "https://api.groq.test")),
+    ]
+
+    client = LLMClient(config=config, http_client=mock_http)
+    req = LLMRequest(
+        task=LLMTask.VLM,
+        capability=LLMCapability.VISION,
+        messages=[LLMMessage(role="user", content="Inspect ROI")],
+        images=[ImageInput(source="fake_base64_data", mime_type="image/jpeg")],
+    )
+
+    # Call 1 -> Gemini
+    resp1 = await client.generate_vision(req)
+    assert resp1.provider == LLMProvider.GEMINI
+
+    # Call 2 -> Groq
+    resp2 = await client.generate_vision(req)
+    assert resp2.provider == LLMProvider.GROQ
+
+    # Call 3 -> Gemini
+    resp3 = await client.generate_vision(req)
+    assert resp3.provider == LLMProvider.GEMINI
+
+    # Call 4 -> Groq
+    resp4 = await client.generate_vision(req)
+    assert resp4.provider == LLMProvider.GROQ
+
+
+@pytest.mark.asyncio
+async def test_vlm_preferred_provider_explicit_routing():
+    """Explicit preferred_provider routes to that provider regardless of counter."""
+    config = make_test_config()
+    mock_http = AsyncMock(spec=httpx.AsyncClient)
+
+    groq_response = {
+        "choices": [{"message": {"content": "Groq detection"}, "finish_reason": "stop"}]
+    }
+    mock_http.post.return_value = httpx.Response(
+        status_code=200, json=groq_response, request=httpx.Request("POST", "https://api.groq.test")
+    )
+
+    client = LLMClient(config=config, http_client=mock_http)
+    req = LLMRequest(
+        task=LLMTask.VLM,
+        capability=LLMCapability.VISION,
+        messages=[LLMMessage(role="user", content="Inspect ROI")],
+        images=[ImageInput(source="fake_base64_data", mime_type="image/jpeg")],
+        preferred_provider=LLMProvider.GROQ,
+    )
+
+    resp = await client.generate_vision(req)
+    assert resp.provider == LLMProvider.GROQ
+
+
+@pytest.mark.asyncio
 async def test_generate_vision_requires_images():
     """Calling generate_vision without images raises ValueError."""
     config = make_test_config()

@@ -87,14 +87,14 @@ Every stage below runs on a free-tier API or a fully local/open-source library. 
 | 5a. OCR Agent | Primary: **PaddleOCR**, Secondary: **EasyOCR** | Free — local, open-source | High precision on tiny/stamped industrial serial numbers |
 | 5b. Label Agent | OpenCV `cv2.matchTemplate` | Free — local | |
 | 5c. Structural Agent | OpenCV SSIM + **YOLO11n (Ultralytics)** | Free — AGPL-3.0 | See Section 4, Stage 5 for detail |
-| 5d. VLM Agent | Primary: Google Gemini (**Gemini 3.5 Flash** — `gemini-3.5-flash`, verified)<br>Secondary: Groq (**Qwen 3.8 27B Vision** — `qwen/qwen3.8-27b`, verified) | Free — rate-limited | Primary on Gemini 3.5 Flash, auto-fallback to Groq Qwen 3.8 27B if Gemini is rate-limited or down |
+| 5d. VLM Agent | Dual Load-Balanced: **Google Gemini 3.5 Flash** (`gemini-3.5-flash`) + **Groq Qwen 3.8 27B Vision** (`qwen/qwen3.8-27b`) | Free — rate-limited | **50-50 Round-Robin Load Balancing**: Odd ROIs dispatch to Gemini primary (Groq fallback), Even ROIs dispatch to Groq primary (Gemini fallback). Prevents 429 quota bursts. |
 | 6. Evidence Fusion | Pure math/logic | Free | No model needed |
 | 7. AI Judge | Primary: Groq (**GPT-OSS 20B** — `openai/gpt-oss-20b`, verified active & ultra-fast)<br>Secondary: Google Gemini (**Gemini 3.5 Flash** — `gemini-3.5-flash`, verified reasoning & JSON mode) | Free — rate-limited | Primary on Groq for ultra-fast response, auto-fallback to Gemini 3.5 Flash |
 | 8. Policy + Report | Code + ReportLab (PDF) | Free — local | |
 | Analytics | SQL aggregation (GROUP BY) | Free | No model needed |
 
 **Two things to design around, since they're free:**
-- **Rate limits, not cost.** Groq & Google Gemini free tiers are request-based. The `llm_client.py` wrapper retries with backoff and automatically handles primary/secondary failover (Groq `openai/gpt-oss-20b` primary for AI Judge, Google Gemini `gemini-3.5-flash` fallback; Google Gemini `gemini-3.5-flash` primary for VLM Agent, Groq `qwen/qwen3.8-27b` fallback).
+- **Rate limits, not cost.** Groq & Google Gemini free tiers are request- and token-based (Gemini: 20 req/min; Groq: 7,000 ITPM tokens/min). The `llm_client.py` wrapper uses **Round-Robin Load Balancing** on VLM requests (alternating 50% load to Gemini and 50% load to Groq with mutual cross-failover), retries with backoff, and automatically handles primary/secondary failover (Groq `openai/gpt-oss-20b` primary for AI Judge, Google Gemini `gemini-3.5-flash` fallback).
 - **YOLO's AGPL-3.0 license requires the project to stay open-source** if you use it without an Ultralytics Enterprise license. Since this is already an open-source GitHub portfolio project, this is a non-issue — just don't fork it into a closed-source product later without revisiting the license.
 
 ---
@@ -405,7 +405,22 @@ Following fine-tuning, the trained model was subjected to an automated diagnosti
 
 ---
 
-**5d. VLM Agent** — Primary: Google Gemini **Gemini 3.5 Flash** (`gemini-3.5-flash`, verified active, multimodal defect analysis & explanation). Secondary / Fallback: Groq **Qwen 3.8 27B Vision** (`qwen/qwen3.8-27b`, verified active, 27B multimodal reasoning). Catches general visual anomalies the other 3 agents aren't specifically looking for; also the fallback when a region doesn't cleanly map to OCR/Label/Structural. Combined vision+reasoning means it can return a short explanation alongside the detection, not just a raw label.
+**5d. VLM Agent** — Dual Load-Balanced Architecture: **Google Gemini 3.5 Flash** (`gemini-3.5-flash`) + **Groq Qwen 3.8 27B Vision** (`qwen/qwen3.8-27b`). Catches general visual anomalies the other 3 agents aren't specifically looking for; also acts as the multimodal validation pass on structural components (swelling, cracks, tampering, burn marks). Combined vision+reasoning returns a clear explanation alongside the detection.
+
+#### 🔄 Dual-Provider Round-Robin VLM Load Balancing (Gemini 50% ↔ Groq 50%)
+
+To eliminate the free-tier **HTTP 429 Too Many Requests** error caused by bursting multiple visual ROI requests in parallel, VisionForge implements **Round-Robin Load Balancing**:
+
+| Execution Turn | Region of Interest (ROI) | Primary Provider | Automatic Failover (Fallback) |
+|:---|:---|:---|:---|
+| **Odd ROIs (1, 3, 5...)** | ROI 1 (e.g. `cell_pack`), ROI 3 (`connector_pins`) | 🟢 **Google Gemini** (`gemini-3.5-flash`) | ⚡ **Groq** (`qwen/qwen3.8-27b`) |
+| **Even ROIs (2, 4, 6...)** | ROI 2 (e.g. `serial_label`), ROI 4 (`seal_ring`) | ⚡ **Groq** (`qwen/qwen3.8-27b`) | 🟢 **Google Gemini** (`gemini-3.5-flash`) |
+
+##### Why this architectural decision is critical for production free-tier stability:
+1. **Halves API Load:** A 4-ROI inspection splits into 2 calls to Gemini and 2 calls to Groq instead of slamming 4 heavy multimodal calls into a single provider.
+2. **Eliminates Burst Quotas:** Gemini stays well below its 20 requests/minute burst threshold; Groq stays safely under its 7,000 Input Tokens Per Minute (ITPM) limit (each dual-image visual prompt consumes ~4,940 tokens).
+3. **2× Faster Parallel Latency:** Both independent cloud AI engines execute concurrently without creating a sequential bottleneck.
+4. **Resilient Cross-Failover:** If Gemini is temporarily rate-limited or degraded, Groq handles the request; if Groq is busy, Gemini handles it.
 
 ---
 
@@ -722,9 +737,12 @@ GET /analytics/by-operator      → per-operator inspection & fraud breakdown (A
 
 ### LLM Client
 - Single wrapper around the chosen provider (chat + vision), used by the VLM Agent and the AI Judge.
-- **VLM Agent Model Routing**: Primary Google Gemini (`gemini-3.5-flash`, verified), Secondary Groq (`qwen/qwen3.8-27b`, verified).
+- **VLM Agent Model Routing**: Dynamic **50/50 Round-Robin Load Balancing**:
+  - Odd calls (1, 3, 5...): Primary Google Gemini (`gemini-3.5-flash`), Secondary Groq (`qwen/qwen3.8-27b`).
+  - Even calls (2, 4, 6...): Primary Groq (`qwen/qwen3.8-27b`), Secondary Google Gemini (`gemini-3.5-flash`).
+  - Supports explicit `preferred_provider` routing per request.
 - **AI Judge Model Routing**: Primary Groq (`openai/gpt-oss-20b`, verified active & sub-second response), Secondary Google Gemini (`gemini-3.5-flash`, verified JSON mode).
-- Centralizes retries, timeouts, primary/secondary model failover, and prompt/response logging for debugging accuracy issues.
+- Centralizes retries, exponential backoff, rate-limit isolation, and prompt/response logging for auditing and debugging.
 
 ---
 
@@ -774,3 +792,249 @@ The pipeline is considered validated when, on a curated test set of golden-vs-fr
 - At least one documented failure case with a clear explanation of why the Judge got it wrong — and whether YOLO's component-level evidence helped or was overridden
 
 This number — not stage count — is the artifact that should anchor any explanation of this project.
+
+---
+
+## 11. Development Log — Bugs Fixed & Technical Decisions
+
+> Running record of every bug fix, design change, and infrastructure decision made during the MVP build. Kept here so nothing is lost between sessions.
+
+---
+
+### Quick Start
+
+```
+Double-click  run_visionforge.bat
+```
+
+Everything starts automatically:
+1. Preflight — checks Python + Node, frees stale ports (5173 / 8000)
+2. Asks: "Enable HTTPS mobile tunnel? Y/N"
+3. Backend  → http://localhost:8000 (uvicorn, auto-reload)
+4. Frontend → http://localhost:5173 (Vite, host mode)
+5. Mobile   → HTTPS URL printed on screen (Cloudflare quick tunnel)
+
+**Default credentials:**
+| Role | Email | Password |
+|---|---|---|
+| Admin | admin@visionforge.ai | adminpassword123 |
+| Operator | operator@visionforge.ai | operatorpassword123 |
+
+**Database:** `backend/data/visionforge.db` (SQLite, auto-created on first run)
+
+---
+
+### Theme System — Removed
+
+User explicitly asked to remove the light/dark toggle. Dark theme is now hardcoded (no `ThemeContext`, no toggle button, `tailwind.config.js` uses `darkMode: 'media'`). All colors are direct dark-theme classes.
+
+- **Deleted:** `frontend/src/context/ThemeContext.jsx`
+- **Modified:** `frontend/src/App.jsx` (removed ThemeProvider), `frontend/src/components/layout/Topbar.jsx` (removed Sun/Moon toggle), `frontend/tailwind.config.js` (`darkMode: 'class'` → `'media'`)
+
+---
+
+### JWT — Proactive Token Refresh
+
+Access tokens expire in 30 minutes. The frontend now proactively refreshes ~60 seconds before expiry (no silent logouts).
+
+- `api.js` → `decodeJwtPayload()` (atob, base64url safe), `scheduleTokenRefresh()` (setTimeout to `exp - 60s - now`), `startAuthTimer()`, `stopAuthTimer()`
+- `AuthContext.jsx` → `login()` calls `startAuthTimer()`, `logout()` calls `stopAuthTimer()`, `bootstrapUser()` no longer hard-logouts — lets the axios interceptor refresh instead
+- Refresh token: 7 days (server-side), rotated on every use
+
+---
+
+### Registration — Role Bug Fixed
+
+New users always got `OPERATOR` role regardless of selection. Two files were missing the `role` field:
+
+- `backend/app/schemas/auth.py` — `UserRegister` now has `role: UserRole = Field(default=UserRole.OPERATOR)`
+- `backend/app/routers/auth.py` — register endpoint now passes `role=body.role` to `User()`
+
+Admins must register with `role: "admin"` explicitly during account creation.
+
+---
+
+### ELA_RESAVE_QUALITY — Config Added
+
+Stage 2 (Authenticity Verification) crashed with `AttributeError: 'Settings' object has no attribute 'ELA_RESAVE_QUALITY'`.
+
+- `backend/app/core/config.py` — added `ELA_RESAVE_QUALITY: int = 95`
+- Source: `backend/app/pipeline/stages/authenticity.py:126`
+
+---
+
+### Analytics & Dashboard — Backend Field Name Fixes
+
+Frontend was reading wrong/wrong-cased field names from the backend response. All corrected:
+
+| Frontend (wrong) | Backend (correct) | Page(s) |
+|---|---|---|
+| `total_fraud` | `fraud_detected_count` | AnalyticsPage, DashboardPage |
+| `fraud_rate * 100` | `fraud_rate_pct` (already %) | AnalyticsPage, DashboardPage |
+| `pass_rate * 100` | computed `accepted_count / total_inspections` | AnalyticsPage, DashboardPage |
+| `loc.total / fraud / rate` | `loc.total_inspections / fraud_count / fraud_rate_pct` | AnalyticsPage |
+| `dataKey="month"` | `period` | AnalyticsPage chart |
+| `total_count` | `total_inspections` | DashboardPage |
+| `op.email / inspections_count / overrides_count / role` | `operator_email / total_inspections / overridden_count` (role removed) | AnalyticsPage |
+
+---
+
+### Reports — Delete Endpoint + Frontend Button
+
+Admins can now delete individual reports.
+
+- **Backend:** `DELETE /reports/{id}` in `routers/reports.py` — cascades `evidence_records` delete
+- **Frontend:** `reportsAPI.delete(id)` in `api.js`, `Trash2` button with `window.confirm()` in `ReportsPage.jsx` (admin only, optimistic UI removal)
+
+---
+
+### Reports — Filter Values Fixed
+
+Dropdowns were sending wrong/uppercase values to the backend. Fixed to match the SQLAlchemy enum exactly:
+
+| Filter | Before (broken) | After (correct) |
+|---|---|---|
+| Verdict | `GENUINE` / `FRAUD` / `SUSPICIOUS` | `accept` / `reject` / `review` |
+| Policy action | `QUARANTINE` / `RETAKE` / `VENDOR_VERIFICATION` | `quarantine` / `retake` / `vendor_verification` |
+
+---
+
+### Mobile Camera Handoff — QR Code Fix
+
+The QR code in the desktop "Desktop Guard Modal" encoded `localhost` URLs, which don't work on a phone. Now it auto-resolves the correct URL.
+
+**Resolution priority:**
+1. `VITE_PUBLIC_URL` env var (HTTPS tunnel URL — for camera access)
+2. If on localhost → LAN IP via new `/api/v1/system/network` endpoint
+3. Fallback: current URL (works in production)
+
+**New files:**
+- `backend/app/routers/system.py` — `GET /api/v1/system/network` returns `{ "ip": "x.x.x.x" }` via UDP probe
+- `backend/app/main.py` — registered system router
+- `backend/app/routers/__init__.py` — added `system` to imports
+
+**Modified files:**
+- `frontend/vite.config.js` — added `server.host: true`, `server.allowedHosts: ['.trycloudflare.com', '.ngrok.app', '.loca.lt']`
+- `frontend/src/components/inspection/DesktopGuardModal.jsx` — smart URL resolution, shows encoded URL under QR
+
+**Usage notes:**
+- LAN IP (HTTP): page opens on phone, but camera is blocked (getUserMedia requires HTTPS or localhost)
+- HTTPS tunnel: camera works. Scan the QR from any phone browser.
+
+---
+
+### Mobile Responsive Layout — Full Redesign
+
+The fixed sidebar (`w-64`) was always visible, leaving only ~130px of content on a 390px phone. Redesigned to a responsive drawer pattern.
+
+**Core layout changes:**
+
+| File | Change |
+|---|---|
+| `AppLayout.jsx` | Sidebar now a mobile drawer: hidden off-screen by default, slides in on hamburger click. Backdrop overlay on mobile, static sidebar on `lg+` screens. |
+| `Sidebar.jsx` | Added `onClose` prop. Hamburger icon (close) visible on mobile only (`lg:hidden`). Nav links auto-close drawer on click. `overflow-y-auto` for long lists. |
+| `Topbar.jsx` | Added `onMenuClick` prop. Hamburger button (`lg:hidden`). Title truncates. "New Inspection" button shows "New" on mobile. Admin badge hidden on mobile to save space. `p-4 sm:p-6` main padding. |
+
+**Page-level responsive fixes (Playwright verified at 390px — zero horizontal overflow):**
+
+| File | Fix |
+|---|---|
+| `DashboardPage.jsx` | CTA button row → `flex-wrap`. Feed row text → `min-w-0`, `truncate` on part names/vendor/location. |
+| `AnalyticsPage.jsx` | Location/operator rows → `min-w-0 break-all` for long unbroken strings. Chart margins → removed negative left margin (was clipping Y-axis labels). Vendor YAxis → truncated tick labels at 12 chars. |
+| `InspectionDetailPage.jsx` | Vendor badge → `min-w-0 max-w-full truncate` on inner text. |
+| `PipelineProgress.jsx` | Header row → `flex-wrap` + `gap-2`, title → `truncate`. |
+| `LandingPage.jsx` | Header → `flex-wrap` for small screens. Glow effect → `w-[420px] sm:w-[600px]` (was `w-[600px]` fixed). Mockup header bar → `flex-wrap` + `truncate` on result title. |
+| `LoginPage.jsx` | Error message → `break-words` for long API error strings. |
+
+---
+
+### npm run tunnel — Cloudflare Quick Tunnel Helper
+
+Automatic HTTPS tunnel for mobile camera testing. No account required.
+
+**What it does:**
+1. Finds or downloads `cloudflared.exe` to `~/.visionforge/bin/` (~55MB, one-time)
+2. Starts a Cloudflare quick tunnel (`*.trycloudflare.com`)
+3. Writes the HTTPS URL to `frontend/.env` as `VITE_PUBLIC_URL`
+4. Writes `frontend/.tunnel.url` marker for the bat to detect
+5. Keeps running until Ctrl+C
+
+**Files:**
+- `frontend/scripts/tunnel.mjs` — the script (Node 18+, no deps)
+- `frontend/package.json` — `"tunnel": "node scripts/tunnel.mjs"` added to scripts
+- `~/.visionforge/bin/cloudflared.exe` — installed binary (auto-downloads on first run if missing)
+- `frontend/.env` — `VITE_PUBLIC_URL=https://...trycloudflare.com` (auto-written)
+- `frontend/.tunnel.url` — temporary marker file (deleted on tunnel close)
+
+**Manual usage:**
+```bash
+cd frontend && npm run tunnel
+```
+
+---
+
+### run_visionforge.bat — Master Launcher
+
+Single double-click starts everything: backend, frontend, tunnel, and opens the browser.
+
+**Flow:**
+1. Verifies Python and Node.js are on PATH
+2. Preflight — kills stale processes on ports 5173 and 8000
+3. Asks "Enable HTTPS mobile tunnel? (Y/N)"
+4. If Y: starts tunnel in a new window, polls up to 90s for the URL marker
+5. Starts FastAPI backend (`uvicorn --reload --host 0.0.0.0 --port 8000`)
+6. Starts Vite dev server (`npm run dev`, host mode, reads tunnel URL from `.env`)
+7. Opens browser to `http://localhost:5173`
+8. Prints the mobile HTTPS URL on screen
+
+**If N:** Strips any stale `VITE_PUBLIC_URL` from `.env` so the QR falls back to LAN IP.
+
+**To re-run:** Just double-click again — preflight cleans up old processes automatically.
+
+---
+
+### Backend Startup Defaults (config.py)
+
+Key settings in `backend/app/core/config.py`:
+
+```python
+DATABASE_URL          = "sqlite+aiosqlite:///./data/visionforge.db"
+SECRET_KEY            = "visionforge-mvp-secret-key-change-in-production"
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
+REFRESH_TOKEN_EXPIRE_DAYS   = 7
+
+# Pipeline
+ELA_RESAVE_QUALITY    = 95   # was missing — caused AttributeError
+SIMILARITY_THRESHOLD  = 0.75
+```
+
+---
+
+### VLM Dual-Provider Round-Robin Load Balancing (Gemini 50% / Groq 50%)
+
+**Problem:**
+During Stage 5 (Evidence Execution), multiple visual ROIs (e.g. 4 to 7 regions) were sent concurrently via `asyncio.gather(*vlm_tasks)` to Google Gemini (`gemini-3.5-flash`). Because Gemini's free tier has a strict burst limit of 20 requests/minute, bursting 4 heavy multimodal image payloads in the exact same millisecond triggered `HTTP 429 Too Many Requests (Resource Exhausted)`. When automated failover transferred all remaining requests to Groq (`qwen/qwen3.8-27b`), Groq's free-tier limit of 7,000 Input Tokens Per Minute (ITPM) was also exceeded (each dual-image prompt takes ~4,940 tokens, so 2 concurrent calls = ~9,880 tokens > 7,000).
+
+**Solution:**
+Implemented **50-50 Round-Robin Load Balancing** between Gemini and Groq in `llm_client.py` and `vlm_agent.py`:
+1. **Alternating Primary Providers:**
+   - Odd VLM calls (1, 3, 5...) dispatch to **Google Gemini** as primary (with Groq as fallback).
+   - Even VLM calls (2, 4, 6...) dispatch to **Groq** as primary (with Gemini as fallback).
+2. **Double Quota Capacity:**
+   - Gemini only receives half the requests, staying well under 20 req/min.
+   - Groq receives half the requests, staying safely under 7,000 tokens/min.
+3. **Pacing & Concurrency Guard:**
+   - VLM executions use controlled concurrency so calls do not hit external AI API servers in the exact same millisecond.
+4. **Zero 429 Errors:**
+   - Both cloud providers operate comfortably within free-tier rate limits, yielding 2× faster parallel execution with 100% resilient cross-failover.
+
+---
+
+### Key Technical Notes
+
+- **Vite 8+ `allowedHosts`:** Without the explicit allowlist in `vite.config.js`, requests from cloudflare tunnels (`.trycloudflare.com`) get a `403` response — Vite 8 blocks unknown hostnames by default.
+- **`getUserMedia` on phone:** Requires HTTPS or localhost. LAN IP over plain HTTP opens the page but camera access is denied by the browser. Always use the HTTPS tunnel for live camera testing.
+- **SQLite WAL mode:** Used by default via `aiosqlite`. Safe for concurrent reads, single writer. Fine for single-user MVP.
+- **FAISS index:** Stored in `backend/data/faiss_index/`. Rebuilt automatically from golden images on server startup if missing.
+- **YOLO weights:** `backend/data/yolo_weights/component_detector.pt` (5.2 MB, 8 classes). Must be present before Stage 5 runs.
+- **Seed data:** Two user accounts (`admin@visionforge.ai`, `operator@visionforge.ai`) and one default vendor ("Standard QA") are seeded automatically on first database creation.

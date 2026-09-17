@@ -21,6 +21,9 @@ from sqlalchemy.ext.asyncio import (
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.pool import NullPool
 
+from fastapi import HTTPException
+from fastapi.exceptions import RequestValidationError
+
 from app.core.config import get_settings
 
 logger = logging.getLogger(__name__)
@@ -113,6 +116,9 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
         try:
             yield session
             await session.commit()
+        except (HTTPException, RequestValidationError):
+            await session.rollback()
+            raise
         except Exception:
             await session.rollback()
             logger.exception("DB session rolled back due to exception")
@@ -192,6 +198,43 @@ async def init_db() -> None:
                 v2 = Vendor(name="Foxconn Industrial Internet", code="FII-04", site_name="Zhengzhou Campus")
                 v3 = Vendor(name="Delta Electronics QA", code="DLT-09", site_name="Taoyuan Facility")
                 session.add_all([v1, v2, v3])
+
+            # Seed default golden reference hardware components if missing
+            from app.models.product import GoldenReference
+            from pathlib import Path
+            g_result = await session.execute(select(GoldenReference).limit(1))
+            golden_dir = Path(settings.GOLDEN_DIR)
+            if g_result.scalar_one_or_none() is None:
+                g1 = GoldenReference(
+                    id=UUID("a2ebf50f-1556-430f-83ce-18d1bda3024c"),
+                    part_id="PCB-MCU-V2",
+                    part_name="Industrial ATX Motherboard V1",
+                    image_path=str(golden_dir / "pcb_mcu_v2_a2ebf50f.png"),
+                    meta={"product_type": "motherboard"},
+                )
+                g2 = GoldenReference(
+                    id=UUID("efdd0ef3-4273-468a-b3a2-77f41dcc2913"),
+                    part_id="BAT-STD-V1",
+                    part_name="Smart Lithium Battery Pack 48V",
+                    image_path=str(golden_dir / "bat_std_v1_efdd0ef3.png"),
+                    meta={"product_type": "battery"},
+                )
+                g3 = GoldenReference(
+                    id=UUID("de3719e1-3cb7-4296-8c14-1b3c49ebff64"),
+                    part_id="RAM-DDR4-V1",
+                    part_name="ECC DDR4 Server Module 16GB",
+                    image_path=str(golden_dir / "ram_ddr4_v1_de3719e1.png"),
+                    meta={"product_type": "ram"},
+                )
+                session.add_all([g1, g2, g3])
+            else:
+                # Normalize golden reference image paths if pointing to other machine absolute paths
+                all_g = (await session.execute(select(GoldenReference))).scalars().all()
+                for g in all_g:
+                    if g.image_path and not Path(g.image_path).exists():
+                        local_target = golden_dir / Path(g.image_path).name
+                        if local_target.exists():
+                            g.image_path = str(local_target)
 
             await session.commit()
 

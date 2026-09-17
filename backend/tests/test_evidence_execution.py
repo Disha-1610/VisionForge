@@ -113,14 +113,18 @@ async def test_evidence_execution_end_to_end_with_mock_agents():
     # 4. Assert stage result
     assert stage_res.status == "passed"
     assert stage_res.stage == PipelineStageName.EVIDENCE_EXECUTION
-    assert stage_res.data["total_rois_executed"] == len(template.regions)
+    # 8 template regions + 5 structural ROIs re-inspected by VLM validation pass
+    expected_count = len(template.regions) + sum(
+        1 for r in template.regions if r.agent == AgentType.STRUCTURAL
+    )
+    assert stage_res.data["total_rois_executed"] == expected_count
     assert stage_res.data["defects_detected"] > 0
     assert stage_res.data["agent_failures"] == 0
 
     # 5. Assert EvidenceStore audit trail populated
     evidence_records = state.evidence.get_all_for_inspection(state.memory.inspection_id)
-    assert len(evidence_records) == len(template.regions)
-    assert len(state.memory.evidence_refs) == len(template.regions)
+    assert len(evidence_records) == expected_count
+    assert len(state.memory.evidence_refs) == expected_count
 
     # Check that structural evidence has defect recorded
     structural_records = [r for r in evidence_records if r.agent_type == AgentType.STRUCTURAL]

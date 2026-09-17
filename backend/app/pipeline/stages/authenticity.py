@@ -170,13 +170,21 @@ async def _validate_exif(image_path: str) -> ExifResult:
     """
     Read camera metadata via exifread. Missing EXIF, a known editing-software
     tag, or a datetime that doesn't parse are all inconsistency signals.
+    PNG files are expected to lack EXIF — only flag for JPEG/JPG files.
     """
+    ext = Path(image_path).suffix.lower()
+    is_png = ext in (".png", ".webp", ".gif", ".bmp")
+
     try:
         with open(image_path, "rb") as fh:
             tags = exifread.process_file(fh, details=False, strict=False)
     except OSError as exc:
         logger.warning("EXIF: cannot read %s: %s", image_path, exc)
         tags = {}
+
+    # PNG files don't have EXIF by design — return clean score
+    if is_png and not tags:
+        return ExifResult(has_exif=False, exif_score=1.0)
 
     if not tags:
         return ExifResult(has_exif=False, exif_score=0.0)
@@ -310,6 +318,9 @@ async def _detect_copy_move(image_path: str) -> CopyMoveResult:
         for bx in range(blocks_x):
             y0, x0 = by * block, bx * block
             patch = img[y0:y0 + block, x0:x0 + block]
+            # Ignore uniform/flat background patches (low variance) to prevent false clone-stamp alarms
+            if float(np.std(patch)) < 4.0:
+                continue
             # Coarse 8x8 average-pooled fingerprint — cheap, rotation-naive
             # but sufficient to catch straight clone-stamp copies.
             fingerprint = tuple(
@@ -324,7 +335,15 @@ async def _detect_copy_move(image_path: str) -> CopyMoveResult:
             else:
                 block_map[fingerprint] = (y0, x0)
 
-    copy_move_score = min(1.0, matched_blocks / max(1, settings.COPY_MOVE_MATCH_THRESHOLD * 2))
+    total_blocks = blocks_y * blocks_x
+    duplicate_ratio = matched_blocks / max(1, total_blocks)
+
+    # Use proportional threshold: flag only if duplicates exceed min_ratio of total blocks
+    copy_move_score = min(1.0, duplicate_ratio / max(settings.COPY_MOVE_MIN_DUPLICATE_RATIO, 0.01))
+
+    # Also apply absolute threshold as a safety net
+    if matched_blocks >= settings.COPY_MOVE_MATCH_THRESHOLD:
+        copy_move_score = max(copy_move_score, min(1.0, matched_blocks / (settings.COPY_MOVE_MATCH_THRESHOLD * 3)))
 
     return CopyMoveResult(
         matched_blocks=matched_blocks,
@@ -360,7 +379,7 @@ def _calculate_authenticity_score(
         flags.append(AuthenticityFlag.ELA_ANOMALY)
 
     exif_component = exif.exif_score
-    if not exif.has_exif:
+    if not exif.has_exif and exif.exif_score < 0.6:
         flags.append(AuthenticityFlag.EXIF_MISSING)
     elif exif.exif_score < 0.6:
         flags.append(AuthenticityFlag.EXIF_INCONSISTENT)
@@ -374,7 +393,8 @@ def _calculate_authenticity_score(
         flags.append(AuthenticityFlag.NOISE_INCONSISTENT)
 
     copy_move_component = 1.0 - copy_move.copy_move_score
-    if copy_move.matched_blocks >= settings.COPY_MOVE_MATCH_THRESHOLD:
+    # Flag copy-move only if duplicate ratio exceeds the minimum threshold
+    if copy_move.copy_move_score > 0.7:
         flags.append(AuthenticityFlag.COPY_MOVE_DETECTED)
 
     score = (

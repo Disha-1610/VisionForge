@@ -74,22 +74,28 @@ def evaluate_policy_action(state: InspectionState) -> tuple[PolicyAction, str, d
         )
 
     # Rule 3: Borderline Anomaly / Verification -> VENDOR_VERIFICATION
+    category_mismatch = getattr(mem, "hardware_category_mismatch", False)
     if (
         judge_verdict == "review"
+        or category_mismatch
         or fraud_prob >= 0.30
         or authenticity_flagged
         or fused.get("fraud_score", 0.0) >= 30.0
     ):
+        explanation = (
+            f"Hardware category mismatch detected (declared '{getattr(mem, 'declared_product_type', 'unknown')}' "
+            f"vs visual match '{mem.product_type}'). Part held for secondary verification."
+            if category_mismatch
+            else f"Borderline anomaly detected (fraud probability: {fraud_prob*100:.1f}%). Part held for secondary inspection and vendor lot verification."
+        )
         return (
             PolicyAction.VENDOR_VERIFICATION,
-            (
-                f"Borderline anomaly detected (fraud probability: {fraud_prob*100:.1f}%). "
-                "Part held for secondary inspection and vendor lot verification."
-            ),
+            explanation,
             {
                 "rule_triggered": "BORDERLINE_REVIEW_REQUIRED",
                 "fraud_probability": fraud_prob,
                 "authenticity_flagged": authenticity_flagged,
+                "hardware_category_mismatch": category_mismatch,
             },
         )
 

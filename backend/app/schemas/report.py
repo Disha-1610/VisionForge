@@ -52,6 +52,8 @@ class ReportResponse(BaseModel):
     location: str
 
     part_id: str
+    part_name: Optional[str] = None
+    product_type: Optional[str] = None
     golden_image_path: str
     inspection_image_paths: list[str]
 

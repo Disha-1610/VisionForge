@@ -113,13 +113,17 @@ async def test_week3_stages_4_and_5_all_4_agents_end_to_end():
     # 6. Verify Stage 5 Result & Metrics
     assert exec_result.status == "passed"
     assert exec_result.stage == PipelineStageName.EVIDENCE_EXECUTION
-    assert exec_result.data["total_rois_executed"] == len(template.regions)
+    # 8 template regions + 5 structural ROIs re-inspected by VLM validation pass
+    expected_count = len(template.regions) + sum(
+        1 for r in template.regions if r.agent == AgentType.STRUCTURAL
+    )
+    assert exec_result.data["total_rois_executed"] == expected_count
     assert exec_result.data["agent_failures"] == 0
 
     # 7. Verify All 4 Agents Recorded Evidence into EvidenceStore
     records = state.evidence.get_all_for_inspection(inspection_id)
-    assert len(records) == len(template.regions)
-    assert len(state.memory.evidence_refs) == len(template.regions)
+    assert len(records) == expected_count
+    assert len(state.memory.evidence_refs) == expected_count
 
     recorded_agent_types = set(r.agent_type for r in records)
     assert AgentType.OCR in recorded_agent_types

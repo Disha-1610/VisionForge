@@ -71,7 +71,7 @@ async def test_vlm_agent_clean_inspection_passes():
     assert result.has_defect is False
     assert result.confidence == 0.95
     assert result.evidence["defect_type"] == "none"
-    assert "verified clean" in result.explanation.lower()
+    assert "no visible defect" in result.explanation.lower()
 
 
 @pytest.mark.asyncio
