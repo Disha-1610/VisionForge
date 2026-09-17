@@ -558,6 +558,34 @@ VisionForge features an exhaustive 12-document technical specification suite:
 
 ---
 
+## 🏆 Project Origin — From Dell FutureMin AI Hackathon Finalist to Production Architecture
+
+VisionForge AI originated from a real-world industrial challenge presented at the **Dell FutureMin AI Hackathon**, where **Disha** and **Anil** reached the **National Finals**:
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                             THE ENGINEERING EVOLUTION JOURNEY                                    │
+├────────────────────────────────┬─────────────────────────────────────────────────────────────────┤
+│ 🥉 Hackathon Prototype (Day 0) │ • Naive, monolithic cloud VLM prompt over raw 4K board images.  │
+│                                │ • Severe latency (8-12 seconds), hallucinated capacitor counts. │
+│                                │ • Brittle CV rules that broke under slight angle or glare shifts│
+│                                │ • Fragile proof-of-concept without tests or audit persistence.  │
+├────────────────────────────────┼─────────────────────────────────────────────────────────────────┤
+│ 🚀 Production Re-Architecture  │ • Threw away naive approach; re-engineered entire system from 0.│
+│    (Weeks of Continuous Dev)   │ • Built 8-stage LangGraph state machine with 30ms defensive gates│
+│                                │ • Curated 4,448-image corpus; fine-tuned YOLO11n (5.2 MB model).│
+│                                │ • Engineered Anomaly Max-Pooling to prevent defect dilution.    │
+│                                │ • Implemented Groq LPU causal judge (~420ms root-cause).        │
+│                                │ • Built Tactical React 18 HUD with real-time SSE telemetry.     │
+│                                │ • Authored 23 automated Pytest test suites (203 passing tests). │
+└────────────────────────────────┴─────────────────────────────────────────────────────────────────┘
+```
+
+> *"Most hackathon projects die when the demo ends. For us, the Dell FutureMin Hackathon was simply Day 1. The original prototype had severe limitations, but the industrial problem was massive. We spent weeks completely re-architecting the system from the ground up to build what VisionForge AI is today: an enterprise-ready, sub-4-second autonomous hardware forensics workstation."*  
+> — **Disha & Anil**
+
+---
+
 ## 👥 Authors & Core Contributors
 
 | Contributor | Primary Focus & Core Responsibilities |
