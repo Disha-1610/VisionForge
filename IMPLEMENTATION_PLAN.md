@@ -441,23 +441,13 @@ All Week 5 deliverables (Anil + Disha) completed:
 | | D2 (Sep 8) | ✅ | ✅ |
 | | D3 (Sep 9) | ✅ | ✅ |
 | | D4 (Sep 10) | ✅ | ✅ |
-| | D5 (Sep 11) | | |
-| | D6 (Sep 12) | | |
-| **W5** | D1 (Sep 14) | | |
-| | D2 (Sep 15) | | |
-| | D3 (Sep 16) | | |
-| | D4 (Sep 17) | | |
-| | D5 (Sep 18) | | |
-| | D6 (Sep 19) | | |
-| **W6** | D1 (Sep 21) | | |
-| | D2 (Sep 22) | | |
-| | D3 (Sep 23) | | |
-| | D4 (Sep 24) | | |
-| | D5 (Sep 25) | | |
-| | D6 (Sep 26) | | |
-| **W7** | D1 (Sep 28) | | |
-| | D2 (Sep 29) | | |
-| | D3 (Sep 30) | | |
+| | D5 (Sep 11) | ✅ | ✅ | |
+| | D6 (Sep 12) | ✅ | ✅ | **Completed ✅** |
+| **W5** | D1 (Sep 14) | ✅ | ✅ | |
+| | D2 (Sep 15) | ✅ | ✅ | |
+| | D3 (Sep 16) | ✅ | ✅ | |
+| | D4 (Sep 17) | ✅ | ✅ | |
+| | D5 (Sep 18) | ✅ | ✅ | **Project Completed ✅** |
 
 ---
 
