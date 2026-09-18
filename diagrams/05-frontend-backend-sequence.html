@@ -5085,7 +5085,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       </div>
     </div>
 
-    <script id="archify-guided-views-data" type="application/json">[{"id":"upload-and-ack","label":"Async Upload and Ingestion","focus":["user","ui","api","db","pipeline"],"note":"FastAPI immediately returns 201 Created and spins off the background state machine."},{"id":"sse-telemetry","label":"Real-Time SSE Telemetry Stream","focus":["pipeline","sse","ui"],"note":"Stages stream live progress, ROI bounding box coordinates, and final completion events."},{"id":"audit-and-pdf","label":"Verdict Audit and PDF Certificate","focus":["ui","api","db","user"],"note":"The Tactical HUD queries case evidence and downloads the signed forensic PDF certificate."}]</script>
+    <script id="archify-guided-views-data" type="application/json">[{"id":"upload-and-ack","label":"Async Scan Ingestion","focus":["user","ui","api","db"],"note":"FastAPI persists the PENDING inspection and returns 201 Created in \u003c 50ms."},{"id":"sse-telemetry","label":"Real-Time Telemetry Stream","focus":["ui","api","sse"],"note":"React hook usePipelineSSE receives live microsecond stage transitions and ROI coordinates."},{"id":"audit-and-pdf","label":"Evidence Retrieval and PDF Certificate","focus":["ui","api","db","user"],"note":"The Tactical HUD queries case evidence and downloads the cryptographically signed forensic PDF."}]</script>
 
     <script id="archify-i18n-data" type="application/json">{"locale":"en","messages":{"viewer.kind.frontend":"Frontend","viewer.kind.backend":"Backend","viewer.kind.database":"Database","viewer.kind.cloud":"Cloud","viewer.kind.security":"Security","viewer.kind.messagebus":"Message bus","viewer.kind.external":"External","viewer.kind.neutral":"Neutral","viewer.kind.node":"Node","viewer.kind.start":"Start","viewer.kind.active":"Active","viewer.kind.waiting":"Waiting","viewer.kind.decision":"Decision","viewer.kind.success":"Success","viewer.kind.failure":"Failure","viewer.toolbar.actions":"Diagram actions","viewer.theme.toggle.title":"Toggle theme (T)","viewer.theme.toggle":"Toggle color theme","viewer.theme.dark":"Dark","viewer.theme.light":"Light","viewer.preset.choose.title":"Choose visual style (S cycles)","viewer.preset.choose":"Choose visual style","viewer.preset.style":"Style","viewer.preset.menu":"Visual style","viewer.preset.identity":"Visual identity","viewer.preset.cycles":"S cycles","viewer.preset.classic":"Classic","viewer.preset.classic.short":"Classic","viewer.preset.classic.hint":"Stable technical default","viewer.preset.flow":"Signal Flow","viewer.preset.flow.short":"Flow","viewer.preset.flow.hint":"Motion-forward presentation","viewer.preset.blueprint":"Blueprint","viewer.preset.blueprint.hint":"Engineering review","viewer.preset.editorial":"Editorial","viewer.preset.editorial.hint":"Publication and launch notes","viewer.preset.badge.signalFlow":"SIGNAL FLOW","viewer.preset.badge.blueprint":"BLUEPRINT / REV 01","viewer.preset.badge.editorial":"EDITORIAL / FIELD NOTE","viewer.preset.badge.editorialPlate":"ARCHIFY / PLATE 04","viewer.preset.current":"Visual style: {style}. Choose visual style","viewer.motion.live":"Live","viewer.motion.still":"Still","viewer.motion.pause":"Pause motion","viewer.motion.resume":"Resume motion","viewer.motion.reduced":"Motion paused by reduced-motion preference","viewer.motion.hidden":"Motion paused while this page is hidden","viewer.motion.yielding":"Pause motion; currently yielding to {owner}","viewer.motion.yielding.title":"Live preview enabled · yielding to {owner}","viewer.owner.story":"the guided story","viewer.owner.chapter":"the active chapter","viewer.owner.chapterPreview":"the chapter delta preview","viewer.owner.handoff":"the chapter handoff","viewer.owner.route":"Route Probe","viewer.owner.lens":"Semantic Lens","viewer.owner.relationship":"Relationship Preview","viewer.owner.intent":"Intent Trace","viewer.owner.focus":"semantic focus","viewer.owner.legend":"legend preview","viewer.owner.reader":"reader interaction","viewer.present.enter":"Enter presentation stage","viewer.present.enter.title":"Presentation stage (F)","viewer.present.exit":"Exit presentation stage","viewer.present.exit.title":"Exit presentation stage (F or Escape)","viewer.present.present":"Present","viewer.present.exit.label":"Exit","viewer.export.button":"Export","viewer.export.button.title":"Export diagram (E)","viewer.export.diagram":"Export diagram","viewer.export.menu":"Export","viewer.export.subtitle":"Portable, clean outputs","viewer.export.share":"Share","viewer.export.shareCard":"Share Card","viewer.export.routeShareCard":"Route Share Card","viewer.export.reachShareCard":"Reach Share Card","viewer.export.copyShareCard":"Copy Share Card","viewer.export.copyDiagram":"Copy diagram","viewer.export.clipboardPng":"PNG to clipboard","viewer.export.raster":"Raster images","viewer.export.image":"Image","viewer.export.lossless":"Lossless image","viewer.export.compact":"Compact image","viewer.export.modern":"Modern image","viewer.export.vectorMotion":"Vector and motion","viewer.export.vectorMotion.heading":"Vector \u0026 motion","viewer.export.editable":"Editable vector","viewer.export.motion6s":"6s motion","viewer.export.unsupported":"Not supported by this browser","viewer.export.clipboardUnsupported":"Clipboard image write not supported by this browser","viewer.export.clipboardUnsupported.period":"Clipboard image write not supported by this browser.","viewer.export.clipboardUnsupported.short":"Clipboard image write not supported in this browser.","viewer.export.motionUnavailable":"Motion capture unavailable in this browser","viewer.export.webmUnavailable":"WebM unavailable in this browser","viewer.export.failed":"Export failed: {message}","viewer.export.unknownVariant":"Unknown Share Card variant: {variant}","viewer.export.routeRequired":"Trace a route before exporting a Route Share Card","viewer.export.reachRequired":"Trace authored reach before exporting a Reach Share Card","viewer.export.unknown":"unknown","viewer.export.routeFailed":"Route Share Card export failed: {message}","viewer.export.reachFailed":"Reach Share Card export failed: {message}","viewer.export.copyFailed":"Copy failed: {message}","viewer.export.copiedPng":"Copied PNG to clipboard","viewer.export.copiedShare":"Copied Share Card","viewer.export.downloadedShare":"Downloaded Share Card","viewer.export.downloadedRoute":"Downloaded Route Share Card","viewer.export.downloadedReach":"Downloaded Reach Share Card","viewer.export.downloadedWebm":"Downloaded WebM","viewer.export.recording":"Recording 6 seconds of motion…","viewer.export.card.routeSummary.one":"Route: {source} → {target} · {count} directed hop","viewer.export.card.routeSummary.other":"Route: {source} → {target} · {count} directed hops","viewer.export.card.reachSummary":"Authored {direction} from {origin} · {nodes} · {links} · max {hops}","viewer.export.card.node.one":"{count} node","viewer.export.card.node.other":"{count} nodes","viewer.export.card.link.one":"{count} link","viewer.export.card.link.other":"{count} links","viewer.export.card.hop.one":"{count} hop","viewer.export.card.hop.other":"{count} hops","viewer.export.card.routeBadge":"ARCHIFY · ROUTE · {hops}","viewer.export.card.reachBadge":"ARCHIFY · {direction} REACH","viewer.export.card.defaultBadge":"ARCHIFY · {preset} · {theme}","viewer.export.direction.upstream":"Upstream","viewer.export.direction.downstream":"Downstream","viewer.export.error.canvasUnavailable":"Canvas unavailable for {label}","viewer.export.error.contextUnavailable":"2D canvas context unavailable for {label}","viewer.export.error.toBlobUnavailable":"canvas.toBlob unavailable for {label}","viewer.export.error.toBlobNull":"canvas.toBlob returned no data for {label}","viewer.export.error.variantsCombined":"Share Card variants cannot be combined","viewer.export.error.viewerState":"Share Card export could not remove temporary viewer state","viewer.export.error.routeState":"Route Card export could not preserve the resolved route safely","viewer.export.error.reachState":"Reach Card export could not preserve authored reach safely","viewer.export.error.webmRequirements":"WebM motion export requires a trace animation and browser MediaRecorder support","viewer.export.error.mediaRecorder":"MediaRecorder failed","viewer.export.error.emptyWebm":"MediaRecorder produced an empty WebM","viewer.export.error.webmBackground":"SVG background could not be loaded for WebM export","viewer.guided.region":"Guided diagram views","viewer.guided.previous":"Previous guided view","viewer.guided.previous.title":"Previous guided view ([)","viewer.guided.next":"Next guided view","viewer.guided.next.title":"Next guided view (])","viewer.guided.views":"Guided views","viewer.guided.explore":"Explore this system","viewer.guided.intro":"Step through curated paths without changing the source diagram.","viewer.guided.trail":"Story trail","viewer.guided.beat":"Beat","viewer.guided.nextBeat":"Next","viewer.guided.play":"Play guided story","viewer.guided.play.title":"Play guided story (P)","viewer.guided.pause":"Pause guided story","viewer.guided.pause.title":"Pause guided story (P)","viewer.guided.replay":"Replay guided story","viewer.guided.replay.title":"Replay guided story (P)","viewer.guided.playStory":"Play story","viewer.guided.pauseStory":"Pause","viewer.guided.replayStory":"Replay story","viewer.guided.motionUnavailable":"Story playback unavailable while motion is Still","viewer.guided.enableMotion":"Switch motion to Live to play the guided story","viewer.guided.selectBeatLink":"Select a Story Beat to copy its exact link","viewer.guided.copyMoment":"Copy moment","viewer.guided.momentCopied":"Moment link copied","viewer.guided.momentCopyFailed":"Could not copy story moment link","viewer.guided.copied":"Copied","viewer.guided.copyFailed":"Copy failed","viewer.guided.showAll":"Show all","viewer.guided.showAll.aria":"Show entire diagram","viewer.guided.chapters":"Story chapters","viewer.guided.storyTrail":"Story trail for {label}: {count} beats","viewer.guided.chapter.open":"Open chapter {index} of {total}: {label}, {count} stops","viewer.guided.chapter.current":"Current chapter {index} of {total}: {label}, {count} stops","viewer.guided.chapter.selectedNodes":"{count} selected nodes","viewer.guided.chapter.stops":"{count} stops","viewer.guided.chapter.stop.one":"{count} stop","viewer.guided.chapter.stop.other":"{count} stops","viewer.guided.chapter.current.title":"{label} — current chapter, {count} stops","viewer.guided.chapter.delta.expanded":"{stay} stay, {enter} enter, {leave} leave","viewer.guided.chapter.delta.aria":"Open chapter {index} of {total}: {label}. Chapter focus delta: {delta}","viewer.guided.chapter.delta.title":"{label} — {delta} chapter focus","viewer.guided.handoff":"{from} → {to} · via {label}","viewer.guided.share.chapter":"Chapter {index} / {total}","viewer.guided.share.initial":"Chapter 01 / 01","viewer.guided.share.default":"Guided chapter","viewer.guided.state.ready":"Ready","viewer.guided.state.playing":"Playing","viewer.guided.state.settled":"Settled","viewer.guided.state.paused":"Paused","viewer.guided.state.pinned":"Pinned","viewer.guided.state.still":"Still","viewer.guided.share.step":"Step {index} / {total} · {label}","viewer.guided.share.staticMoment":"{step} · Static moment","viewer.guided.share.complete":"{count} steps complete · {note}","viewer.guided.share.settled":"Path settled for reading.","viewer.guided.share.staticPath":"{count} steps · Static path","viewer.guided.share.ready":"{count} steps · Ready","viewer.guided.share.aria":"{state} chapter {index} of {total}: {label}. {beat}. {route}","viewer.guided.beat.start":"Beat {index} / {total} · {label} · starting point","viewer.guided.beat.forward":"Beat {index} / {total} · {from} → {to}","viewer.guided.beat.reverse":"Beat {index} / {total} · {from} → {to} · reverse authored link","viewer.guided.beat.multiple":"Beat {index} / {total} · {from} ⇄ {to} · {count} authored links","viewer.guided.beat.group":"Beat {index} / {total} · {from} · {to} · grouped · no direct link","viewer.guided.beat.aria.prefix":"Story beat {index} of {total}: {label}. ","viewer.guided.beat.aria.start":"Starting point.","viewer.guided.beat.aria.forward":"From {from} through one authored forward relationship.","viewer.guided.beat.aria.reverse":"From {from}; the authored relationship points from {to} to {from}.","viewer.guided.beat.aria.multiple":"From {from} through {count} authored relationships; shown without arbitrary motion.","viewer.guided.beat.aria.group":"Grouped from {from} with no direct authored relationship.","viewer.guided.caption.start":"Starting point","viewer.guided.caption.grouped":"Grouped transition · no direct authored link","viewer.guided.caption.more":" +{count} more","viewer.guided.caption.reverse":"Reverse authored relationship","viewer.guided.caption.relationships":"{count} authored relationships","viewer.guided.caption.relationship":"Authored relationship","viewer.guided.caption.direction":"authored direction: {from} → {to}","viewer.guided.caption.starting":"Authored starting point","viewer.guided.beatLink":"Copy link to current story moment: Beat {index} of {total}: {label}","viewer.guided.noStory":"This diagram has no authored guided story.","viewer.guide.eyebrow":"Diagram guide","viewer.guide.close":"Close diagram guide","viewer.guide.inspecting":"Inspecting compiled semantics","viewer.guide.actions":"Diagram exploration actions","viewer.guide.find":"Find any node","viewer.guide.find.hint":"Search labels, responsibilities, kinds, and stable IDs.","viewer.guide.route":"Trace a route","viewer.guide.route.aria":"Trace a directed route","viewer.guide.route.hint":"Ask how two semantic nodes connect in authored direction.","viewer.guide.map":"See the whole system","viewer.guide.map.hint":"Open Semantic Radar with a live viewport and stable nodes.","viewer.guide.lens":"Compare semantic kinds","viewer.guide.lens.hint":"Count roles, reveal their traffic, and compare direct authored links.","viewer.guide.story":"Play the guided story","viewer.guide.story.hint":"Walk the authored chapters and real relationships.","viewer.guide.present":"Enter Presentation Stage","viewer.guide.present.hint":"Give the live diagram the viewport without changing export.","viewer.guide.shortcuts":"Additional keyboard shortcuts","viewer.guide.shortcut.export":"Export","viewer.guide.shortcut.theme":"Theme","viewer.guide.shortcut.style":"Style","viewer.guide.shortcut.reset":"Reset","viewer.guide.shortcut.zoomIn":"Zoom in","viewer.guide.shortcut.zoomOut":"Zoom out","viewer.guide.shortcut.close":"Close","viewer.guide.facts":"{nodes} · {relationships} · {views}","viewer.guide.fact.node.one":"{count} semantic node","viewer.guide.fact.node.other":"{count} semantic nodes","viewer.guide.fact.relationship.one":"{count} relationship","viewer.guide.fact.relationship.other":"{count} relationships","viewer.guide.fact.view.one":"{count} guided view","viewer.guide.fact.view.other":"{count} guided views","viewer.guide.story.available.one":"Walk {count} authored chapter and its real relationships.","viewer.guide.story.available.other":"Walk {count} authored chapters and their real relationships.","viewer.guide.story.unavailable":"No authored guided story in this diagram.","viewer.guide.open":"Open diagram guide","viewer.guide.noStory":"This diagram has no authored guided story.","viewer.finder.title":"Find a node","viewer.finder.close":"Close node finder","viewer.finder.placeholder":"Search labels or IDs","viewer.finder.search":"Search diagram nodes","viewer.finder.results":"Diagram nodes","viewer.finder.empty":"No matching nodes","viewer.finder.result.focus":"Focus {label}","viewer.finder.result.routeStart":"Choose {label} as route start","viewer.finder.result.routeTarget":"Choose {label} as route destination, {links}","viewer.finder.status.empty":"No matching nodes","viewer.finder.status.count.one":"{count} matching node","viewer.finder.status.count.other":"{count} matching nodes","viewer.finder.noun.nodes":"nodes","viewer.finder.link.one":"{count} link","viewer.finder.link.other":"{count} links","viewer.finder.result.focus.one":"Focus {label}, {count} related connection","viewer.finder.result.focus.other":"Focus {label}, {count} related connections","viewer.finder.status.filtered":"{visible} of {available} {noun}","viewer.finder.status.all":"{available} {noun}","viewer.passport.eyebrow":"Semantic passport","viewer.passport.metadata":"Node metadata","viewer.passport.evidence":"Verified source evidence","viewer.passport.verified":"Verified source","viewer.passport.verificationScope":"Verified against local Git at the pinned revision. Remote access has not been checked.","viewer.passport.reach":"Authored reach","viewer.passport.reach.trace":"Trace authored reachability","viewer.passport.upstream":"Upstream","viewer.passport.downstream":"Downstream","viewer.passport.upstream.trace":"Trace upstream authored reachability","viewer.passport.downstream.trace":"Trace downstream authored reachability","viewer.passport.close":"Close semantic passport","viewer.passport.copy":"Copy link","viewer.passport.copy.focus":"Copy link to focused node","viewer.passport.relations":"Relations","viewer.passport.relations.show":"Show connected relationships","viewer.passport.relations.hide":"Hide connected relationships","viewer.passport.relations.list":"Connected relationships","viewer.passport.copyRelation":"Copy relation","viewer.passport.copyNode":"Copy node","viewer.passport.copyPinned":"Copy link to pinned relationship","viewer.passport.copySource":"Copy link to source node","viewer.passport.copy.focused.success":"Focused node link copied","viewer.passport.copy.pinned.success":"Pinned relationship link copied","viewer.passport.copy.focused.failed":"Could not copy focused node link","viewer.passport.copy.pinned.failed":"Could not copy pinned relationship link","viewer.passport.relationship.none":"No connected relationships","viewer.passport.relationship.count.one":"{count} relation","viewer.passport.relationship.count.other":"{count} relations","viewer.passport.relationship.show.one":"Show {count} connected relationship","viewer.passport.relationship.show.other":"Show {count} connected relationships","viewer.passport.relationship.summary":"{out} outgoing · {in} incoming{loops}","viewer.passport.relationship.loops":" · {count} loop","viewer.passport.relationship.explorer":"Direct relationship explorer","viewer.passport.relationship.help":"Use arrow keys to explore relationships. Press Enter or Space to pin details; Escape clears.","viewer.passport.relationship.loopsBack":"loops back","viewer.passport.relationship.connectsTo":"connects to","viewer.passport.relationship.connectsFrom":"connects from","viewer.passport.relationship.pinned":"Pinned relationship · {from} → {to} · {label}","viewer.passport.relationship.inspect":"Inspect relationship {index} of {total}: {from} to {to}, {label}. Press Enter for details.","viewer.passport.relationship.group.out":"Outgoing","viewer.passport.relationship.group.in":"Incoming","viewer.passport.relationship.group.loop":"Self loops","viewer.passport.relationship.row":"{group}: {relationship}, {neighbor}","viewer.passport.relationship.direction.out":"OUT →","viewer.passport.relationship.direction.in":"← IN","viewer.passport.relationship.direction.loop":"LOOP","viewer.passport.sourceCount.one":"{count} verified source reference","viewer.passport.sourceCount.other":"{count} verified source references","viewer.passport.sourceMarker":"SRC","viewer.passport.beacon.one":"{count} verified source; focus this node to inspect","viewer.passport.beacon.other":"{count} verified sources; focus this node to inspect","viewer.passport.repository.open":"Open verified repository revision {revision}","viewer.passport.source.open":"Open verified source {path} at revision {revision}","viewer.passport.source.openLink":"Open ↗","viewer.passport.reach.upstream.one":"Trace {count} upstream authored node","viewer.passport.reach.upstream.other":"Trace {count} upstream authored nodes","viewer.passport.reach.downstream.one":"Trace {count} downstream authored node","viewer.passport.reach.downstream.other":"Trace {count} downstream authored nodes","viewer.passport.reach.noUpstream":"No upstream authored nodes","viewer.passport.reach.noDownstream":"No downstream authored nodes","viewer.passport.reach.status":"{direction} · {nodes} nodes · {links} links · max {hops} hops","viewer.route.eyebrow":"Route probe","viewer.route.start":"Choose a start node","viewer.route.start.find":"Find start","viewer.route.start.find.aria":"Find a route start","viewer.route.copy":"Copy link","viewer.route.copy.aria":"Copy link to traced route","viewer.route.clear":"Clear","viewer.route.clear.aria":"Clear route probe","viewer.route.traced":"Traced route","viewer.route.pickTwo":"Pick two semantic nodes on the diagram","viewer.route.pickOne":"Pick a semantic node on the diagram","viewer.route.controls":"Route journey controls","viewer.route.previous":"Previous route position","viewer.route.play":"Play route journey","viewer.route.pause":"Pause route journey","viewer.route.replay":"Replay route journey","viewer.route.next":"Next route position","viewer.route.journey":"Journey","viewer.route.pause.label":"Pause","viewer.route.replay.label":"Replay","viewer.route.overview":"Overview","viewer.route.overview.aria":"Show complete route overview","viewer.route.instructions":"Choose the source, then the destination. Direction matters.","viewer.route.destination":"Choose a destination from {label}","viewer.route.destination.find":"Find target","viewer.route.destination.find.aria":"Find a reachable route destination","viewer.route.differentDestination":"Choose a different destination","viewer.route.distinct":"A route needs two distinct semantic nodes.","viewer.route.unreachable":"No directed route to {label}","viewer.route.unreachable.detail":"{target} is not reachable from {source}. Pick a highlighted destination.","viewer.route.start.instructions":"Select the source. The next step will reveal only directed destinations.","viewer.route.copy.success":"Traced route link copied","viewer.route.copy.failed":"Could not copy traced route link","viewer.route.position":"Route position {index} of {total}: {label}","viewer.route.step":"Step {index} of {total} · {phase} · {label}","viewer.route.motionRequired":"Automatic journey requires Live motion","viewer.route.trigger.clear":"Clear traced route","viewer.route.overview.status":"{nodes} · {hops} · shortest authored route","viewer.route.overview.node.one":"{count} node","viewer.route.overview.node.other":"{count} nodes","viewer.route.overview.hop.one":"{count} directed hop","viewer.route.overview.hop.other":"{count} directed hops","viewer.route.phase.playing":"Playing","viewer.route.phase.complete":"Complete","viewer.route.phase.inspecting":"Inspecting","viewer.route.destination.count.one":"{count} directed destination available. Pick a highlighted node.","viewer.route.destination.count.other":"{count} directed destinations available. Pick a highlighted node.","viewer.route.noOutgoing":"No outgoing route starts here. Clear and choose another source.","viewer.route.result.title":"{source} to {target}","viewer.route.finder.source.title":"Choose route start","viewer.route.finder.source.placeholder":"Search route sources","viewer.route.finder.source.empty":"No matching route sources","viewer.route.finder.source.results":"Nodes that can start a route","viewer.route.finder.source.noun":"route sources","viewer.route.finder.source.badge":"start","viewer.route.finder.target.title":"Destination from {label}","viewer.route.finder.target.placeholder":"Search reachable destinations","viewer.route.finder.target.empty":"No matching reachable destinations","viewer.route.finder.target.results":"Reachable route destinations","viewer.route.finder.target.noun":"reachable destinations","viewer.route.hop.one":"{count} hop","viewer.route.hop.other":"{count} hops","viewer.lens.eyebrow":"Semantic lens","viewer.lens.title":"Compare system roles","viewer.lens.close":"Close semantic lens","viewer.lens.instruction":"Choose up to two semantic kinds. One reveals its real traffic; two compare only direct authored relationships.","viewer.lens.kinds":"Semantic kinds","viewer.lens.choose":"Choose a kind to inspect its nodes and touching relationships.","viewer.lens.copy":"Copy link to semantic lens","viewer.lens.clear":"Clear semantic lens","viewer.lens.open":"Open semantic lens","viewer.lens.openActive":"Open active semantic lens","viewer.lens.legend":"Semantic legend","viewer.lens.legend.inspect.one":"Inspect {label}, {count} node","viewer.lens.legend.inspect.other":"Inspect {label}, {count} nodes","viewer.lens.kind.count.one":"{label}, {count} node","viewer.lens.kind.count.other":"{label}, {count} nodes","viewer.lens.compare.one":"{first} → {second}: {forward} · {second} → {first}: {reverse} · {count} direct relationship","viewer.lens.compare.other":"{first} → {second}: {forward} · {second} → {first}: {reverse} · {count} direct relationships","viewer.lens.single":"{nodes} · {relationships} · connected peers remain visible","viewer.lens.node.one":"{count} {label} node","viewer.lens.node.other":"{count} {label} nodes","viewer.lens.relationship.one":"{count} touching relationship","viewer.lens.relationship.other":"{count} touching relationships","viewer.radar.title":"Semantic radar","viewer.radar.building":"Building overview","viewer.radar.openFull":"Open full semantic radar","viewer.radar.open":"Open radar","viewer.radar.close":"Close semantic radar","viewer.radar.surface":"Diagram overview. Click a node to focus it, or use arrow keys to pan.","viewer.radar.click":"Click node","viewer.radar.drag":"Drag to pan","viewer.radar.space":"Semantic radar needs more MAP space.","viewer.radar.nodes":"Semantic diagram radar nodes","viewer.radar.focus":"Focus {label} from Semantic Radar","viewer.radar.status":"{count} nodes · {viewport}","viewer.radar.fullMap":"{count} nodes · full map","viewer.radar.compacted":"Radar compacted to avoid covering the Semantic Passport or MAP controls.","viewer.radar.cancelWaiting":"Cancel semantic radar waiting for more MAP space","viewer.radar.needsSpace":"Semantic radar needs more visible MAP space","viewer.radar.viewport.full":"full map","viewer.radar.viewport.width":"{percent}% width","viewer.radar.viewport.scale":"{percent}% viewport","viewer.nav.controls":"Diagram view controls","viewer.nav.route":"Trace a directed route","viewer.nav.route.title":"Trace route (R)","viewer.nav.route.short":"PATH","viewer.nav.radar":"Open semantic radar","viewer.nav.radar.title":"Semantic radar (M)","viewer.nav.radar.short":"MAP","viewer.nav.lens":"Open semantic lens","viewer.nav.lens.title":"Semantic lens (L)","viewer.nav.lens.short":"LENS","viewer.nav.find":"Find a node","viewer.nav.find.title":"Find a node (/)","viewer.nav.guide":"Open diagram guide","viewer.nav.guide.title":"Diagram guide (?)","viewer.nav.zoomOut":"Zoom out","viewer.nav.zoomOut.title":"Zoom out (-)","viewer.nav.reset":"Reset diagram view","viewer.nav.reset.title":"Reset view (0)","viewer.nav.read":"READ","viewer.nav.zoomIn":"Zoom in","viewer.nav.zoomIn.title":"Zoom in (+)","viewer.nav.camera":"{hint}. Reset diagram view","viewer.nav.camera.title":"{semantic}{hint} · reset view (0)","viewer.nav.camera.semantic":"Semantic camera active · ","viewer.nav.level.map":"MAP","viewer.nav.level.read":"READ","viewer.nav.level.full":"FULL","viewer.nav.level.auto":"AUTO","viewer.nav.detail.map":"Zoom in to reveal relationship labels and node context","viewer.nav.detail.read":"Zoom in again to reveal tags and annotations","viewer.nav.detail.full":"Full diagram detail","viewer.intent.summary":"{label}. {out} outgoing, {in} incoming{loops}. {total} connections. Press Enter for details.","viewer.intent.loops":", {count} self loop","viewer.common.copied":"Copied","viewer.common.copyFailed":"Copy failed","viewer.common.copyLink":"Copy link","viewer.common.clear":"Clear","viewer.common.close":"Close"}}</script>
     <div class="guided-views no-print" id="guided-views" hidden aria-label="Guided diagram views">
@@ -5130,7 +5130,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     <!-- Main Diagram -->
     <div class="diagram-container" data-detail-level="read"
          data-preset-badge-editorial-plate="ARCHIFY / PLATE 04">
-      <svg viewBox="0 0 1080 980" role="img" lang="en" aria-labelledby="archify-diagram-title archify-diagram-description" data-preset="classic" data-quality-profile="showcase">
+      <svg viewBox="0 0 960 720" role="img" lang="en" aria-labelledby="archify-diagram-title archify-diagram-description" data-preset="classic" data-quality-profile="showcase">
         <title id="archify-diagram-title">VisionForge AI - Frontend to Backend Inspection Sequence</title>
         <desc id="archify-diagram-description">A sequence diagram generated by Archify.</desc>
         <!-- Definitions -->
@@ -5156,306 +5156,266 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <rect width="100%" height="100%" fill="url(#grid)" />
 
         <!-- Time Segments -->
-        <rect data-graph-role="structural-frame" data-composition-frame-kind="segment" data-composition-frame-id="0" x="48" y="140" width="984" height="160" rx="10" class="c-lane" stroke-width="1"/>
+        <rect data-graph-role="structural-frame" data-composition-frame-kind="segment" data-composition-frame-id="0" x="48" y="145" width="864" height="123" rx="10" class="c-lane" stroke-width="1"/>
 
-        <rect data-graph-role="structural-frame" data-composition-frame-kind="segment" data-composition-frame-id="1" x="48" y="320" width="984" height="310" rx="10" class="c-lane" stroke-width="1"/>
+        <rect data-graph-role="structural-frame" data-composition-frame-kind="segment" data-composition-frame-id="1" x="48" y="282" width="864" height="116" rx="10" class="c-lane" stroke-width="1"/>
 
-        <rect data-graph-role="structural-frame" data-composition-frame-kind="segment" data-composition-frame-id="2" x="48" y="650" width="984" height="220" rx="10" class="c-lane" stroke-width="1"/>
+        <rect data-graph-role="structural-frame" data-composition-frame-kind="segment" data-composition-frame-id="2" x="48" y="412" width="864" height="208" rx="10" class="c-lane" stroke-width="1"/>
 
         <!-- Lifelines -->
-        <path d="M 129.5 142 L 129.5 915" class="a-default" stroke-width="0.8" stroke-dasharray="3,7"/>
-        <path d="M 298.1 142 L 298.1 915" class="a-default" stroke-width="0.8" stroke-dasharray="3,7"/>
-        <path d="M 466.7 142 L 466.7 915" class="a-default" stroke-width="0.8" stroke-dasharray="3,7"/>
-        <path d="M 635.3 142 L 635.3 915" class="a-default" stroke-width="0.8" stroke-dasharray="3,7"/>
-        <path d="M 803.9 142 L 803.9 915" class="a-default" stroke-width="0.8" stroke-dasharray="3,7"/>
-        <path d="M 972.5 142 L 972.5 915" class="a-default" stroke-width="0.8" stroke-dasharray="3,7"/>
+        <path d="M 133.5 142 L 133.5 655" class="a-default" stroke-width="0.8" stroke-dasharray="3,7"/>
+        <path d="M 312.25 142 L 312.25 655" class="a-default" stroke-width="0.8" stroke-dasharray="3,7"/>
+        <path d="M 491 142 L 491 655" class="a-default" stroke-width="0.8" stroke-dasharray="3,7"/>
+        <path d="M 669.75 142 L 669.75 655" class="a-default" stroke-width="0.8" stroke-dasharray="3,7"/>
+        <path d="M 848.5 142 L 848.5 655" class="a-default" stroke-width="0.8" stroke-dasharray="3,7"/>
 
         <!-- Activations -->
-        <rect x="293.1" y="160" width="10" height="138" rx="3" class="c-mask"/>
-        <rect x="293.1" y="160" width="10" height="138" rx="3" class="c-frontend" stroke-width="1"/>
-        <rect x="461.7" y="190" width="10" height="106" rx="3" class="c-mask"/>
-        <rect x="461.7" y="190" width="10" height="106" rx="3" class="c-backend" stroke-width="1"/>
-        <rect x="630.3" y="255" width="10" height="325" rx="3" class="c-mask"/>
-        <rect x="630.3" y="255" width="10" height="325" rx="3" class="c-backend" stroke-width="1"/>
-        <rect x="293.1" y="335" width="10" height="525" rx="3" class="c-mask"/>
-        <rect x="293.1" y="335" width="10" height="525" rx="3" class="c-frontend" stroke-width="1"/>
-        <rect x="461.7" y="340" width="10" height="45" rx="3" class="c-mask"/>
-        <rect x="461.7" y="340" width="10" height="45" rx="3" class="c-backend" stroke-width="1"/>
-        <rect x="798.9" y="370" width="10" height="242" rx="3" class="c-mask"/>
-        <rect x="798.9" y="370" width="10" height="242" rx="3" class="c-messagebus" stroke-width="1"/>
-        <rect x="461.7" y="665" width="10" height="107" rx="3" class="c-mask"/>
-        <rect x="461.7" y="665" width="10" height="107" rx="3" class="c-backend" stroke-width="1"/>
-        <rect x="461.7" y="795" width="10" height="41" rx="3" class="c-mask"/>
-        <rect x="461.7" y="795" width="10" height="41" rx="3" class="c-backend" stroke-width="1"/>
+        <rect x="307.25" y="165" width="10" height="95" rx="3" class="c-mask"/>
+        <rect x="307.25" y="165" width="10" height="95" rx="3" class="c-frontend" stroke-width="1"/>
+        <rect x="486" y="190" width="10" height="70" rx="3" class="c-mask"/>
+        <rect x="486" y="190" width="10" height="70" rx="3" class="c-backend" stroke-width="1"/>
+        <rect x="843.5" y="220" width="10" height="12" rx="3" class="c-mask"/>
+        <rect x="843.5" y="220" width="10" height="12" rx="3" class="c-database" stroke-width="1"/>
+        <rect x="307.25" y="290" width="10" height="320" rx="3" class="c-mask"/>
+        <rect x="307.25" y="290" width="10" height="320" rx="3" class="c-frontend" stroke-width="1"/>
+        <rect x="486" y="290" width="10" height="40" rx="3" class="c-mask"/>
+        <rect x="486" y="290" width="10" height="40" rx="3" class="c-backend" stroke-width="1"/>
+        <rect x="664.75" y="320" width="10" height="70" rx="3" class="c-mask"/>
+        <rect x="664.75" y="320" width="10" height="70" rx="3" class="c-messagebus" stroke-width="1"/>
+        <rect x="486" y="420" width="10" height="100" rx="3" class="c-mask"/>
+        <rect x="486" y="420" width="10" height="100" rx="3" class="c-backend" stroke-width="1"/>
+        <rect x="843.5" y="450" width="10" height="40" rx="3" class="c-mask"/>
+        <rect x="843.5" y="450" width="10" height="40" rx="3" class="c-database" stroke-width="1"/>
+        <rect x="486" y="540" width="10" height="40" rx="3" class="c-mask"/>
+        <rect x="486" y="540" width="10" height="40" rx="3" class="c-backend" stroke-width="1"/>
 
         <!-- Messages -->
         <g data-edge-from="user" data-edge-to="ui" data-edge-label="upload board scan" data-edge-key="0" data-edge-id="m1">
-          <path data-composition-edge-from="user" data-composition-edge-to="ui" data-composition-edge-id="m1" data-composition-points="136.5,160;291.1,160" d="M 136.5 160 L 291.1 160" class="a-default" stroke-width="1.4" marker-end="url(#arrowhead)"/>
+          <path data-composition-edge-from="user" data-composition-edge-to="ui" data-composition-edge-id="m1" data-composition-points="140.5,165;305.25,165" d="M 140.5 165 L 305.25 165" class="a-default" stroke-width="1.4" marker-end="url(#arrowhead)"/>
         <g data-detail="context">
-          <rect x="163.60000000000002" y="140" width="100.4" height="16" rx="3" class="c-mask"/>
-          <text x="213.8" y="150" class="t-backend" font-size="9" text-anchor="middle">upload board scan</text>
+          <rect x="172.675" y="145" width="100.4" height="16" rx="3" class="c-mask"/>
+          <text x="222.875" y="155" class="t-backend" font-size="9" text-anchor="middle">upload board scan</text>
         </g>
         </g>
 
         <g data-edge-from="ui" data-edge-to="api" data-edge-label="POST /api/v1/inspections" data-edge-key="1" data-edge-id="m2">
-          <path data-composition-edge-from="ui" data-composition-edge-to="api" data-composition-edge-id="m2" data-composition-points="305.1,195;459.7,195" d="M 305.1 195 L 459.7 195" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+          <path data-composition-edge-from="ui" data-composition-edge-to="api" data-composition-edge-id="m2" data-composition-points="319.25,195;484,195" d="M 319.25 195 L 484 195" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
         <g data-detail="context">
-          <rect x="314" y="175" width="136.8" height="16" rx="3" class="c-mask"/>
-          <text x="382.4" y="185" class="t-backend" font-size="9" text-anchor="middle">POST /api/v1/inspections</text>
+          <rect x="333.225" y="175" width="136.8" height="16" rx="3" class="c-mask"/>
+          <text x="401.625" y="185" class="t-backend" font-size="9" text-anchor="middle">POST /api/v1/inspections</text>
         </g>
         </g>
 
         <g data-edge-from="api" data-edge-to="db" data-edge-label="INSERT case (status=PENDING)" data-edge-key="2" data-edge-id="m3">
-          <path data-composition-edge-from="api" data-composition-edge-to="db" data-composition-edge-id="m3" data-composition-points="473.7,230;965.5,230" d="M 473.7 230 L 965.5 230" class="a-default" stroke-width="1.4" marker-end="url(#arrowhead)"/>
+          <path data-composition-edge-from="api" data-composition-edge-to="db" data-composition-edge-id="m3" data-composition-points="498,225;841.5,225" d="M 498 225 L 841.5 225" class="a-default" stroke-width="1.4" marker-end="url(#arrowhead)"/>
         <g data-detail="context">
-          <rect x="640.8000000000001" y="210" width="157.6" height="16" rx="3" class="c-mask"/>
-          <text x="719.6" y="220" class="t-backend" font-size="9" text-anchor="middle">INSERT case (status=PENDING)</text>
+          <rect x="590.95" y="205" width="157.6" height="16" rx="3" class="c-mask"/>
+          <text x="669.75" y="215" class="t-backend" font-size="9" text-anchor="middle">INSERT case (status=PENDING)</text>
         </g>
         </g>
 
-        <g data-edge-from="api" data-edge-to="pipeline" data-edge-label="spawn background task" data-edge-key="3" data-edge-id="m4">
-          <path data-composition-edge-from="api" data-composition-edge-to="pipeline" data-composition-edge-id="m4" data-composition-points="473.7,260;628.3,260" d="M 473.7 260 L 628.3 260" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+        <g data-edge-from="api" data-edge-to="ui" data-edge-label="201 Created { id: insp_123 }" data-edge-key="3" data-edge-id="m4">
+          <path data-composition-edge-from="api" data-composition-edge-to="ui" data-composition-edge-id="m4" data-composition-points="484,255;319.25,255" d="M 484 255 L 319.25 255" class="a-default" stroke-width="1.4" stroke-dasharray="3,5" marker-end="url(#arrowhead)"/>
         <g data-detail="context">
-          <rect x="490.4" y="240" width="121.2" height="16" rx="3" class="c-mask"/>
-          <text x="551" y="250" class="t-backend" font-size="9" text-anchor="middle">spawn background task</text>
+          <rect x="322.825" y="235" width="157.6" height="16" rx="3" class="c-mask"/>
+          <text x="401.625" y="245" class="t-muted" font-size="9" text-anchor="middle">201 Created { id: insp_123 }</text>
         </g>
         </g>
 
-        <g data-edge-from="api" data-edge-to="ui" data-edge-label="201 Created { id: insp_123 }" data-edge-key="4" data-edge-id="m5">
-          <path data-composition-edge-from="api" data-composition-edge-to="ui" data-composition-edge-id="m5" data-composition-points="459.7,290;305.1,290" d="M 459.7 290 L 305.1 290" class="a-default" stroke-width="1.4" stroke-dasharray="3,5" marker-end="url(#arrowhead)"/>
+        <g data-edge-from="ui" data-edge-to="api" data-edge-label="GET /api/v1/inspections/insp_123/stream" data-edge-key="4" data-edge-id="m5">
+          <path data-composition-edge-from="ui" data-composition-edge-to="api" data-composition-edge-id="m5" data-composition-points="319.25,295;484,295" d="M 319.25 295 L 484 295" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
         <g data-detail="context">
-          <rect x="303.59999999999997" y="270" width="157.6" height="16" rx="3" class="c-mask"/>
-          <text x="382.4" y="280" class="t-muted" font-size="9" text-anchor="middle">201 Created { id: insp_123 }</text>
+          <rect x="294.225" y="275" width="214.8" height="16" rx="3" class="c-mask"/>
+          <text x="401.625" y="285" class="t-backend" font-size="9" text-anchor="middle">GET /api/v1/inspections/insp_123/stream</text>
         </g>
         </g>
 
-        <g data-edge-from="ui" data-edge-to="api" data-edge-label="GET /api/v1/inspections/insp_123/stream" data-edge-key="5" data-edge-id="m6">
-          <path data-composition-edge-from="ui" data-composition-edge-to="api" data-composition-edge-id="m6" data-composition-points="305.1,340;459.7,340" d="M 305.1 340 L 459.7 340" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+        <g data-edge-from="api" data-edge-to="sse" data-edge-label="open EventSource stream" data-edge-key="5" data-edge-id="m6">
+          <path data-composition-edge-from="api" data-composition-edge-to="sse" data-composition-edge-id="m6" data-composition-points="498,325;662.75,325" d="M 498 325 L 662.75 325" class="a-default" stroke-width="1.4" marker-end="url(#arrowhead)"/>
         <g data-detail="context">
-          <rect x="275" y="320" width="214.8" height="16" rx="3" class="c-mask"/>
-          <text x="382.4" y="330" class="t-backend" font-size="9" text-anchor="middle">GET /api/v1/inspections/insp_123/stream</text>
+          <rect x="514.575" y="305" width="131.60000000000002" height="16" rx="3" class="c-mask"/>
+          <text x="580.375" y="315" class="t-backend" font-size="9" text-anchor="middle">open EventSource stream</text>
         </g>
         </g>
 
-        <g data-edge-from="api" data-edge-to="sse" data-edge-label="open SSE stream" data-edge-key="6" data-edge-id="m7">
-          <path data-composition-edge-from="api" data-composition-edge-to="sse" data-composition-edge-id="m7" data-composition-points="473.7,375;796.9,375" d="M 473.7 375 L 796.9 375" class="a-default" stroke-width="1.4" marker-end="url(#arrowhead)"/>
+        <g data-edge-from="sse" data-edge-to="ui" data-edge-label="event: progress (stage=S5, rois=4)" data-edge-key="6" data-edge-id="m7">
+          <path data-composition-edge-from="sse" data-composition-edge-to="ui" data-composition-edge-id="m7" data-composition-points="662.75,355;319.25,355" d="M 662.75 355 L 319.25 355" class="a-dashed" stroke-width="1.4" marker-end="url(#arrowhead-dashed)"/>
         <g data-detail="context">
-          <rect x="590.3" y="355" width="90" height="16" rx="3" class="c-mask"/>
-          <text x="635.3" y="365" class="t-backend" font-size="9" text-anchor="middle">open SSE stream</text>
+          <rect x="396.6" y="335" width="188.8" height="16" rx="3" class="c-mask"/>
+          <text x="491" y="345" class="t-messagebus" font-size="9" text-anchor="middle">event: progress (stage=S5, rois=4)</text>
         </g>
         </g>
 
-        <g data-edge-from="pipeline" data-edge-to="sse" data-edge-label="event: progress { stage: S1_QUALITY }" data-edge-key="7" data-edge-id="m8">
-          <path data-composition-edge-from="pipeline" data-composition-edge-to="sse" data-composition-edge-id="m8" data-composition-points="642.3,415;796.9,415" d="M 642.3 415 L 796.9 415" class="a-dashed" stroke-width="1.4" marker-end="url(#arrowhead-dashed)"/>
+        <g data-edge-from="sse" data-edge-to="ui" data-edge-label="event: completed (verdict=TAMPERED)" data-edge-key="7" data-edge-id="m8">
+          <path data-composition-edge-from="sse" data-composition-edge-to="ui" data-composition-edge-id="m8" data-composition-points="662.75,385;319.25,385" d="M 662.75 385 L 319.25 385" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
         <g data-detail="context">
-          <rect x="617.3999999999999" y="395" width="204.4" height="16" rx="3" class="c-mask"/>
-          <text x="719.5999999999999" y="405" class="t-messagebus" font-size="9" text-anchor="middle">event: progress { stage: S1_QUALITY }</text>
+          <rect x="394" y="365" width="194" height="16" rx="3" class="c-mask"/>
+          <text x="491" y="375" class="t-backend" font-size="9" text-anchor="middle">event: completed (verdict=TAMPERED)</text>
         </g>
         </g>
 
-        <g data-edge-from="sse" data-edge-to="ui" data-edge-label="update stage indicator" data-edge-key="8" data-edge-id="m9">
-          <path data-composition-edge-from="sse" data-composition-edge-to="ui" data-composition-edge-id="m9" data-composition-points="796.9,450;305.1,450" d="M 796.9 450 L 305.1 450" class="a-default" stroke-width="1.4" stroke-dasharray="3,5" marker-end="url(#arrowhead)"/>
+        <g data-edge-from="ui" data-edge-to="api" data-edge-label="GET /api/v1/inspections/insp_123" data-edge-key="8" data-edge-id="m9">
+          <path data-composition-edge-from="ui" data-composition-edge-to="api" data-composition-edge-id="m9" data-composition-points="319.25,425;484,425" d="M 319.25 425 L 484 425" class="a-default" stroke-width="1.4" marker-end="url(#arrowhead)"/>
         <g data-detail="context">
-          <rect x="487.8" y="430" width="126.4" height="16" rx="3" class="c-mask"/>
-          <text x="551" y="440" class="t-muted" font-size="9" text-anchor="middle">update stage indicator</text>
+          <rect x="312.425" y="405" width="178.4" height="16" rx="3" class="c-mask"/>
+          <text x="401.625" y="415" class="t-backend" font-size="9" text-anchor="middle">GET /api/v1/inspections/insp_123</text>
         </g>
         </g>
 
-        <g data-edge-from="pipeline" data-edge-to="sse" data-edge-label="event: progress { stage: S5_SWARM, rois: 4 }" data-edge-key="9" data-edge-id="m10">
-          <path data-composition-edge-from="pipeline" data-composition-edge-to="sse" data-composition-edge-id="m10" data-composition-points="642.3,490;796.9,490" d="M 642.3 490 L 796.9 490" class="a-dashed" stroke-width="1.4" marker-end="url(#arrowhead-dashed)"/>
+        <g data-edge-from="api" data-edge-to="db" data-edge-label="SELECT case details &amp; evidence cards" data-edge-key="9" data-edge-id="m10">
+          <path data-composition-edge-from="api" data-composition-edge-to="db" data-composition-edge-id="m10" data-composition-points="498,455;841.5,455" d="M 498 455 L 841.5 455" class="a-default" stroke-width="1.4" marker-end="url(#arrowhead)"/>
         <g data-detail="context">
-          <rect x="599.1999999999999" y="470" width="240.8" height="16" rx="3" class="c-mask"/>
-          <text x="719.5999999999999" y="480" class="t-messagebus" font-size="9" text-anchor="middle">event: progress { stage: S5_SWARM, rois: 4 }</text>
+          <rect x="570.15" y="435" width="199.20000000000002" height="16" rx="3" class="c-mask"/>
+          <text x="669.75" y="445" class="t-backend" font-size="9" text-anchor="middle">SELECT case details &amp; evidence cards</text>
         </g>
         </g>
 
-        <g data-edge-from="pipeline" data-edge-to="db" data-edge-label="UPDATE case (status=COMPLETED)" data-edge-key="10" data-edge-id="m11">
-          <path data-composition-edge-from="pipeline" data-composition-edge-to="db" data-composition-edge-id="m11" data-composition-points="642.3,530;965.5,530" d="M 642.3 530 L 965.5 530" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+        <g data-edge-from="db" data-edge-to="api" data-edge-label="verdict rationale &amp; JET heatmaps" data-edge-key="10" data-edge-id="m11">
+          <path data-composition-edge-from="db" data-composition-edge-to="api" data-composition-edge-id="m11" data-composition-points="841.5,485;498,485" d="M 841.5 485 L 498 485" class="a-default" stroke-width="1.4" stroke-dasharray="3,5" marker-end="url(#arrowhead)"/>
         <g data-detail="context">
-          <rect x="719.9" y="510" width="168" height="16" rx="3" class="c-mask"/>
-          <text x="803.9" y="520" class="t-backend" font-size="9" text-anchor="middle">UPDATE case (status=COMPLETED)</text>
+          <rect x="580.55" y="465" width="178.4" height="16" rx="3" class="c-mask"/>
+          <text x="669.75" y="475" class="t-muted" font-size="9" text-anchor="middle">verdict rationale &amp; JET heatmaps</text>
         </g>
         </g>
 
-        <g data-edge-from="pipeline" data-edge-to="sse" data-edge-label="event: completed { verdict: TAMPERED }" data-edge-key="11" data-edge-id="m12">
-          <path data-composition-edge-from="pipeline" data-composition-edge-to="sse" data-composition-edge-id="m12" data-composition-points="642.3,570;796.9,570" d="M 642.3 570 L 796.9 570" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+        <g data-edge-from="api" data-edge-to="ui" data-edge-label="200 JSON inspection details" data-edge-key="11" data-edge-id="m12">
+          <path data-composition-edge-from="api" data-composition-edge-to="ui" data-composition-edge-id="m12" data-composition-points="484,515;319.25,515" d="M 484 515 L 319.25 515" class="a-default" stroke-width="1.4" stroke-dasharray="3,5" marker-end="url(#arrowhead)"/>
         <g data-detail="context">
-          <rect x="614.8" y="550" width="209.6" height="16" rx="3" class="c-mask"/>
-          <text x="719.5999999999999" y="560" class="t-backend" font-size="9" text-anchor="middle">event: completed { verdict: TAMPERED }</text>
+          <rect x="325.425" y="495" width="152.4" height="16" rx="3" class="c-mask"/>
+          <text x="401.625" y="505" class="t-muted" font-size="9" text-anchor="middle">200 JSON inspection details</text>
         </g>
         </g>
 
-        <g data-edge-from="sse" data-edge-to="ui" data-edge-label="render split-canvas workbench" data-edge-key="12" data-edge-id="m13">
-          <path data-composition-edge-from="sse" data-composition-edge-to="ui" data-composition-edge-id="m13" data-composition-points="796.9,605;305.1,605" d="M 796.9 605 L 305.1 605" class="a-default" stroke-width="1.4" stroke-dasharray="3,5" marker-end="url(#arrowhead)"/>
+        <g data-edge-from="ui" data-edge-to="api" data-edge-label="GET /api/v1/inspections/insp_123/report/pdf" data-edge-key="12" data-edge-id="m13">
+          <path data-composition-edge-from="ui" data-composition-edge-to="api" data-composition-edge-id="m13" data-composition-points="319.25,545;484,545" d="M 319.25 545 L 484 545" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
         <g data-detail="context">
-          <rect x="469.6" y="585" width="162.8" height="16" rx="3" class="c-mask"/>
-          <text x="551" y="595" class="t-muted" font-size="9" text-anchor="middle">render split-canvas workbench</text>
+          <rect x="283.825" y="525" width="235.6" height="16" rx="3" class="c-mask"/>
+          <text x="401.625" y="535" class="t-backend" font-size="9" text-anchor="middle">GET /api/v1/inspections/insp_123/report/pdf</text>
         </g>
         </g>
 
-        <g data-edge-from="ui" data-edge-to="api" data-edge-label="GET /api/v1/inspections/insp_123" data-edge-key="13" data-edge-id="m14">
-          <path data-composition-edge-from="ui" data-composition-edge-to="api" data-composition-edge-id="m14" data-composition-points="305.1,670;459.7,670" d="M 305.1 670 L 459.7 670" class="a-default" stroke-width="1.4" marker-end="url(#arrowhead)"/>
+        <g data-edge-from="api" data-edge-to="ui" data-edge-label="200 application/pdf (SHA-256 cert)" data-edge-key="13" data-edge-id="m14">
+          <path data-composition-edge-from="api" data-composition-edge-to="ui" data-composition-edge-id="m14" data-composition-points="484,575;319.25,575" d="M 484 575 L 319.25 575" class="a-default" stroke-width="1.4" stroke-dasharray="3,5" marker-end="url(#arrowhead)"/>
         <g data-detail="context">
-          <rect x="293.2" y="650" width="178.4" height="16" rx="3" class="c-mask"/>
-          <text x="382.4" y="660" class="t-backend" font-size="9" text-anchor="middle">GET /api/v1/inspections/insp_123</text>
+          <rect x="307.225" y="555" width="188.8" height="16" rx="3" class="c-mask"/>
+          <text x="401.625" y="565" class="t-muted" font-size="9" text-anchor="middle">200 application/pdf (SHA-256 cert)</text>
         </g>
         </g>
 
-        <g data-edge-from="api" data-edge-to="db" data-edge-label="SELECT case + evidence" data-edge-key="14" data-edge-id="m15">
-          <path data-composition-edge-from="api" data-composition-edge-to="db" data-composition-edge-id="m15" data-composition-points="473.7,705;965.5,705" d="M 473.7 705 L 965.5 705" class="a-default" stroke-width="1.4" marker-end="url(#arrowhead)"/>
+        <g data-edge-from="ui" data-edge-to="user" data-edge-label="download certified forensic report" data-edge-key="14" data-edge-id="m15">
+          <path data-composition-edge-from="ui" data-composition-edge-to="user" data-composition-edge-id="m15" data-composition-points="305.25,605;140.5,605" d="M 305.25 605 L 140.5 605" class="a-default" stroke-width="1.4" stroke-dasharray="3,5" marker-end="url(#arrowhead)"/>
         <g data-detail="context">
-          <rect x="656.4" y="685" width="126.4" height="16" rx="3" class="c-mask"/>
-          <text x="719.6" y="695" class="t-backend" font-size="9" text-anchor="middle">SELECT case + evidence</text>
-        </g>
-        </g>
-
-        <g data-edge-from="db" data-edge-to="api" data-edge-label="case details &amp; heatmaps" data-edge-key="15" data-edge-id="m16">
-          <path data-composition-edge-from="db" data-composition-edge-to="api" data-composition-edge-id="m16" data-composition-points="965.5,735;473.7,735" d="M 965.5 735 L 473.7 735" class="a-default" stroke-width="1.4" stroke-dasharray="3,5" marker-end="url(#arrowhead)"/>
-        <g data-detail="context">
-          <rect x="653.8" y="715" width="131.60000000000002" height="16" rx="3" class="c-mask"/>
-          <text x="719.5999999999999" y="725" class="t-muted" font-size="9" text-anchor="middle">case details &amp; heatmaps</text>
-        </g>
-        </g>
-
-        <g data-edge-from="api" data-edge-to="ui" data-edge-label="200 JSON inspection details" data-edge-key="16" data-edge-id="m17">
-          <path data-composition-edge-from="api" data-composition-edge-to="ui" data-composition-edge-id="m17" data-composition-points="459.7,765;305.1,765" d="M 459.7 765 L 305.1 765" class="a-default" stroke-width="1.4" stroke-dasharray="3,5" marker-end="url(#arrowhead)"/>
-        <g data-detail="context">
-          <rect x="306.2" y="745" width="152.4" height="16" rx="3" class="c-mask"/>
-          <text x="382.4" y="755" class="t-muted" font-size="9" text-anchor="middle">200 JSON inspection details</text>
-        </g>
-        </g>
-
-        <g data-edge-from="ui" data-edge-to="api" data-edge-label="GET /api/v1/inspections/insp_123/report/pdf" data-edge-key="17" data-edge-id="m18">
-          <path data-composition-edge-from="ui" data-composition-edge-to="api" data-composition-edge-id="m18" data-composition-points="305.1,800;459.7,800" d="M 305.1 800 L 459.7 800" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
-        <g data-detail="context">
-          <rect x="264.59999999999997" y="780" width="235.6" height="16" rx="3" class="c-mask"/>
-          <text x="382.4" y="790" class="t-backend" font-size="9" text-anchor="middle">GET /api/v1/inspections/insp_123/report/pdf</text>
-        </g>
-        </g>
-
-        <g data-edge-from="api" data-edge-to="ui" data-edge-label="200 PDF certificate with SHA-256" data-edge-key="18" data-edge-id="m19">
-          <path data-composition-edge-from="api" data-composition-edge-to="ui" data-composition-edge-id="m19" data-composition-points="459.7,830;305.1,830" d="M 459.7 830 L 305.1 830" class="a-default" stroke-width="1.4" stroke-dasharray="3,5" marker-end="url(#arrowhead)"/>
-        <g data-detail="context">
-          <rect x="293.2" y="810" width="178.4" height="16" rx="3" class="c-mask"/>
-          <text x="382.4" y="820" class="t-muted" font-size="9" text-anchor="middle">200 PDF certificate with SHA-256</text>
-        </g>
-        </g>
-
-        <g data-edge-from="ui" data-edge-to="user" data-edge-label="download forensic PDF certificate" data-edge-key="19" data-edge-id="m20">
-          <path data-composition-edge-from="ui" data-composition-edge-to="user" data-composition-edge-id="m20" data-composition-points="291.1,855;136.5,855" d="M 291.1 855 L 136.5 855" class="a-default" stroke-width="1.4" stroke-dasharray="3,5" marker-end="url(#arrowhead)"/>
-        <g data-detail="context">
-          <rect x="122.00000000000001" y="835" width="183.6" height="16" rx="3" class="c-mask"/>
-          <text x="213.8" y="845" class="t-muted" font-size="9" text-anchor="middle">download forensic PDF certificate</text>
+          <rect x="128.475" y="585" width="188.8" height="16" rx="3" class="c-mask"/>
+          <text x="222.875" y="595" class="t-muted" font-size="9" text-anchor="middle">download certified forensic report</text>
         </g>
         </g>
 
         <!-- Segment Labels -->
         <g data-graph-role="segment-label" data-segment-id="0">
-          <rect x="56" y="118" width="159.6" height="18" rx="3" class="c-mask"/>
-          <text x="62" y="131" class="t-dim" font-size="9" font-weight="600">Intake &amp; Fast Acknowledgment</text>
+          <rect x="56" y="123" width="175.20000000000002" height="18" rx="3" class="c-mask"/>
+          <text x="62" y="136" class="t-dim" font-size="9" font-weight="600">1. Intake &amp; Fast Acknowledgment</text>
         </g>
         <g data-graph-role="segment-label" data-segment-id="1">
-          <rect x="56" y="298" width="159.6" height="18" rx="3" class="c-mask"/>
-          <text x="62" y="311" class="t-dim" font-size="9" font-weight="600">Real-Time Pipeline Telemetry</text>
+          <rect x="56" y="260" width="180.4" height="18" rx="3" class="c-mask"/>
+          <text x="62" y="273" class="t-dim" font-size="9" font-weight="600">2. Real-Time Telemetry Streaming</text>
         </g>
         <g data-graph-role="segment-label" data-segment-id="2">
-          <rect x="56" y="628" width="175.20000000000002" height="18" rx="3" class="c-mask"/>
-          <text x="62" y="641" class="t-dim" font-size="9" font-weight="600">Evidence Retrieval &amp; PDF Export</text>
+          <rect x="56" y="390" width="170" height="18" rx="3" class="c-mask"/>
+          <text x="62" y="403" class="t-dim" font-size="9" font-weight="600">3. Evidence Audit &amp; PDF Export</text>
         </g>
 
         <!-- Participants -->
-        <g id="node-user" data-node-id="user" data-node-label="QA Operator" tabindex="0" role="button" aria-label="Focus QA Operator, Workstation, Sequence participant" aria-pressed="false" data-node-kind="external" data-node-sublabel="Workstation" data-node-context="Sequence participant">
-          <title>QA Operator · Workstation · Sequence participant</title>
-          <rect x="62" y="72" width="135" height="54" rx="6" class="c-mask"/>
-          <rect x="62" y="72" width="135" height="54" rx="6" class="c-external" stroke-width="1.5"/>
+        <g id="node-user" data-node-id="user" data-node-label="QA Inspector" tabindex="0" role="button" aria-label="Focus QA Inspector, Workstation, Sequence participant" aria-pressed="false" data-node-kind="external" data-node-sublabel="Workstation" data-node-context="Sequence participant">
+          <title>QA Inspector · Workstation · Sequence participant</title>
+          <rect x="62" y="72" width="143" height="54" rx="6" class="c-mask"/>
+          <rect x="62" y="72" width="143" height="54" rx="6" class="c-external" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="external" class="semantic-sigil s-external" transform="translate(68 78) scale(0.6875)">
             <rect x="2.5" y="5" width="8.5" height="8" rx="1.5"/>
             <path d="M8 2.5h5.5V8M13.5 2.5 7.5 8.5"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="129.5" y="94" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">QA Operator</text>
-          <text data-detail="context" x="129.5" y="111" class="t-muted" font-size="7" text-anchor="middle">Workstation</text>
+          <text data-node-label="" data-detail-anchor="" x="133.5" y="94" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">QA Inspector</text>
+          <text data-detail="context" x="133.5" y="111" class="t-muted" font-size="7" text-anchor="middle">Workstation</text>
         </g>
 
-        <g id="node-ui" data-node-id="ui" data-node-label="Tactical HUD" tabindex="0" role="button" aria-label="Focus Tactical HUD, React 18 SPA, Sequence participant" aria-pressed="false" data-node-kind="frontend" data-node-sublabel="React 18 SPA" data-node-context="Sequence participant">
-          <title>Tactical HUD · React 18 SPA · Sequence participant</title>
-          <rect x="230.60000000000002" y="72" width="135" height="54" rx="6" class="c-mask"/>
-          <rect x="230.60000000000002" y="72" width="135" height="54" rx="6" class="c-frontend" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="frontend" class="semantic-sigil s-frontend" transform="translate(236.60000000000002 78) scale(0.6875)">
+        <g id="node-ui" data-node-id="ui" data-node-label="Tactical HUD" tabindex="0" role="button" aria-label="Focus Tactical HUD, React 18 SPA, Sequence participant, React" aria-pressed="false" data-node-kind="frontend" data-node-sublabel="React 18 SPA" data-node-context="Sequence participant" data-node-brand="React" data-node-brand-id="react" data-node-brand-status="preset" data-node-brand-source="https://github.com/facebook/create-react-app/blob/282c03f9525fdf8061ffa1ec50dce89296d916bd/test/fixtures/relative-paths/src/logo.svg">
+          <title>Tactical HUD · React 18 SPA · Sequence participant · React</title>
+          <rect x="240.75" y="72" width="143" height="54" rx="6" class="c-mask"/>
+          <rect x="240.75" y="72" width="143" height="54" rx="6" class="c-frontend" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="frontend" class="semantic-sigil s-frontend" transform="translate(246.75 78) scale(0.6875)">
             <rect x="2" y="3" width="12" height="10" rx="2"/>
             <path d="M2 6.5h12"/>
             <circle cx="4.1" cy="4.8" r=".7" class="sigil-fill"/>
             <circle cx="6.3" cy="4.8" r=".7" class="sigil-fill"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="298.1" y="94" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Tactical HUD</text>
-          <text data-detail="context" x="298.1" y="111" class="t-muted" font-size="7" text-anchor="middle">React 18 SPA</text>
+          <g aria-hidden="true" data-brand-mark="react" data-brand-title="React" data-brand-status="preset" data-brand-source="https://github.com/facebook/create-react-app/blob/282c03f9525fdf8061ffa1ec50dce89296d916bd/test/fixtures/relative-paths/src/logo.svg" class="brand-mark" transform="translate(361.75 78)">
+            <rect width="16" height="16" rx="4" class="brand-mark-badge"/>
+            <path d="M14.23 12.004a2.236 2.236 0 0 1-2.235 2.236 2.236 2.236 0 0 1-2.236-2.236 2.236 2.236 0 0 1 2.235-2.236 2.236 2.236 0 0 1 2.236 2.236zm2.648-10.69c-1.346 0-3.107.96-4.888 2.622-1.78-1.653-3.542-2.602-4.887-2.602-.41 0-.783.093-1.106.278-1.375.793-1.683 3.264-.973 6.365C1.98 8.917 0 10.42 0 12.004c0 1.59 1.99 3.097 5.043 4.03-.704 3.113-.39 5.588.988 6.38.32.187.69.275 1.102.275 1.345 0 3.107-.96 4.888-2.624 1.78 1.654 3.542 2.603 4.887 2.603.41 0 .783-.09 1.106-.275 1.374-.792 1.683-3.263.973-6.365C22.02 15.096 24 13.59 24 12.004c0-1.59-1.99-3.097-5.043-4.032.704-3.11.39-5.587-.988-6.38-.318-.184-.688-.277-1.092-.278zm-.005 1.09v.006c.225 0 .406.044.558.127.666.382.955 1.835.73 3.704-.054.46-.142.945-.25 1.44-.96-.236-2.006-.417-3.107-.534-.66-.905-1.345-1.727-2.035-2.447 1.592-1.48 3.087-2.292 4.105-2.295zm-9.77.02c1.012 0 2.514.808 4.11 2.28-.686.72-1.37 1.537-2.02 2.442-1.107.117-2.154.298-3.113.538-.112-.49-.195-.964-.254-1.42-.23-1.868.054-3.32.714-3.707.19-.09.4-.127.563-.132zm4.882 3.05c.455.468.91.992 1.36 1.564-.44-.02-.89-.034-1.345-.034-.46 0-.915.01-1.36.034.44-.572.895-1.096 1.345-1.565zM12 8.1c.74 0 1.477.034 2.202.093.406.582.802 1.203 1.183 1.86.372.64.71 1.29 1.018 1.946-.308.655-.646 1.31-1.013 1.95-.38.66-.773 1.288-1.18 1.87-.728.063-1.466.098-2.21.098-.74 0-1.477-.035-2.202-.093-.406-.582-.802-1.204-1.183-1.86-.372-.64-.71-1.29-1.018-1.946.303-.657.646-1.313 1.013-1.954.38-.66.773-1.286 1.18-1.868.728-.064 1.466-.098 2.21-.098zm-3.635.254c-.24.377-.48.763-.704 1.16-.225.39-.435.782-.635 1.174-.265-.656-.49-1.31-.676-1.947.64-.15 1.315-.283 2.015-.386zm7.26 0c.695.103 1.365.23 2.006.387-.18.632-.405 1.282-.66 1.933-.2-.39-.41-.783-.64-1.174-.225-.392-.465-.774-.705-1.146zm3.063.675c.484.15.944.317 1.375.498 1.732.74 2.852 1.708 2.852 2.476-.005.768-1.125 1.74-2.857 2.475-.42.18-.88.342-1.355.493-.28-.958-.646-1.956-1.1-2.98.45-1.017.81-2.01 1.085-2.964zm-13.395.004c.278.96.645 1.957 1.1 2.98-.45 1.017-.812 2.01-1.086 2.964-.484-.15-.944-.318-1.37-.5-1.732-.737-2.852-1.706-2.852-2.474 0-.768 1.12-1.742 2.852-2.476.42-.18.88-.342 1.356-.494zm11.678 4.28c.265.657.49 1.312.676 1.948-.64.157-1.316.29-2.016.39.24-.375.48-.762.705-1.158.225-.39.435-.788.636-1.18zm-9.945.02c.2.392.41.783.64 1.175.23.39.465.772.705 1.143-.695-.102-1.365-.23-2.006-.386.18-.63.406-1.282.66-1.933zM17.92 16.32c.112.493.2.968.254 1.423.23 1.868-.054 3.32-.714 3.708-.147.09-.338.128-.563.128-1.012 0-2.514-.807-4.11-2.28.686-.72 1.37-1.536 2.02-2.44 1.107-.118 2.154-.3 3.113-.54zm-11.83.01c.96.234 2.006.415 3.107.532.66.905 1.345 1.727 2.035 2.446-1.595 1.483-3.092 2.295-4.11 2.295-.22-.005-.406-.05-.553-.132-.666-.38-.955-1.834-.73-3.703.054-.46.142-.944.25-1.438zm4.56.64c.44.02.89.034 1.345.034.46 0 .915-.01 1.36-.034-.44.572-.895 1.095-1.345 1.565-.455-.47-.91-.993-1.36-1.565z" transform="translate(3 3) scale(0.4166666666666667)" fill="#61DAFB"/>
+            <rect width="16" height="16" rx="4" class="brand-mark-frame"/>
+          </g>
+          <text data-node-label="" data-detail-anchor="" x="312.25" y="94" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Tactical HUD</text>
+          <text data-detail="context" x="312.25" y="111" class="t-muted" font-size="7" text-anchor="middle">React 18 SPA</text>
         </g>
 
-        <g id="node-api" data-node-id="api" data-node-label="FastAPI Gateway" tabindex="0" role="button" aria-label="Focus FastAPI Gateway, Uvicorn :8000, Sequence participant" aria-pressed="false" data-node-kind="backend" data-node-sublabel="Uvicorn :8000" data-node-context="Sequence participant">
-          <title>FastAPI Gateway · Uvicorn :8000 · Sequence participant</title>
-          <rect x="399.2" y="72" width="135" height="54" rx="6" class="c-mask"/>
-          <rect x="399.2" y="72" width="135" height="54" rx="6" class="c-backend" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(405.2 78) scale(0.6875)">
+        <g id="node-api" data-node-id="api" data-node-label="FastAPI Gateway" tabindex="0" role="button" aria-label="Focus FastAPI Gateway, Uvicorn :8000, Sequence participant, FastAPI" aria-pressed="false" data-node-kind="backend" data-node-sublabel="Uvicorn :8000" data-node-context="Sequence participant" data-node-brand="FastAPI" data-node-brand-id="fastapi" data-node-brand-status="preset" data-node-brand-source="https://github.com/tiangolo/fastapi/blob/ffb4f77a11f83132b521ba0aac6c95792c19e797/docs/en/docs/img/icon-white.svg">
+          <title>FastAPI Gateway · Uvicorn :8000 · Sequence participant · FastAPI</title>
+          <rect x="419.5" y="72" width="143" height="54" rx="6" class="c-mask"/>
+          <rect x="419.5" y="72" width="143" height="54" rx="6" class="c-backend" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(425.5 78) scale(0.6875)">
             <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="466.7" y="94" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">FastAPI Gateway</text>
-          <text data-detail="context" x="466.7" y="111" class="t-muted" font-size="7" text-anchor="middle">Uvicorn :8000</text>
-        </g>
-
-        <g id="node-pipeline" data-node-id="pipeline" data-node-label="LangGraph Engine" tabindex="0" role="button" aria-label="Focus LangGraph Engine, Background Task, Sequence participant" aria-pressed="false" data-node-kind="backend" data-node-sublabel="Background Task" data-node-context="Sequence participant">
-          <title>LangGraph Engine · Background Task · Sequence participant</title>
-          <rect x="567.8" y="72" width="135" height="54" rx="6" class="c-mask"/>
-          <rect x="567.8" y="72" width="135" height="54" rx="6" class="c-backend" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(573.8 78) scale(0.6875)">
-            <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
+          <g aria-hidden="true" data-brand-mark="fastapi" data-brand-title="FastAPI" data-brand-status="preset" data-brand-source="https://github.com/tiangolo/fastapi/blob/ffb4f77a11f83132b521ba0aac6c95792c19e797/docs/en/docs/img/icon-white.svg" class="brand-mark" transform="translate(540.5 78)">
+            <rect width="16" height="16" rx="4" class="brand-mark-badge"/>
+            <path d="M12 .0387C5.3729.0384.0003 5.3931 0 11.9988c-.001 6.6066 5.372 11.9628 12 11.9625 6.628.0003 12.001-5.3559 12-11.9625-.0003-6.6057-5.3729-11.9604-12-11.96m-.829 5.4153h7.55l-7.5805 5.3284h5.1828L5.279 18.5436q2.9466-6.5444 5.892-13.0896" transform="translate(3 3) scale(0.4166666666666667)" fill="#009688"/>
+            <rect width="16" height="16" rx="4" class="brand-mark-frame"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="635.3" y="94" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">LangGraph Engine</text>
-          <text data-detail="context" x="635.3" y="111" class="t-muted" font-size="7" text-anchor="middle">Background Task</text>
+          <text data-node-label="" data-detail-anchor="" x="491" y="94" class="t-primary" font-size="9.6" font-weight="600" text-anchor="middle">FastAPI Gateway</text>
+          <text data-detail="context" x="491" y="111" class="t-muted" font-size="7" text-anchor="middle">Uvicorn :8000</text>
         </g>
 
         <g id="node-sse" data-node-id="sse" data-node-label="SSE Channel" tabindex="0" role="button" aria-label="Focus SSE Channel, EventStream, Sequence participant" aria-pressed="false" data-node-kind="messagebus" data-node-sublabel="EventStream" data-node-context="Sequence participant">
           <title>SSE Channel · EventStream · Sequence participant</title>
-          <rect x="736.4" y="72" width="135" height="54" rx="6" class="c-mask"/>
-          <rect x="736.4" y="72" width="135" height="54" rx="6" class="c-messagebus" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="messagebus" class="semantic-sigil s-messagebus" transform="translate(742.4 78) scale(0.6875)">
+          <rect x="598.25" y="72" width="143" height="54" rx="6" class="c-mask"/>
+          <rect x="598.25" y="72" width="143" height="54" rx="6" class="c-messagebus" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="messagebus" class="semantic-sigil s-messagebus" transform="translate(604.25 78) scale(0.6875)">
             <path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11"/>
             <circle cx="5" cy="4.5" r="1" class="sigil-fill"/>
             <circle cx="10.5" cy="8" r="1" class="sigil-fill"/>
             <circle cx="7" cy="11.5" r="1" class="sigil-fill"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="803.9" y="94" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">SSE Channel</text>
-          <text data-detail="context" x="803.9" y="111" class="t-muted" font-size="7" text-anchor="middle">EventStream</text>
+          <text data-node-label="" data-detail-anchor="" x="669.75" y="94" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">SSE Channel</text>
+          <text data-detail="context" x="669.75" y="111" class="t-muted" font-size="7" text-anchor="middle">EventStream</text>
         </g>
 
-        <g id="node-db" data-node-id="db" data-node-label="Database" tabindex="0" role="button" aria-label="Focus Database, SQLAlchemy 2.0, Sequence participant" aria-pressed="false" data-node-kind="database" data-node-sublabel="SQLAlchemy 2.0" data-node-context="Sequence participant">
-          <title>Database · SQLAlchemy 2.0 · Sequence participant</title>
-          <rect x="905" y="72" width="135" height="54" rx="6" class="c-mask"/>
-          <rect x="905" y="72" width="135" height="54" rx="6" class="c-database" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="database" class="semantic-sigil s-database" transform="translate(911 78) scale(0.6875)">
+        <g id="node-db" data-node-id="db" data-node-label="Relational DB" tabindex="0" role="button" aria-label="Focus Relational DB, SQLAlchemy 2.0, Sequence participant" aria-pressed="false" data-node-kind="database" data-node-sublabel="SQLAlchemy 2.0" data-node-context="Sequence participant">
+          <title>Relational DB · SQLAlchemy 2.0 · Sequence participant</title>
+          <rect x="777" y="72" width="143" height="54" rx="6" class="c-mask"/>
+          <rect x="777" y="72" width="143" height="54" rx="6" class="c-database" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="database" class="semantic-sigil s-database" transform="translate(783 78) scale(0.6875)">
             <ellipse cx="8" cy="4" rx="5" ry="2"/>
             <path d="M3 4v8c0 1.1 2.2 2 5 2s5-.9 5-2V4M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="972.5" y="94" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Database</text>
-          <text data-detail="context" x="972.5" y="111" class="t-muted" font-size="7" text-anchor="middle">SQLAlchemy 2.0</text>
+          <text data-node-label="" data-detail-anchor="" x="848.5" y="94" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Relational DB</text>
+          <text data-detail="context" x="848.5" y="111" class="t-muted" font-size="7" text-anchor="middle">SQLAlchemy 2.0</text>
         </g>
 
         <!-- Legend -->
         <g data-legend="">
-          <text x="40" y="906" class="t-primary" font-size="12" font-weight="650">Legend</text>
-          <g data-legend-semantic-kind="emphasis" data-legend-x="40" data-legend-baseline="926" data-legend-width="78">
-            <path d="M 40 923 L 74 923" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
-            <text x="83" y="926" class="t-muted" font-size="10" font-weight="500">request</text>
+          <text x="40" y="646" class="t-primary" font-size="12" font-weight="650">Legend</text>
+          <g data-legend-semantic-kind="emphasis" data-legend-x="40" data-legend-baseline="666" data-legend-width="78">
+            <path d="M 40 663 L 74 663" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+            <text x="83" y="666" class="t-muted" font-size="10" font-weight="500">request</text>
           </g>
-          <g data-legend-semantic-kind="return" data-legend-x="140" data-legend-baseline="926" data-legend-width="73">
-            <path d="M 140 923 L 174 923" class="a-default" stroke-width="1.4" stroke-dasharray="3,5" marker-end="url(#arrowhead)"/>
-            <text x="183" y="926" class="t-muted" font-size="10" font-weight="500">return</text>
+          <g data-legend-semantic-kind="return" data-legend-x="140" data-legend-baseline="666" data-legend-width="73">
+            <path d="M 140 663 L 174 663" class="a-default" stroke-width="1.4" stroke-dasharray="3,5" marker-end="url(#arrowhead)"/>
+            <text x="183" y="666" class="t-muted" font-size="10" font-weight="500">return</text>
           </g>
-          <g data-legend-semantic-kind="dashed" data-legend-x="235" data-legend-baseline="926" data-legend-width="98">
-            <path d="M 235 923 L 269 923" class="a-dashed" stroke-width="1.4" marker-end="url(#arrowhead-dashed)"/>
-            <text x="278" y="926" class="t-muted" font-size="10" font-weight="500">async trace</text>
+          <g data-legend-semantic-kind="dashed" data-legend-x="235" data-legend-baseline="666" data-legend-width="98">
+            <path d="M 235 663 L 269 663" class="a-dashed" stroke-width="1.4" marker-end="url(#arrowhead-dashed)"/>
+            <text x="278" y="666" class="t-muted" font-size="10" font-weight="500">async trace</text>
           </g>
-          <g data-legend-semantic-kind="default" data-legend-x="355" data-legend-baseline="926" data-legend-width="118">
-            <path d="M 355 923 L 389 923" class="a-default" stroke-width="1.4" marker-end="url(#arrowhead)"/>
-            <text x="398" y="926" class="t-muted" font-size="10" font-weight="500">default message</text>
+          <g data-legend-semantic-kind="default" data-legend-x="355" data-legend-baseline="666" data-legend-width="118">
+            <path d="M 355 663 L 389 663" class="a-default" stroke-width="1.4" marker-end="url(#arrowhead)"/>
+            <text x="398" y="666" class="t-muted" font-size="10" font-weight="500">default message</text>
           </g>
         </g>
       </svg>
@@ -5647,11 +5607,11 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       <div class="card">
         <div class="card-header">
           <div class="card-dot cyan"></div>
-          <h3>Non-Blocking Async Submission</h3>
+          <h3>Non-Blocking Ingestion</h3>
         </div>
         <ul>
-          <li>&bull; POST /api/v1/inspections accepts multipart uploads and immediately persists initial PENDING record</li>
-          <li>&bull; API responds with 201 Created in &lt; 50ms, offloading heavy CV and neural inference to background worker</li>
+          <li>&bull; POST /api/v1/inspections accepts multipart scans and persists initial PENDING record immediately</li>
+          <li>&bull; Gateway responds with 201 Created in &lt; 50ms, offloading heavy CV and neural inference to background execution</li>
         </ul>
       </div>
 
@@ -5662,19 +5622,19 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         </div>
         <ul>
           <li>&bull; React hook usePipelineSSE connects to GET /api/v1/inspections/{id}/stream</li>
-          <li>&bull; Pipeline pushes microsecond stage transitions and active ROI bounding box coordinates in real time</li>
-          <li>&bull; Automatic fallback to HTTP polling every 2.5s guarantees resilience against network drops</li>
+          <li>&bull; Gateway pushes microsecond stage transitions and active ROI bounding box coordinates in real time</li>
+          <li>&bull; Automatic fallback to HTTP polling every 2.5s guarantees resilience against edge network drops</li>
         </ul>
       </div>
 
       <div class="card">
         <div class="card-header">
           <div class="card-dot rose"></div>
-          <h3>Audit Evidence &amp; Forensic PDF</h3>
+          <h3>Evidence Retrieval &amp; Signed PDF</h3>
         </div>
         <ul>
-          <li>&bull; Tactical HUD renders synchronized dual-canvas inspection with localized JET heatmap overlays</li>
-          <li>&bull; GET /api/v1/inspections/{id}/report/pdf exports compliance certificate with SHA-256 audit signature</li>
+          <li>&bull; Tactical HUD renders synchronized dual-canvas workbench with localized JET heatmap overlays</li>
+          <li>&bull; GET /api/v1/inspections/{id}/report/pdf exports compliance certificate with immutable SHA-256 audit hash</li>
         </ul>
       </div>
     </div>
