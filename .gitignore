@@ -270,3 +270,9 @@ backend/data/reports/*
 .idea/
 .DS_Store
 Thumbs.db
+
+# Private Interview Preparation Guides
+docs/*INTERVIEW*.md
+docs/INTERVIEW_100_QA.md
+docs/INTERVIEW_DEPLOYMENT_GUIDE.md
+
