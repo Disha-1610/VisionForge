@@ -19,7 +19,7 @@
 [![Google Gemini](https://img.shields.io/badge/Gemini_3.5_Flash-Multimodal_VLM-4285F4?style=flat-square&logo=google&logoColor=white)](https://ai.google.dev)
 [![FAISS](https://img.shields.io/badge/FAISS-Vector_Search_3072D-00599C?style=flat-square&logo=meta&logoColor=white)](https://github.com/facebookresearch/faiss)
 [![Pytest](https://img.shields.io/badge/Pytest-203_Tests_Passing-brightgreen?style=flat-square&logo=pytest&logoColor=white)](docs/TESTING.md)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
+[![License: Proprietary](https://img.shields.io/badge/License-Proprietary_All_Rights_Reserved-red.svg?style=flat-square)](LICENSE)
 
 <br/><br/>
 
@@ -619,9 +619,11 @@ VisionForge AI was redesigned, engineered, and brought to production by:
 
 ---
 
-## 📄 License
+## 📄 License & Intellectual Property
 
-VisionForge AI is open-source software licensed under the **[MIT License](LICENSE)**.
+Copyright (c) 2026 **Anil Pradhan & Disha**. All Rights Reserved.
+
+VisionForge AI is a **proprietary and confidential personal engineering project**. No individual or organization has permission to copy, clone, reproduce, distribute, reverse-engineer, modify, or commercially exploit this software, its trained models, or its datasets without explicit prior written authorization. See **[LICENSE](LICENSE)** for the complete legal terms.
 
 ---
 

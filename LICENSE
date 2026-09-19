@@ -1,21 +1,76 @@
-MIT License
+PROPRIETARY AND CONFIDENTIAL SOFTWARE LICENSE
+================================================================================
+VisionForge AI — Autonomous Industrial Visual Forensics & Hardware Fraud Detection
+Copyright (c) 2026 Anil Pradhan & Disha. All Rights Reserved.
+================================================================================
 
-Copyright (c) 2026 Disha, Anil
+IMPORTANT — PLEASE READ CAREFULLY BEFORE VIEWING, ACCESSING, OR INTERACTING 
+WITH THIS SOFTWARE, CODEBASE, DATASETS, OR ASSOCIATED ARTIFACTS.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+This software, including all source code, architecture designs, trained neural 
+network model weights (including YOLO11n weights), computer vision pipelines, 
+API schemas, database schemas, frontend interfaces, diagrams, documentation, 
+and proprietary methodologies (collectively referred to as the "Software"), 
+is the private, exclusive, and confidential intellectual property of Anil Pradhan 
+and Disha (the "Authors" and "Copyright Holders").
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+1. STRICT PROHIBITION ON COPYING AND DISTRIBUTION
+--------------------------------------------------------------------------------
+No individual, organization, educational institution, corporation, or entity 
+is granted permission to access, download, clone, fork, duplicate, copy, 
+reproduce, publish, distribute, broadcast, sublicense, transmit, or otherwise 
+disseminate the Software, in whole or in part, in any format (source code, 
+bytecode, compiled binaries, container images, or documentation), without 
+explicit, prior written authorization directly signed by the Copyright Holders.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+2. NO DERIVATIVE WORKS OR REVERSE ENGINEERING
+--------------------------------------------------------------------------------
+You may not:
+  (a) Modify, adapt, translate, alter, or create derivative works based upon 
+      this Software or any component thereof;
+  (b) Decompile, disassemble, reverse-engineer, or attempt to reconstruct the 
+      underlying algorithms, pipeline state machines, or logic of the Software;
+  (c) Extract, scrape, repurpose, or harvest any part of the trained model weights, 
+      dataset annotations, feature extraction logic, or prompt templates;
+  (d) Use the Software, its source code, or its outputs to train, fine-tune, 
+      evaluate, or benchmark third-party artificial intelligence or computer vision models.
+
+3. COMMERCIAL & COMPETITIVE USE FORBIDDEN
+--------------------------------------------------------------------------------
+This Software may not be used, directly or indirectly, for any commercial, 
+revenue-generating, business, industrial, or competitive purposes. It may not 
+be submitted as original work in any hackathon, academic examination, conference, 
+grant application, or corporate proposal without explicit, documented attribution 
+and written consent from the Copyright Holders.
+
+4. PERSONAL INTELLECTUAL PROPERTY & PORTFOLIO SHOWCASE
+--------------------------------------------------------------------------------
+This Software represents an original research and engineering project built 
+solely by the Authors for portfolio showcase, technical demonstration, and 
+intellectual exploration. The public availability of this repository for viewing 
+on GitHub does NOT constitute an open-source license, public domain release, 
+or abandonment of intellectual property rights. Viewing rights are strictly 
+limited to personal, non-commercial evaluation of the Authors' portfolio work.
+
+5. LEGAL REMEDIES & ENFORCEMENT
+--------------------------------------------------------------------------------
+Any unauthorized reproduction, copying, distribution, plagiarism, or misuse 
+of this Software constitutes an infringement of intellectual property laws 
+(including the Copyright Act and international intellectual property conventions) 
+and will be subject to immediate legal action, Digital Millennium Copyright Act 
+(DMCA) takedown notices, and statutory damages.
+
+6. DISCLAIMER OF WARRANTY
+--------------------------------------------------------------------------------
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY, 
+WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF, 
+OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+================================================================================
+For permissions, licensing inquiries, or enterprise collaboration, contact:
+  • Anil Pradhan: anilpradhan9644@gmail.com
+  • Disha: disha.tech1610@gmail.com
+================================================================================
