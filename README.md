@@ -588,7 +588,7 @@ The original hackathon proof-of-concept (**VeriVision AI**) demonstrated the fea
 3. **Brittle Alignment:** Traditional ORB keypoint homography warped under slight camera perspective changes or PCB solder glare.
 4. **No Custom Hardware Detector:** The prototype had no dedicated object detection model trained on electronic components.
 
-Following the Grand Final, **Disha and Anil** decided that a billion-dollar supply chain problem deserved more than an ephemeral hackathon script. Over weeks of continuous engineering, we completely discarded the naive prototype and rebuilt **VisionForge AI** from the ground up as an enterprise-grade autonomous forensic workstation.
+Following the Grand Final, **Disha Nayak and Anil Pradhan** decided that a billion-dollar supply chain problem deserved more than an ephemeral hackathon script. Over weeks of continuous engineering, we completely discarded the naive prototype and rebuilt **VisionForge AI** from the ground up as an enterprise-grade autonomous forensic workstation.
 
 ### Engineering Evolution: Prototype vs. Enterprise Platform
 
@@ -604,7 +604,7 @@ Following the Grand Final, **Disha and Anil** decided that a billion-dollar supp
 | **Testing & Quality Gates**| 0 automated tests | **23 Pytest Test Modules (203 Passing Tests)** with hermetic offline mocking |
 
 > *"Most hackathon projects die when the demo ends. For us, the Dell FutureMind AI Hackathon was simply Day 1. The original prototype had severe real-world limitations, but the industrial counterfeit problem was real and massive. We spent weeks completely re-architecting the system from the ground up to build what VisionForge AI is today: a production-ready, sub-4-second autonomous hardware forensics workstation."*  
-> — **Disha & Anil**
+> — **Disha Nayak & Anil Pradhan**
 
 ---
 
@@ -614,19 +614,19 @@ VisionForge AI was redesigned, engineered, and brought to production by:
 
 | Contributor | Primary Focus & Core Responsibilities |
 |:---|:---|
-| **Disha** | **Full-Stack Engineering & Data Architecture**<br/>• **Frontend Workstation:** Architected the entire React 18 SPA, Tactical Cyberpunk HUD, Tailwind design system, synchronized dual-image comparator canvas (`DualImageCanvas.jsx`), ROI bounding box overlays, and analytics.<br/>• **Backend & APIs:** Developed complete FastAPI REST API routing (`/auth`, `/inspections`, `/products`, `/vendors`, `/reports`, `/analytics`), dual-token JWT authentication lifecycle with proactive token rotation, and real-time Server-Sent Events (SSE) telemetry.<br/>• **Database & Persistence:** Designed SQLAlchemy 2.0 relational models, dual-dialect PostgreSQL/SQLite compatibility, foreign key integrity constraints, database migrations, and forensic PDF certificate generation. |
-| **Anil** | **AI/ML, Computer Vision & Pipeline Engineering**<br/>• **Pipeline Architecture:** Designed and implemented the complete 8-stage LangGraph state machine orchestrator (`workflow.py`, `state.py`), 30ms defensive fast-fail gates, and mathematical Anomaly Max-Pooling algorithm.<br/>• **AI/ML & Object Detection:** Curated and cleaned the 4,448-image hardware corpus, unified the 8-class label space, and fine-tuned the Ultralytics YOLO11n component detector (`component_detector.pt`, 5.2 MB).<br/>• **Computer Vision & Agents:** Implemented OpenCV Laplacian blur, Error Level Analysis (ELA) forensics, FAISS vector retrieval, PaddleOCR lot code verifier, and AI Forensic Judge causal reasoning on Groq LPU (`gpt-oss-20b`).<br/>• **Quality Assurance & Testing:** Authored the hermetic 23-module automated Pytest test suite (203 passing tests) with zero-cost offline mocking. |
+| **Disha Nayak** | **Full-Stack Engineering & Data Architecture**<br/>• **Frontend Workstation:** Architected the entire React 18 SPA, Tactical Cyberpunk HUD, Tailwind design system, synchronized dual-image comparator canvas (`DualImageCanvas.jsx`), ROI bounding box overlays, and analytics.<br/>• **Backend & APIs:** Developed complete FastAPI REST API routing (`/auth`, `/inspections`, `/products`, `/vendors`, `/reports`, `/analytics`), dual-token JWT authentication lifecycle with proactive token rotation, and real-time Server-Sent Events (SSE) telemetry.<br/>• **Database & Persistence:** Designed SQLAlchemy 2.0 relational models, dual-dialect PostgreSQL/SQLite compatibility, foreign key integrity constraints, database migrations, and forensic PDF certificate generation. |
+| **Anil Pradhan** | **AI/ML, Computer Vision & Pipeline Engineering**<br/>• **Pipeline Architecture:** Designed and implemented the complete 8-stage LangGraph state machine orchestrator (`workflow.py`, `state.py`), 30ms defensive fast-fail gates, and mathematical Anomaly Max-Pooling algorithm.<br/>• **AI/ML & Object Detection:** Curated and cleaned the 4,448-image hardware corpus, unified the 8-class label space, and fine-tuned the Ultralytics YOLO11n component detector (`component_detector.pt`, 5.2 MB).<br/>• **Computer Vision & Agents:** Implemented OpenCV Laplacian blur, Error Level Analysis (ELA) forensics, FAISS vector retrieval, PaddleOCR lot code verifier, and AI Forensic Judge causal reasoning on Groq LPU (`gpt-oss-20b`).<br/>• **Quality Assurance & Testing:** Authored the hermetic 23-module automated Pytest test suite (203 passing tests) with zero-cost offline mocking. |
 
 ---
 
 ## 📄 License & Intellectual Property
 
-Copyright (c) 2026 **Anil Pradhan & Disha**. All Rights Reserved.
+Copyright (c) 2026 **Anil Pradhan & Disha Nayak**. All Rights Reserved.
 
 VisionForge AI is a **proprietary and confidential personal engineering project**. No individual or organization has permission to copy, clone, reproduce, distribute, reverse-engineer, modify, or commercially exploit this software, its trained models, or its datasets without explicit prior written authorization. See **[LICENSE](LICENSE)** for the complete legal terms.
 
 ---
 
 <div align="center">
-  <sub>Built with ❤️ by Disha & Anil for zero-trust industrial hardware integrity and transparent electronics supply chains.</sub>
+  <sub>Built with ❤️ by Disha Nayak & Anil Pradhan for zero-trust industrial hardware integrity and transparent electronics supply chains.</sub>
 </div>
