@@ -106,12 +106,15 @@ class VLMAnomalyReport(BaseModel):
     visual_evidence: str = Field(default="", description="What each image actually shows — golden vs sample")
 
 
-def _image_to_data_payload(pil_img: Image.Image) -> ImageInput:
-    """Encode PIL image to base64 ImageInput for LLMClient."""
+def _image_to_data_payload(pil_img: Image.Image, max_dim: int = 512) -> ImageInput:
+    """Encode PIL image to base64 ImageInput for LLMClient, scaling large crops to conserve VLM input tokens."""
     buffered = io.BytesIO()
     # Convert RGBA to RGB for JPEG encoding
     if pil_img.mode in ("RGBA", "P"):
         pil_img = pil_img.convert("RGB")
+    if max(pil_img.size) > max_dim:
+        pil_img = pil_img.copy()
+        pil_img.thumbnail((max_dim, max_dim), Image.Resampling.LANCZOS)
     pil_img.save(buffered, format="JPEG", quality=85)
     raw_bytes = buffered.getvalue()
     b64_str = base64.b64encode(raw_bytes).decode("ascii")
@@ -285,19 +288,34 @@ class VLMAgent(BaseAgent):
             specific_diffs = list(report.specific_differences)
             visual_evidence = str(report.visual_evidence)
 
-            # Safety check: enforce has_defect if anomalies, differences or defect keywords are reported
+            # Safety check: enforce has_defect if anomalies, differences or explicit defect indicators are reported
             if not has_defect:
+                clean_phrases = (
+                    "no visual defect",
+                    "no visual defects",
+                    "no defect",
+                    "no defects",
+                    "no visible defect",
+                    "no visible defects",
+                    "clean and verified",
+                    "no anomaly",
+                    "no anomalies",
+                    "without defect",
+                    "normal condition",
+                )
+                desc_lower = description.lower().strip()
+                is_explicitly_clean = any(cp in desc_lower for cp in clean_phrases)
+
                 defect_keywords = (
-                    "missing", "damage", "scratch", "corrosion", "defect",
+                    "missing", "damage", "scratch", "corrosion",
                     "tamper", "counterfeit", "discrepanc", "broken", "burn", "peel"
                 )
-                desc_lower = description.lower()
-                has_keywords = any(kw in desc_lower for kw in defect_keywords)
+                has_keywords = (not is_explicitly_clean) and any(kw in desc_lower for kw in defect_keywords)
                 has_sev = severity.lower() in ("critical", "high", "medium", "low")
                 has_type = defect_type.lower() not in ("none", "clean", "null", "normal", "unknown", "")
                 has_diffs = len(specific_diffs) > 0
 
-                if has_keywords or has_sev or has_type or has_diffs:
+                if (has_keywords and (has_sev or has_type or has_diffs)) or (has_sev and has_type) or (has_diffs and (has_type or has_sev)):
                     has_defect = True
 
             if has_defect:

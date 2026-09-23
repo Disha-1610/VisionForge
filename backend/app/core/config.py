@@ -40,8 +40,8 @@ class Settings(BaseSettings):
     # ---------- Gemini (Google AI Studio) ----------
     GEMINI_API_KEY: str = ""
     GEMINI_BASE_URL: str = "https://generativelanguage.googleapis.com/v1beta"
-    GEMINI_VLM_MODEL: str = "gemini-3.5-flash"
-    GEMINI_JUDGE_MODEL: str = "gemini-3.5-flash"
+    GEMINI_VLM_MODEL: str = "gemini-2.5-flash"
+    GEMINI_JUDGE_MODEL: str = "gemini-2.5-flash"
     GEMINI_EMBEDDING_MODEL: str = "gemini-embedding-2"
 
     # ---------- Groq ----------
@@ -59,6 +59,7 @@ class Settings(BaseSettings):
     # ---------- File Storage ----------
     UPLOAD_DIR: str = str(BASE_DIR / "data" / "inspection_uploads")
     GOLDEN_IMAGE_DIR: str = str(BASE_DIR / "data" / "golden_images")
+    GOLDEN_DIR: str = str(BASE_DIR / "data" / "golden_images")
     FAISS_INDEX_DIR: str = str(BASE_DIR / "data" / "faiss_index")
     ROI_TEMPLATE_DIR: str = str(BASE_DIR / "data" / "roi_templates")
     YOLO_WEIGHTS_DIR: str = str(BASE_DIR / "data" / "yolo_weights")

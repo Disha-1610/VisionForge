@@ -75,6 +75,35 @@ async def test_vlm_agent_clean_inspection_passes():
 
 
 @pytest.mark.asyncio
+async def test_vlm_agent_default_no_visual_defects_does_not_false_alarm():
+    """Verify default phrase 'No visual defects detected' does NOT trigger keyword false positive."""
+    mock_report = VLMAnomalyReport(
+        has_defect=False,
+        defect_type="none",
+        confidence=0.85,
+        severity="none",
+        description="No visual defects detected",
+        affected_area="none",
+    )
+    mock_client = _MockLLMClient(report=mock_report)
+    agent = VLMAgent(client=mock_client)
+
+    golden = np.zeros((80, 80, 3), dtype=np.uint8)
+    inspection = np.zeros((80, 80, 3), dtype=np.uint8)
+
+    result = await agent.run(
+        golden_roi=golden,
+        inspection_roi=inspection,
+        roi_data={"roi_id": "vlm_surface_1", "name": "General Board Surface"},
+    )
+
+    assert result.has_defect is False
+    assert result.evidence["severity"] == "none"
+    assert "no visible defect" in result.explanation.lower()
+    assert "hardware defect detected" not in result.explanation.lower()
+
+
+@pytest.mark.asyncio
 async def test_vlm_agent_detects_visual_anomaly():
     mock_report = VLMAnomalyReport(
         has_defect=True,

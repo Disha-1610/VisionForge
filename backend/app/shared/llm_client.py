@@ -169,13 +169,13 @@ DEFAULT_ROUTING = ModelRouting(
         ),
         fallback=ModelRoute(
             provider=LLMProvider.GEMINI,
-            model=getattr(settings, "GEMINI_JUDGE_MODEL", "gemini-3.5-flash"),
+            model=getattr(settings, "GEMINI_JUDGE_MODEL", "gemini-2.5-flash"),
         ),
     ),
     vlm=TaskRouting(
         primary=ModelRoute(
             provider=LLMProvider.GEMINI,
-            model=getattr(settings, "GEMINI_VLM_MODEL", "gemini-3.5-flash"),
+            model=getattr(settings, "GEMINI_VLM_MODEL", "gemini-2.5-flash"),
         ),
         fallback=ModelRoute(
             provider=LLMProvider.GROQ,
@@ -214,8 +214,8 @@ def build_default_config() -> LLMClientConfig:
         api_key=settings.GEMINI_API_KEY,
         base_url=settings.GEMINI_BASE_URL
         or "https://generativelanguage.googleapis.com/v1beta",
-        text_model=settings.GEMINI_JUDGE_MODEL or "gemini-3.5-flash",
-        vision_model=settings.GEMINI_VLM_MODEL or "gemini-3.5-flash",
+        text_model=settings.GEMINI_JUDGE_MODEL or "gemini-2.5-flash",
+        vision_model=settings.GEMINI_VLM_MODEL or "gemini-2.5-flash",
         timeout_seconds=getattr(settings, "LLM_TIMEOUT_SECONDS", 30.0),
         max_retries=getattr(settings, "LLM_MAX_RETRIES", 3),
         initial_backoff_seconds=getattr(settings, "LLM_INITIAL_BACKOFF_SECONDS", 1.0),
