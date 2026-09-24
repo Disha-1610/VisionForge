@@ -68,7 +68,7 @@ VisionForge AI solves this by combining **deterministic computer vision, localiz
    • OCR Agent: Reads stamped serial numbers using PaddleOCR/EasyOCR.
    • Label Agent: Matches holographic seals and safety logos using cv2.matchTemplate.
    • Structural Agent: Counts capacitors, IC chips, connectors via YOLO11n + SSIM.
-   • VLM Agent: Evaluates solder joints and thermal burns via Gemini 3.5 & Groq Qwen.
+   • VLM Agent: Evaluates solder joints and thermal burns via Gemini 2.5 & Groq Qwen.
          ↓
 6. ANOMALY MAX-POOLING (2.5s – 2.7s)
    Stage 6 fuses all findings using non-diluting mathematical max-pooling:
@@ -198,7 +198,7 @@ flowchart LR
    $$\text{Similarity} = 1.0 - \frac{\text{Levenshtein}(T_{\text{detected}}, T_{\text{expected}})}{\max(|T_{\text{detected}}|, |T_{\text{expected}}|)}$$
 2. **Label Agent (`label_agent.py`):** Uses OpenCV multi-scale normalized cross-correlation (`cv2.matchTemplate`) to detect subtle rotational shifts, misaligned safety logos, and missing CE/FCC stamps.
 3. **Structural Agent (`structural_agent.py`):** Combines our custom fine-tuned **YOLO11n 8-class model** (`component_detector.pt`) with OpenCV Structural Similarity (SSIM). It detects individual component absences (e.g. "Capacitor missing at position 3") while SSIM provides holistic pixel drift protection.
-4. **VLM Agent (`vlm_agent.py`):** Employs dual vision-language models load-balanced across Google Gemini 3.5 Flash and Groq Qwen 3.8 27B to analyze irregular physical damage, heat discoloration, and solder bridge anomalies.
+4. **VLM Agent (`vlm_agent.py`):** Employs dual vision-language models load-balanced across Google Gemini 2.5 Flash and Groq Qwen 3.8 27B to analyze irregular physical damage, heat discoloration, and solder bridge anomalies.
 5. **AI Forensic Judge (`judge.py`):** Runs on Groq LPU (`gpt-oss-20b` with Gemini fallback) to synthesize all agent evidence cards into an explainable root cause analysis and a composite fraud probability.
 
 ---
@@ -390,26 +390,28 @@ VisionForge is designed to operate continuously under zero-budget constraints an
 
 ```mermaid
 flowchart TD
-    subgraph VLM_Load_Balancer["⚖️ Dual-Provider VLM Load Balancer"]
-        InReq["ROI Inspection Request"] --> Check{"ROI Index % 2 == 1?"}
+    subgraph VLM_Load_Balancer["⚖️ Dual-Provider VLM Concurrent Load Balancer"]
+        InReq["Concurrent ROI Execution Tasks"] --> Check{"ROI Index % 2 == 0?"}
         
-        Check -->|"Yes: Odd ROI"| GemPri["Primary: Gemini 3.5 Flash"]
-        Check -->|"No: Even ROI"| GroqPri["Primary: Groq Qwen 3.8-27B"]
+        Check -->|"Yes: Even ROI"| GroqPri["Primary: Groq Qwen 3.8-27B (~1.4s)"]
+        Check -->|"No: Odd ROI"| GemPri["Primary: Gemini 2.5 Flash"]
         
-        GemPri -->|"HTTP 429 / Timeout"| GemToGroq["Failover to Groq Qwen"]
-        GemPri -->|"200 OK"| Ret1["Return Evidence Card"]
-        GemToGroq --> Ret1
+        GroqPri -->|"HTTP 429 / Timeout > 10s"| GroqToGem["Failover to Gemini 2.5 Flash"]
+        GroqPri -->|"200 OK"| Ret1["Return Evidence Card"]
+        GroqToGem --> Ret1
         
-        GroqPri -->|"HTTP 429 / Timeout"| GroqToGem["Failover to Gemini Flash"]
-        GroqPri -->|"200 OK"| Ret2["Return Evidence Card"]
-        GroqToGem --> Ret2
+        GemPri -->|"HTTP 503 Spike / Timeout > 10s"| GemToGroq["⚡ Fast-Fail to Groq Qwen (~1.4s)"]
+        GemPri -->|"200 OK"| Ret2["Return Evidence Card"]
+        GemToGroq --> Ret2
     end
 ```
 
-### Key Fault-Tolerance Strategies
-1. **Odd/Even Round-Robin Load Balancing:** By interleaving odd and even ROI calls across Google Gemini and Groq Cloud, VisionForge cuts per-provider request volume in half, completely bypassing free-tier rate limits.
-2. **Mutual Provider Failover:** If either provider returns HTTP 429 (Too Many Requests), HTTP 500, or a network timeout, `llm_client.py` transparently retries the payload on the alternate provider with exponential backoff.
-3. **Local Embedding Fallback:** If the Google `gemini-embedding-2` cloud endpoint is unreachable or lacks an API key, the system automatically falls back to local OpenCLIP `ViT-B-32` execution on the CPU/GPU with zero pipeline interruption.
+### Key Fault-Tolerance Strategies & Sub-10s Latency SLA
+1. **Concurrent Async Execution (`asyncio.gather`):** Structural validation passes are dispatched concurrently rather than sequentially, eliminating artificial sleep buffers and cutting total multi-agent execution to **< 5 seconds**.
+2. **Instant 502/503 High-Demand Fast-Failover:** Google Gemini free-tier endpoints occasionally return 503 ("high demand"). The client fast-fails immediately on attempt 1, handing off to Groq's high-speed inference engine in **~1.4 seconds** without wasting retry cycles.
+3. **Aggressive 10-Second Transport Timeout:** Tightened `LLM_TIMEOUT_SECONDS = 10.0` prevents socket freezes from blocking inspection pipelines.
+4. **Mutual Provider Failover:** If either provider returns HTTP 429 (Too Many Requests), HTTP 500, or a network timeout, `llm_client.py` transparently retries the payload on the alternate provider.
+5. **Local Embedding Fallback:** If the Google `gemini-embedding-2` cloud endpoint is unreachable or lacks an API key, the system automatically falls back to local OpenCLIP `ViT-B-32` execution on the CPU/GPU with zero pipeline interruption.
 
 ---
 

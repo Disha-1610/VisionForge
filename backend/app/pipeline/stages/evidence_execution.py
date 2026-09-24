@@ -412,38 +412,36 @@ async def run_evidence_execution(
             and "id" in r
         ]
         if structural_roi_ids:
-            vlm_results = []
+            vlm_tasks = []
             for idx, roi_id in enumerate(structural_roi_ids):
                 region_info = regions_by_id.get(roi_id)
                 if not region_info:
                     continue
-                # Explicit 50/50 Round-Robin Load Balancing between Gemini and Groq
-                pref_provider = "gemini" if idx % 2 == 0 else "groq"
+                # Explicit 50/50 Round-Robin Load Balancing: Groq primary on even, Gemini on odd
+                pref_provider = "groq" if idx % 2 == 0 else "gemini"
                 # Force VLM agent for this validation pass by overriding the agent field
                 vlm_region = {**region_info, "agent": "vlm", "preferred_provider": pref_provider}
 
-                # Stagger multimodal calls with 1.2s pacing to prevent millisecond quota bursts
-                if idx > 0:
-                    await asyncio.sleep(1.2)
-
-                res = await _execute_single_roi(
-                    roi_id=roi_id,
-                    region_info=vlm_region,
-                    golden_img=pil_golden,
-                    inspection_img=pil_inspection,
-                    coordinate_system=coord_system,
-                    agent_registry=registry,
-                    state=state,
-                    semaphore=semaphore,
-                    ref_width=ref_width,
-                    ref_height=ref_height,
+                vlm_tasks.append(
+                    _execute_single_roi(
+                        roi_id=roi_id,
+                        region_info=vlm_region,
+                        golden_img=pil_golden,
+                        inspection_img=pil_inspection,
+                        coordinate_system=coord_system,
+                        agent_registry=registry,
+                        state=state,
+                        semaphore=semaphore,
+                        ref_width=ref_width,
+                        ref_height=ref_height,
+                    )
                 )
-                vlm_results.append(res)
 
-            if vlm_results:
+            if vlm_tasks:
+                vlm_results = await asyncio.gather(*vlm_tasks, return_exceptions=False)
                 executed_results.extend(vlm_results)
                 logger.info(
-                    "VLM validation pass completed on %d structural ROIs",
+                    "VLM validation pass completed concurrently on %d structural ROIs",
                     len(vlm_results),
                 )
 

@@ -76,7 +76,7 @@ export const DashboardPage = () => {
   return (
     <div className="space-y-6">
       {/* Top Welcome Banner */}
-      <div className="p-6 rounded-3xl bg-gradient-to-r from-hud-surface via-hud-card to-hud-surface border border-hud-border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xl">
+      <div className="p-4 sm:p-6 rounded-3xl bg-gradient-to-r from-hud-surface via-hud-card to-hud-surface border border-hud-border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xl">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -92,13 +92,14 @@ export const DashboardPage = () => {
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 w-full sm:w-auto">
           {isAdmin && (
             <Button
               variant="secondary"
               size="sm"
               icon={Database}
               onClick={() => setGoldenDrawerOpen(!goldenDrawerOpen)}
+              className="flex-1 sm:flex-initial"
             >
               {goldenDrawerOpen ? 'Close Repositories' : 'Golden Repositories'}
             </Button>
@@ -109,6 +110,7 @@ export const DashboardPage = () => {
             size="md"
             icon={ScanEye}
             onClick={() => navigate('/inspections/new')}
+            className="flex-1 sm:flex-initial"
           >
             New Inspection
           </Button>
@@ -162,7 +164,7 @@ export const DashboardPage = () => {
       </div>
 
       {/* Recent Inspection Activity Feed */}
-      <div className="p-6 rounded-3xl bg-hud-surface border border-hud-border shadow-xl">
+      <div className="p-4 sm:p-6 rounded-3xl bg-hud-surface border border-hud-border shadow-xl">
         <div className="flex items-center justify-between pb-4 border-b border-hud-border/70 mb-4">
           <div className="flex items-center gap-2.5">
             <Clock className="w-5 h-5 text-cyan-400" />

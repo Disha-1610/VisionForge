@@ -48,8 +48,8 @@ export const PipelineProgress = ({
   const displayDetail = formatTelemetryDetail(stageDetails);
 
   return (
-    <div className="p-6 rounded-3xl bg-hud-surface border border-hud-border shadow-xl">
-      <div className="flex flex-wrap items-center justify-between gap-2 pb-4 border-b border-hud-border/70 mb-6">
+    <div className="p-4 sm:p-6 rounded-3xl bg-hud-surface border border-hud-border shadow-xl">
+      <div className="flex flex-wrap items-center justify-between gap-2 pb-4 border-b border-hud-border/70 mb-4 sm:mb-6">
         <div className="flex items-center gap-3 min-w-0">
           <span
             className={`w-3 h-3 rounded-full shrink-0 ${
@@ -85,7 +85,7 @@ export const PipelineProgress = ({
       </div>
 
       {/* 8-Node Horizontal Connector Stepper */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 relative">
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2 sm:gap-3 relative">
         {stages.map((st) => {
           const isDone = completedStages.includes(st.id);
           const isCurrent = currentStage === st.id && isRunning;
@@ -96,20 +96,20 @@ export const PipelineProgress = ({
 
           if (isDone) {
             nodeStyle = 'bg-emerald-950/40 border-emerald-500/50 text-emerald-300';
-            icon = <CheckCircle2 className="w-4 h-4 text-emerald-400" />;
+            icon = <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />;
           } else if (isCurrent) {
             nodeStyle =
               'bg-cyan-950/70 border-cyan-400 text-cyan-200 shadow-lg shadow-cyan-500/25 animate-pulse';
-            icon = <Loader2 className="w-4 h-4 text-cyan-400 animate-spin" />;
+            icon = <Loader2 className="w-4 h-4 text-cyan-400 animate-spin shrink-0" />;
           } else if (isStageFailed) {
             nodeStyle = 'bg-rose-950/70 border-rose-500 text-rose-300';
-            icon = <AlertCircle className="w-4 h-4 text-rose-400" />;
+            icon = <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />;
           }
 
           return (
             <div
               key={st.id}
-              className={`p-3.5 rounded-2xl border transition-all duration-300 flex flex-col justify-between ${nodeStyle}`}
+              className={`p-2.5 sm:p-3.5 rounded-2xl border transition-all duration-300 flex flex-col justify-between ${nodeStyle}`}
             >
               <div>
                 <div className="flex items-center justify-between mb-2">

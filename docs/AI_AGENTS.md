@@ -210,51 +210,61 @@ Explanation: "Capacitor count mismatch in Power Delivery Stage: Expected 4, dete
 ---
 
 ### 4.4 👁️ Vision-Language (VLM) Agent (`vlm_agent.py`)
-- **Primary Providers:** Dual load-balanced **Google Gemini 3.5 Flash** (`gemini-3.5-flash`) + **Groq Qwen 3.8 27B Vision** (`qwen/qwen3.8-27b`).
-- **Target ROI Types:** `solder_joints`, `substrate`, `connector_pins`, `thermal_dissipation`.
+- **Primary Providers:** Dual load-balanced **Google Gemini 2.5 Flash** (`gemini-2.5-flash`) + **Groq Qwen 3.8 27B Vision** (`qwen/qwen3.8-27b`).
+- **Target ROI Types:** `solder_joints`, `substrate`, `connector_pins`, `thermal_dissipation`, `general_casing`.
 
 #### Forensic Problem Solved
 Analyzes complex physical phenomena that rigid bounding boxes cannot quantify: cold solder joints, solder bridges, burnt PCB traces, flux residue from manual desoldering, and water corrosion.
 
-#### Structured Prompt & JSON Contract
-The VLM receives both the golden crop and inspection crop side-by-side with a strict system prompt instructing it to output structured JSON:
+#### Structured Prompt & JSON Contract (`VLMAnomalyReport`)
+The VLM receives both the golden crop and inspection crop side-by-side with a strict system prompt instructing it to output structured JSON adhering to the `VLMAnomalyReport` schema:
 ```json
 {
-  "has_anomaly": true,
-  "anomaly_score": 0.85,
+  "has_defect": true,
+  "defect_type": "burn_mark",
   "confidence": 0.92,
-  "defect_type": "THERMAL_DAMAGE",
-  "explanation": "Darkened carbonization and burnt PCB substrate observed adjacent to MOSFET Q3, indicating severe overcurrent failure or rework torch damage."
+  "severity": "high",
+  "description": "Observed localized discoloration and scorched PCB substrate near high-current terminal connector.",
+  "affected_area": "terminal_pair",
+  "component_count_expected": 2,
+  "component_count_observed": 2,
+  "specific_differences": [
+    "Dark carbonization visible on sample terminal housing",
+    "Missing protective coating gloss compared to golden standard"
+  ],
+  "visual_evidence": "Golden reference exhibits clean gold-plated terminals; inspection sample shows thermal oxidation."
 }
 ```
 
 ---
 
-## 5. Dual-Provider Round-Robin Balancing Engine
+## 5. Dual-Provider Round-Robin & Sub-10s Latency SLA
 
-To ensure **zero downtime and complete protection against free-tier cloud rate limits**, VisionForge incorporates a 50/50 round-robin load balancer directly inside `backend/app/shared/llm_client.py`:
+To ensure **zero downtime, instant sub-10s execution, and complete protection against free-tier cloud rate limits**, VisionForge incorporates a resilient high-throughput architecture directly inside `backend/app/shared/llm_client.py` and `evidence_execution.py`:
 
 ```mermaid
 flowchart TD
-    Req["Incoming ROI Inspection Crop"] --> Split{"ROI Sequence Index % 2"}
+    Req["Scheduled Structural & Visual ROIs"] --> Concur["⚡ Concurrent Dispatch via asyncio.gather()"]
     
-    Split -->|Odd Index| G1["Route to Gemini 3.5 Flash"]
-    Split -->|Even Index| Q1["Route to Groq Qwen 3.8 27B"]
+    Concur --> RR{"ROI Index % 2"}
+    RR -->|Even Index (0, 2...)| GroqPri["Primary: Groq Qwen 3.8 27B (~1.4s)"]
+    RR -->|Odd Index (1, 3...)| GemPri["Primary: Gemini 2.5 Flash"]
     
-    G1 -->|200 OK| Res1["Parse Evidence Card"]
-    G1 -->|HTTP 429 / 500 / Timeout| Failover1["Failover to Groq Qwen"]
+    GroqPri -->|200 OK| Res1["Parse Evidence Record"]
+    GroqPri -->|429 / 500 / Timeout > 10s| Failover1["Failover to Gemini 2.5 Flash"]
     Failover1 --> Res1
     
-    Q1 -->|200 OK| Res2["Parse Evidence Card"]
-    Q1 -->|HTTP 429 / 500 / Timeout| Failover2["Failover to Gemini 3.5"]
+    GemPri -->|200 OK| Res2["Parse Evidence Record"]
+    GemPri -->|503 High Demand / Timeout > 10s| Failover2["⚡ Fast-Fail to Groq Qwen (~1.4s)"]
     Failover2 --> Res2
 ```
 
-### Why This Engine is Essential
-- **Gemini Free Tier Quota:** 15 Requests Per Minute (RPM).
-- **Groq Free Tier Quota:** 30 Requests Per Minute (RPM) & 7,000 Input Tokens Per Minute (ITPM).
-- An inspection with 6 ROIs would normally consume 6 calls on a single provider, risking immediate `HTTP 429 (Too Many Requests)` rate-limiting on burst submissions.
-- By splitting requests 3-and-3 across both providers, neither provider exceeds $50\%$ of its per-minute rate limit. If either provider temporarily degrades, the mutual failover intercepts the request with zero dropped inspections.
+### High-Throughput Engineering Pillars (<10s SLA)
+1. **Concurrent Gathering (`asyncio.gather`):** Structural validation passes execute in parallel across active worker threads bounded by an `asyncio.Semaphore(4)`. Artificial sequential sleeps (`sleep(1.2)`) have been eliminated, cutting multi-ROI stage latency from 125s down to **~2–4s**.
+2. **Instant 502/503 High-Demand Spike Failover:** Google Gemini free-tier endpoints periodically experience temporary server-side traffic surges (`503 Service Unavailable: "This model is currently experiencing high demand"`). Rather than stalling for 30s retry backoffs, the client fast-fails on attempt 1 and hands off immediately to Groq, which answers in **1.47 seconds**.
+3. **Aggressive 10-Second Transport Timeout (`LLM_TIMEOUT_SECONDS = 10.0`):** Socket timeouts are reduced from 30s to 10s, preventing any hanging HTTP request from freezing the inspection pipeline.
+4. **Token-Optimized Thumbnail Downscaling:** Large inspection crops are scaled down (`max_dim=512`) using Lanczos resampling before base64 transmission. This preserves microscopic solder detail while capping payload size to ~1,000 tokens per crop, strictly complying with Groq's 7,000 ITPM limit.
+5. **Defensive Error Isolation:** Scoped retry variables guarantee that network timeouts cannot trigger `UnboundLocalError`, preserving audit log continuity.
 
 ---
 

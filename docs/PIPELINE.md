@@ -249,7 +249,7 @@ Translates the product's golden blueprint into a structured, prioritized executi
 ### Stage 5: Multi-Agent Evidence Execution
 *(Concurrent Multi-Agent Forensic Swarm)*  
 **Source:** `backend/app/pipeline/stages/evidence_execution.py`, `app/pipeline/agents/*`  
-**Tooling:** PaddleOCR, OpenCV Template Matching, Ultralytics YOLO11n, Gemini 3.5 Flash, Groq Qwen 3.8 (~1.8s execution)
+**Tooling:** PaddleOCR, OpenCV Template Matching, Ultralytics YOLO11n, Gemini 2.5 Flash, Groq Qwen 3.8 (~2–4s execution)
 
 #### Purpose
 Executes the scheduled inspection plan across localized image crops concurrently.
@@ -260,7 +260,7 @@ Executes the scheduled inspection plan across localized image crops concurrently
    - **🔤 OCR Agent:** Extracts text from $C_{\text{test}}$, diffs against $C_{\text{golden}}$ text via Levenshtein distance.
    - **🏷️ Label Agent:** Runs multi-scale template matching (`cv2.matchTemplate`) with NCC score thresholding.
    - **🧩 Structural Agent:** Runs YOLO11n on both crops. Evaluates missing components ($N_{\text{golden}} > 0, N_{\text{test}} = 0$), extra components, count mismatches, and SSIM structural drift.
-   - **👁️ VLM Agent:** Dispatches crops using 50/50 round-robin load balancing across Gemini 3.5 Flash and Groq Qwen 3.8 27B to analyze surface burns and micro-solder voids.
+   - **👁️ VLM Agent:** Dispatches crops concurrently using 50/50 round-robin load balancing across Groq Qwen 3.8 27B and Gemini 2.5 Flash with sub-10s failover to analyze surface burns, cold solder, and hardware anomalies.
 3. **Evidence Card Standardization:** Every agent emits a standardized `EvidenceCard` Pydantic record containing confidence, anomaly score, bounding box, and natural language explanation.
 
 ---

@@ -53,18 +53,18 @@ export const ReviewModal = ({ isOpen, onClose, inspectionId, currentVerdict, onR
     >
       <form onSubmit={handleSubmit} className="space-y-5">
         {/* Action Radio Choice */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <button
             type="button"
             onClick={() => setReviewAction('APPROVED')}
-            className={`p-4 rounded-2xl border text-left transition-all ${
+            className={`p-3.5 sm:p-4 rounded-2xl border text-left transition-all ${
               reviewAction === 'APPROVED'
                 ? 'bg-emerald-950/60 border-emerald-500 text-emerald-200 shadow-md shadow-emerald-500/20'
                 : 'bg-hud-card border-hud-border text-slate-400 hover:border-slate-600'
             }`}
           >
             <div className="flex items-center gap-2 mb-1">
-              <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+              <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
               <span className="text-sm font-bold">Approve AI Verdict</span>
             </div>
             <p className="text-[11px] font-mono opacity-80">
@@ -75,14 +75,14 @@ export const ReviewModal = ({ isOpen, onClose, inspectionId, currentVerdict, onR
           <button
             type="button"
             onClick={() => setReviewAction('OVERRIDDEN')}
-            className={`p-4 rounded-2xl border text-left transition-all ${
+            className={`p-3.5 sm:p-4 rounded-2xl border text-left transition-all ${
               reviewAction === 'OVERRIDDEN'
                 ? 'bg-amber-950/60 border-amber-500 text-amber-200 shadow-md shadow-amber-500/20'
                 : 'bg-hud-card border-hud-border text-slate-400 hover:border-slate-600'
             }`}
           >
             <div className="flex items-center gap-2 mb-1">
-              <AlertOctagon className="w-5 h-5 text-amber-400" />
+              <AlertOctagon className="w-5 h-5 text-amber-400 shrink-0" />
               <span className="text-sm font-bold">Override Verdict</span>
             </div>
             <p className="text-[11px] font-mono opacity-80">
@@ -95,7 +95,7 @@ export const ReviewModal = ({ isOpen, onClose, inspectionId, currentVerdict, onR
         {reviewAction === 'OVERRIDDEN' && (
           <div className="p-4 rounded-2xl bg-hud-card border border-amber-500/40 space-y-3">
             <div className="flex items-center gap-2 text-xs font-mono font-bold text-amber-400">
-              <AlertTriangle className="w-4 h-4" />
+              <AlertTriangle className="w-4 h-4 shrink-0" />
               <span>Select New Authoritative Verdict</span>
             </div>
 
@@ -130,8 +130,8 @@ export const ReviewModal = ({ isOpen, onClose, inspectionId, currentVerdict, onR
         </div>
 
         {/* Actions */}
-        <div className="flex items-center justify-end gap-3 pt-2">
-          <Button type="button" variant="secondary" size="sm" onClick={onClose}>
+        <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3 pt-2">
+          <Button type="button" variant="secondary" size="sm" onClick={onClose} className="w-full sm:w-auto">
             Cancel
           </Button>
           <Button
@@ -139,6 +139,7 @@ export const ReviewModal = ({ isOpen, onClose, inspectionId, currentVerdict, onR
             variant={reviewAction === 'APPROVED' ? 'success' : 'amber'}
             size="sm"
             loading={submitting}
+            className="w-full sm:w-auto"
           >
             Submit Review Record
           </Button>

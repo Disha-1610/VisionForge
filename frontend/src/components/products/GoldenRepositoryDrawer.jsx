@@ -86,10 +86,10 @@ export const GoldenRepositoryDrawer = ({ isOpen, onClose }) => {
 
   return (
     <>
-      <div className="p-6 rounded-2xl bg-hud-surface border border-hud-border space-y-4">
-        <div className="flex items-center justify-between pb-4 border-b border-hud-border/70">
+      <div className="p-4 sm:p-6 rounded-2xl bg-hud-surface border border-hud-border space-y-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-4 border-b border-hud-border/70">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
+            <div className="p-2 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 shrink-0">
               <Database className="w-5 h-5" />
             </div>
             <div>
@@ -102,16 +102,17 @@ export const GoldenRepositoryDrawer = ({ isOpen, onClose }) => {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
             <Button
               size="sm"
               variant="primary"
               icon={Plus}
               onClick={() => setUploadModalOpen(true)}
+              className="flex-1 sm:flex-initial"
             >
               Upload Golden Ref
             </Button>
-            <Button size="sm" variant="secondary" onClick={onClose}>
+            <Button size="sm" variant="secondary" onClick={onClose} className="flex-1 sm:flex-initial">
               Collapse
             </Button>
           </div>

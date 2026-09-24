@@ -194,11 +194,11 @@ export const NewInspectionPage = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between pb-4 border-b border-hud-border/70">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 pb-4 border-b border-hud-border/70">
         <div>
-          <h2 className="text-xl font-black text-white tracking-tight uppercase font-telemetry">
+          <h2 className="text-lg sm:text-xl font-black text-white tracking-tight uppercase font-telemetry">
             Hardware Inspection Intake
           </h2>
           <p className="text-xs text-slate-400 font-mono mt-0.5">
@@ -207,7 +207,7 @@ export const NewInspectionPage = () => {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
         {/* Product & Vendor Selection Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Product Type */}
@@ -306,8 +306,8 @@ export const NewInspectionPage = () => {
         </div>
 
         {/* Dual Intake Channel (Dropzone + Live Camera) */}
-        <div className="p-6 rounded-3xl bg-hud-surface border border-hud-border space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-hud-border/70">
+        <div className="p-4 sm:p-6 rounded-3xl bg-hud-surface border border-hud-border space-y-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 pb-3 border-b border-hud-border/70">
             <div className="flex items-center gap-2.5">
               <UploadCloud className="w-5 h-5 text-cyan-400" />
               <h3 className="text-base font-bold text-white tracking-wide">
@@ -321,6 +321,7 @@ export const NewInspectionPage = () => {
               size="sm"
               icon={Camera}
               onClick={handleCameraClick}
+              className="w-full sm:w-auto"
             >
               Live Camera Feed
             </Button>
@@ -334,7 +335,7 @@ export const NewInspectionPage = () => {
               e.preventDefault();
               handleFilesAdded(e.dataTransfer.files);
             }}
-            className="p-8 border-2 border-dashed border-hud-border hover:border-cyan-400/80 rounded-2xl bg-hud-bg/50 hover:bg-hud-card/50 transition-all cursor-pointer text-center space-y-3"
+            className="p-5 sm:p-8 border-2 border-dashed border-hud-border hover:border-cyan-400/80 rounded-2xl bg-hud-bg/50 hover:bg-hud-card/50 transition-all cursor-pointer text-center space-y-3"
           >
             <input
               ref={fileInputRef}
@@ -396,12 +397,13 @@ export const NewInspectionPage = () => {
         </div>
 
         {/* Submit Bar */}
-        <div className="flex items-center justify-end gap-4 pt-2">
+        <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-3 sm:gap-4 pt-2">
           <Button
             type="button"
             variant="ghost"
             size="md"
             onClick={() => navigate('/dashboard')}
+            className="w-full sm:w-auto"
           >
             Cancel
           </Button>
@@ -412,8 +414,10 @@ export const NewInspectionPage = () => {
             size="lg"
             icon={ArrowRight}
             loading={submitting}
+            className="w-full sm:w-auto"
           >
-            Run Autonomous Inspection (8 Stages)
+            <span className="hidden sm:inline">Run Autonomous Inspection (8 Stages)</span>
+            <span className="sm:hidden">Run 8-Stage Inspection</span>
           </Button>
         </div>
       </form>

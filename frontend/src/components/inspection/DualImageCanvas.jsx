@@ -124,11 +124,11 @@ export const DualImageCanvas = ({
       : yoloDetections.filter((d) => (d.class_name || d.name) === selectedClass);
 
   return (
-    <div className="p-6 rounded-3xl bg-hud-surface border border-hud-border space-y-4 shadow-xl">
+    <div className="p-4 sm:p-6 rounded-3xl bg-hud-surface border border-hud-border space-y-4 shadow-xl">
       {/* Viewport Control Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-hud-border/70">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 pb-4 border-b border-hud-border/70">
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
+          <div className="p-2 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 shrink-0">
             <BoxSelect className="w-5 h-5" />
           </div>
           <div>
@@ -142,7 +142,7 @@ export const DualImageCanvas = ({
         </div>
 
         {/* Toolbar controls */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
           {/* Zoom controls */}
           <div className="flex items-center gap-1 bg-hud-card p-1 rounded-xl border border-hud-border">
             <button
@@ -176,7 +176,7 @@ export const DualImageCanvas = ({
           {/* Layer toggles */}
           <button
             onClick={() => setShowYolo(!showYolo)}
-            className={`px-3 py-1.5 rounded-xl border text-xs font-mono font-semibold transition-all ${
+            className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-xl border text-xs font-mono font-semibold transition-all ${
               showYolo
                 ? 'bg-cyan-500/20 border-cyan-500 text-cyan-300'
                 : 'bg-hud-card border-hud-border text-slate-400'
@@ -187,7 +187,7 @@ export const DualImageCanvas = ({
 
           <button
             onClick={() => setShowRoi(!showRoi)}
-            className={`px-3 py-1.5 rounded-xl border text-xs font-mono font-semibold transition-all ${
+            className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-xl border text-xs font-mono font-semibold transition-all ${
               showRoi
                 ? 'bg-purple-500/20 border-purple-500 text-purple-300'
                 : 'bg-hud-card border-hud-border text-slate-400'

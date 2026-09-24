@@ -278,4 +278,8 @@ docs/INTERVIEW_DEPLOYMENT_GUIDE.md
 interview_script.txt
 *interview_script*
 
+# Local manual test images
+Vision_Forge_Testing/
+
+
 

@@ -213,10 +213,16 @@ class AnalyticsService:
         result = await db.execute(query)
         rows = result.all()
 
-        trend_stats: dict[str, dict[str, int]] = defaultdict(lambda: {"total": 0, "fraud": 0})
+        trend_stats: dict[str, dict[str, Any]] = defaultdict(lambda: {"total": 0, "fraud": 0, "sort_key": ""})
         for dt, verdict, policy, fraud_prob in rows:
-            period = dt.strftime("%Y-%m") if dt else "2026-09"
+            if dt:
+                period = dt.strftime("%b %d")
+                sort_key = dt.strftime("%Y-%m-%d")
+            else:
+                period = "Sep 24"
+                sort_key = "2026-09-24"
             trend_stats[period]["total"] += 1
+            trend_stats[period]["sort_key"] = sort_key
             is_fraud = (
                 verdict == InspectionVerdict.REJECT
                 or policy == PolicyAction.QUARANTINE
@@ -225,8 +231,9 @@ class AnalyticsService:
             if is_fraud:
                 trend_stats[period]["fraud"] += 1
 
+        sorted_periods = sorted(trend_stats.keys(), key=lambda p: trend_stats[p]["sort_key"])
         items: list[MonthlyTrendItem] = []
-        for period in sorted(trend_stats.keys()):
+        for period in sorted_periods:
             t = trend_stats[period]["total"]
             f = trend_stats[period]["fraud"]
             rate = round((f / t) * 100.0, 1) if t > 0 else 0.0
@@ -251,27 +258,29 @@ class AnalyticsService:
                 Inspection.id,
                 Inspection.review_decision,
             )
-            .join(Inspection, User.id == Inspection.created_by)
+            .outerjoin(Inspection, User.id == Inspection.created_by)
         )
         result = await db.execute(query)
         rows = result.all()
 
         op_stats: dict[UUID, dict[str, Any]] = {}
-        for u_id, full_name, email, insp_id, decision in rows:
+        for row in rows:
+            u_id, full_name, email, insp_id, decision = row[0], row[1], row[2], row[3], row[4]
             if u_id not in op_stats:
                 op_stats[u_id] = {
                     "operator_id": u_id,
-                    "operator_name": full_name,
+                    "operator_name": full_name or email,
                     "operator_email": email,
                     "total": 0,
                     "approved": 0,
                     "overridden": 0,
                 }
-            op_stats[u_id]["total"] += 1
-            if decision == ReviewDecision.APPROVED:
-                op_stats[u_id]["approved"] += 1
-            elif decision == ReviewDecision.OVERRIDDEN:
-                op_stats[u_id]["overridden"] += 1
+            if insp_id is not None:
+                op_stats[u_id]["total"] += 1
+                if decision == ReviewDecision.APPROVED:
+                    op_stats[u_id]["approved"] += 1
+                elif decision == ReviewDecision.OVERRIDDEN:
+                    op_stats[u_id]["overridden"] += 1
 
         items = [
             OperatorPerformanceItem(

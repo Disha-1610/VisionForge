@@ -8,6 +8,9 @@ import {
   Users,
   AlertTriangle,
   CheckCircle,
+  ShieldCheck,
+  UserCheck,
+  Activity,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -135,14 +138,24 @@ export const AnalyticsPage = () => {
       </div>
 
       {/* Chart Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Monthly Trend Area Chart */}
-        <div className="p-6 rounded-3xl bg-hud-surface border border-hud-border space-y-4 shadow-xl">
-          <div className="flex items-center justify-between pb-3 border-b border-hud-border/70">
-            <h3 className="text-sm font-bold text-white font-telemetry uppercase tracking-wider">
-              Monthly Fraud Incidents Trend
-            </h3>
-            <span className="text-[11px] font-mono text-cyan-400">Recharts Telemetry</span>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+        {/* Timeline Trend Area Chart */}
+        <div className="p-4 sm:p-6 rounded-3xl bg-hud-surface border border-hud-border space-y-4 shadow-xl">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 pb-3 border-b border-hud-border/70">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 text-cyan-400 shrink-0" />
+              <h3 className="text-sm font-bold text-white font-telemetry uppercase tracking-wider">
+                Inspection & Anomaly Telemetry Timeline
+              </h3>
+            </div>
+            <div className="flex items-center gap-3 flex-wrap">
+              <span className="flex items-center gap-1.5 text-[10px] font-mono text-cyan-400">
+                <span className="w-2 h-2 rounded-full bg-cyan-400 inline-block" /> Total Volume
+              </span>
+              <span className="flex items-center gap-1.5 text-[10px] font-mono text-rose-400">
+                <span className="w-2 h-2 rounded-full bg-rose-500 inline-block" /> Quarantined Fraud
+              </span>
+            </div>
           </div>
 
           <div className="h-64 w-full">
@@ -154,36 +167,42 @@ export const AnalyticsPage = () => {
               </div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={monthlyTrend} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                <AreaChart data={monthlyTrend} margin={{ top: 12, right: 12, left: -10, bottom: 0 }}>
                   <defs>
-                    <linearGradient id="colorFraud" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#ef4444" stopOpacity={0.8} />
-                      <stop offset="95%" stopColor="#ef4444" stopOpacity={0.0} />
-                    </linearGradient>
                     <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.6} />
+                      <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.45} />
                       <stop offset="95%" stopColor="#06b6d4" stopOpacity={0.0} />
                     </linearGradient>
+                    <linearGradient id="colorFraud" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#ef4444" stopOpacity={0.5} />
+                      <stop offset="95%" stopColor="#ef4444" stopOpacity={0.0} />
+                    </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#1e2e4f" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1e2e4f" opacity={0.6} />
                   <XAxis dataKey="period" stroke="#64748b" tick={{ fontSize: 10, fill: '#94a3b8' }} />
                   <YAxis stroke="#64748b" tick={{ fontSize: 10, fill: '#94a3b8' }} />
                   <Tooltip content={<CustomTooltip />} />
                   <Area
                     type="monotone"
-                    dataKey="fraud_count"
-                    name="Fraud Cases"
-                    stroke="#ef4444"
-                    fillOpacity={1}
-                    fill="url(#colorFraud)"
-                  />
-                  <Area
-                    type="monotone"
                     dataKey="total_inspections"
                     name="Total Inspected"
                     stroke="#06b6d4"
+                    strokeWidth={2.5}
+                    dot={{ r: 3.5, fill: '#06b6d4', stroke: '#083344', strokeWidth: 1.5 }}
+                    activeDot={{ r: 6, fill: '#22d3ee', stroke: '#fff', strokeWidth: 2 }}
                     fillOpacity={1}
                     fill="url(#colorTotal)"
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="fraud_count"
+                    name="Fraud Cases"
+                    stroke="#ef4444"
+                    strokeWidth={2.5}
+                    dot={{ r: 3.5, fill: '#ef4444', stroke: '#450a0a', strokeWidth: 1.5 }}
+                    activeDot={{ r: 6, fill: '#f87171', stroke: '#fff', strokeWidth: 2 }}
+                    fillOpacity={1}
+                    fill="url(#colorFraud)"
                   />
                 </AreaChart>
               </ResponsiveContainer>
@@ -192,12 +211,22 @@ export const AnalyticsPage = () => {
         </div>
 
         {/* Vendor Risk Matrix Bar Chart */}
-        <div className="p-6 rounded-3xl bg-hud-surface border border-hud-border space-y-4 shadow-xl">
-          <div className="flex items-center justify-between pb-3 border-b border-hud-border/70">
-            <h3 className="text-sm font-bold text-white font-telemetry uppercase tracking-wider">
-              Supplier Risk Vulnerability Index
-            </h3>
-            <span className="text-[11px] font-mono text-rose-400">By Component Defect</span>
+        <div className="p-4 sm:p-6 rounded-3xl bg-hud-surface border border-hud-border space-y-4 shadow-xl">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 pb-3 border-b border-hud-border/70">
+            <div className="flex items-center gap-2">
+              <Building2 className="w-4 h-4 text-amber-400 shrink-0" />
+              <h3 className="text-sm font-bold text-white font-telemetry uppercase tracking-wider">
+                Supplier Risk Vulnerability Index
+              </h3>
+            </div>
+            <div className="flex items-center gap-3 flex-wrap">
+              <span className="flex items-center gap-1.5 text-[10px] font-mono text-cyan-400">
+                <span className="w-2 h-2 rounded-full bg-cyan-500 inline-block" /> Total Volume
+              </span>
+              <span className="flex items-center gap-1.5 text-[10px] font-mono text-rose-400">
+                <span className="w-2 h-2 rounded-full bg-rose-500 inline-block" /> Fraud Detected
+              </span>
+            </div>
           </div>
 
           <div className="h-64 w-full">
@@ -209,19 +238,42 @@ export const AnalyticsPage = () => {
               </div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={vendorRisk} layout="vertical" margin={{ top: 5, right: 20, left: 20, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#1e2e4f" />
+                <BarChart
+                  data={vendorRisk}
+                  layout="vertical"
+                  margin={{ top: 8, right: 16, left: 0, bottom: 8 }}
+                  barGap={3}
+                  barCategoryGap={14}
+                >
+                  <defs>
+                    <linearGradient id="barTotal" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stopColor="#0891b2" stopOpacity={0.7} />
+                      <stop offset="100%" stopColor="#06b6d4" stopOpacity={1} />
+                    </linearGradient>
+                    <linearGradient id="barFraud" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stopColor="#b91c1c" stopOpacity={0.8} />
+                      <stop offset="100%" stopColor="#f43f5e" stopOpacity={1} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1e2e4f" opacity={0.6} horizontal={false} />
                   <XAxis type="number" stroke="#64748b" tick={{ fontSize: 10, fill: '#94a3b8' }} />
                   <YAxis
                     dataKey="vendor_name"
                     type="category"
                     stroke="#64748b"
-                    tick={{ fontSize: 10, fill: '#94a3b8' }}
-                    width={80}
-                    tickFormatter={(v) => (v && v.length > 12 ? `${v.slice(0, 11)}…` : v)}
+                    tick={{ fontSize: 9.5, fill: '#cbd5e1' }}
+                    width={110}
+                    tickFormatter={(v) => {
+                      if (!v) return '';
+                      return v
+                        .replace(' Ltd.', '')
+                        .replace(' Industrial Internet', ' Industrial')
+                        .replace(' Electronics QA', ' Electronics');
+                    }}
                   />
                   <Tooltip content={<CustomTooltip />} />
-                  <Bar dataKey="fraud_count" name="Fraud Findings" fill="#f59e0b" radius={[0, 6, 6, 0]} />
+                  <Bar dataKey="total_inspections" name="Total Volume" fill="url(#barTotal)" radius={[0, 4, 4, 0]} />
+                  <Bar dataKey="fraud_count" name="Fraud Cases" fill="url(#barFraud)" radius={[0, 4, 4, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -230,23 +282,28 @@ export const AnalyticsPage = () => {
       </div>
 
       {/* Location Risk Hotspots & Operator Audit Table */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Location Breakdown */}
-        <div className="p-6 rounded-3xl bg-hud-surface border border-hud-border space-y-4 shadow-xl">
-          <div className="flex items-center gap-2 pb-3 border-b border-hud-border/70">
-            <MapPin className="w-4 h-4 text-amber-400" />
-            <h3 className="text-sm font-bold text-white font-telemetry uppercase tracking-wider">
-              Station & Location Hotspots
-            </h3>
+        <div className="p-4 sm:p-6 rounded-3xl bg-hud-surface border border-hud-border space-y-4 shadow-xl flex flex-col">
+          <div className="flex items-center justify-between pb-3 border-b border-hud-border/70">
+            <div className="flex items-center gap-2">
+              <MapPin className="w-4 h-4 text-amber-400 shrink-0" />
+              <h3 className="text-sm font-bold text-white font-telemetry uppercase tracking-wider">
+                Station & Location Hotspots
+              </h3>
+            </div>
+            <span className="text-[11px] font-mono text-slate-400">
+              {locationBreakdown.length} Facilities Monitored
+            </span>
           </div>
 
-          <div className="divide-y divide-hud-border/60 text-xs font-mono">
+          <div className="divide-y divide-hud-border/60 text-xs font-mono max-h-80 overflow-y-auto pr-1">
             {locationBreakdown.length === 0 ? (
               <p className="text-slate-500 text-center py-4">No location risk logs recorded.</p>
             ) : (
               locationBreakdown.map((loc, i) => (
-                <div key={i} className="py-2.5 flex items-center justify-between gap-3">
-                  <span className="text-white font-bold min-w-0 break-all leading-snug">{loc.location}</span>
+                <div key={i} className="py-2.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-1.5 sm:gap-3">
+                  <span className="text-white font-bold min-w-0 break-words leading-snug">{loc.location}</span>
                   <div className="flex items-center gap-2 sm:gap-3 shrink-0">
                     <span className="text-slate-400">Total: {loc.total_inspections}</span>
                     <span className="text-rose-400 font-bold">Fraud: {loc.fraud_count}</span>
@@ -262,33 +319,91 @@ export const AnalyticsPage = () => {
 
         {/* Admin-Only Operator Audit Log */}
         {isAdmin && (
-          <div className="p-6 rounded-3xl bg-hud-surface border border-hud-border space-y-4 shadow-xl">
-            <div className="flex items-center justify-between pb-3 border-b border-hud-border/70">
+          <div className="p-4 sm:p-6 rounded-3xl bg-hud-surface border border-hud-border space-y-4 shadow-xl flex flex-col">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-1 sm:gap-2 pb-3 border-b border-hud-border/70">
               <div className="flex items-center gap-2">
-                <Users className="w-4 h-4 text-cyan-400" />
+                <Users className="w-4 h-4 text-cyan-400 shrink-0" />
                 <h3 className="text-sm font-bold text-white font-telemetry uppercase tracking-wider">
                   Operator Audit & Throughput (Admin Only)
                 </h3>
               </div>
+              <span className="text-[11px] font-mono text-cyan-400">
+                {operatorBreakdown.length} Registered Accounts
+              </span>
             </div>
 
-            <div className="divide-y divide-hud-border/60 text-xs font-mono">
+            {/* Dynamic Telemetry Mini-KPI Summary (All computed live from real DB state) */}
+            <div className="grid grid-cols-3 gap-2 p-3 rounded-2xl bg-hud-card/60 border border-hud-border/60 text-center">
+              <div>
+                <p className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">Active Staff</p>
+                <p className="text-base font-bold font-mono text-cyan-400">
+                  {operatorBreakdown.filter((op) => (op.total_inspections || 0) > 0).length || operatorBreakdown.length}
+                </p>
+              </div>
+              <div>
+                <p className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">Audit Overrides</p>
+                <p className="text-base font-bold font-mono text-amber-400">
+                  {operatorBreakdown.reduce((acc, curr) => acc + (curr.overridden_count || 0), 0)}
+                </p>
+              </div>
+              <div>
+                <p className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">Audit Integrity</p>
+                <p className="text-base font-bold font-mono text-emerald-400">
+                  {(() => {
+                    const total = operatorBreakdown.reduce((acc, curr) => acc + (curr.total_inspections || 0), 0);
+                    const overrides = operatorBreakdown.reduce((acc, curr) => acc + (curr.overridden_count || 0), 0);
+                    return total > 0 ? `${(((total - overrides) / total) * 100).toFixed(1)}%` : '100.0%';
+                  })()}
+                </p>
+              </div>
+            </div>
+
+            {/* Operator Roster with Workload Distribution */}
+            <div className="divide-y divide-hud-border/60 text-xs font-mono max-h-60 overflow-y-auto pr-1">
               {operatorBreakdown.length === 0 ? (
                 <p className="text-slate-500 text-center py-4">
                   No per-operator inspection metrics recorded.
                 </p>
               ) : (
-              operatorBreakdown.map((op, i) => (
-                <div key={i} className="py-2.5 flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <span className="text-white font-bold break-all">{op.operator_name || op.operator_email}</span>
-                  </div>
-                  <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-                    <span className="text-slate-400">Cases: {op.total_inspections}</span>
-                    <span className="text-amber-400">Overrides: {op.overridden_count || 0}</span>
-                  </div>
-                </div>
-              ))
+                operatorBreakdown.map((op, i) => {
+                  const totalSys = summary?.total_inspections || operatorBreakdown.reduce((sum, o) => sum + (o.total_inspections || 0), 0) || 1;
+                  const sharePct = ((op.total_inspections / totalSys) * 100).toFixed(1);
+                  return (
+                    <div key={i} className="py-3 space-y-1.5">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="w-7 h-7 rounded-lg bg-cyan-950/80 border border-cyan-500/40 flex items-center justify-center text-[10px] font-bold text-cyan-300 shrink-0">
+                            {(op.operator_name || op.operator_email || 'OP').slice(0, 2).toUpperCase()}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-white font-bold truncate leading-tight">{op.operator_name || op.operator_email}</p>
+                            <p className="text-[10px] text-slate-400 truncate">{op.operator_email}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                          <span className="px-2 py-0.5 rounded bg-hud-card border border-hud-border text-[10px] text-slate-300">
+                            Cases: <strong className="text-white">{op.total_inspections}</strong>
+                          </span>
+                          <span className="px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/30 text-[10px] text-amber-300">
+                            Overrides: <strong>{op.overridden_count || 0}</strong>
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Workload Progress Bar (Only when inspections exist) */}
+                      {op.total_inspections > 0 ? (
+                        <div className="w-full bg-slate-900 rounded-full h-1.5 overflow-hidden flex items-center">
+                          <div
+                            className="bg-gradient-to-r from-cyan-500 to-emerald-400 h-full rounded-full transition-all duration-500"
+                            style={{ width: `${Math.min(100, Math.max(8, Number(sharePct)))}%` }}
+                          />
+                        </div>
+                      ) : (
+                        <p className="text-[10px] text-slate-500 italic">No assigned inspections on record</p>
+                      )}
+                    </div>
+                  );
+                })
               )}
             </div>
           </div>

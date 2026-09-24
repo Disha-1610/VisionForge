@@ -137,7 +137,7 @@ class ProviderConfig:
     base_url: str
     text_model: str
     vision_model: str
-    timeout_seconds: float = 30.0
+    timeout_seconds: float = 10.0
     max_retries: int = 3
     initial_backoff_seconds: float = 1.0
     max_backoff_seconds: float = 8.0
@@ -274,6 +274,7 @@ class BaseProviderClient:
         while attempt < self._config.max_retries:
             attempt += 1
             start = time.perf_counter()
+            retry_delay: float | None = None
             try:
                 response = await self._client.post(
                     url,
@@ -297,8 +298,24 @@ class BaseProviderClient:
                     body_text,
                 )
 
+                # For 502/503/504 (high demand spike / server overloaded):
+                # Fast-fail immediately so backup provider takes over instantly without stalling
+                if response.status_code in (502, 503, 504):
+                    logger.info(
+                        "provider=%s returned status=%s (%s); fast-failing to trigger backup provider immediately",
+                        self.provider.value,
+                        response.status_code,
+                        "high demand/server error",
+                    )
+                    raise LLMProviderHTTPError(
+                        provider=self.provider,
+                        status_code=response.status_code,
+                        message=body_text,
+                        retryable=True,
+                        attempt=attempt,
+                    )
+
                 # Check if provider explicitly reported a cooldown duration (e.g. Gemini / Groq 429)
-                retry_delay: float | None = None
                 if response.status_code == 429:
                     retry_after_hdr = response.headers.get("retry-after")
                     if retry_after_hdr:
@@ -341,19 +358,19 @@ class BaseProviderClient:
             except (httpx.TimeoutException, httpx.TransportError) as exc:
                 last_exc = exc
                 logger.warning(
-                    "provider=%s transport_error=%s attempt=%s",
+                    "provider=%s transport_error=%s attempt=%s (fast-failing to trigger failover)",
                     self.provider.value,
                     str(exc),
                     attempt,
                 )
-                if attempt >= self._config.max_retries:
-                    raise LLMProviderHTTPError(
-                        provider=self.provider,
-                        status_code=0,
-                        message=f"transport error: {exc}",
-                        retryable=True,
-                        attempt=attempt,
-                    ) from exc
+                # Transport / timeout error — fail fast to let backup provider execute immediately
+                raise LLMProviderHTTPError(
+                    provider=self.provider,
+                    status_code=0,
+                    message=f"transport error: {exc}",
+                    retryable=True,
+                    attempt=attempt,
+                ) from exc
 
             # Calculate sleep: if provider requested a short delay (<=5s), wait that exact duration
             if retry_delay is not None and retry_delay <= 5.0:

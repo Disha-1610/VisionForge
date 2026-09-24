@@ -111,8 +111,9 @@ copy .env.example .env   # On Windows
 | `JWT_SECRET_KEY` | `change-me-in-production` | Secret cryptographic salt for signing JWT tokens. |
 | `JWT_ACCESS_TOKEN_EXPIRE_MINUTES` | `30` | Access token lifespan. |
 | `JWT_REFRESH_TOKEN_EXPIRE_DAYS` | `7` | Refresh token lifespan. |
-| `GEMINI_API_KEY` | `""` | Google AI Studio API key (for Gemini 3.5 Flash & Embeddings). |
+| `GEMINI_API_KEY` | `""` | Google AI Studio API key (for Gemini 2.5 Flash & Embeddings). |
 | `GROQ_API_KEY` | `""` | Groq Cloud API key (for Qwen 3.8 VLM & LPU AI Judge). |
+| `LLM_TIMEOUT_SECONDS` | `10.0` | Socket timeout for VLM and LLM inference calls before fast-failover. |
 | `MIN_BLUR_VARIANCE` | `100.0` | Laplacian variance threshold for Stage 1. |
 | `MIN_BRIGHTNESS` | `40.0` | Minimum mean pixel brightness threshold. |
 | `MAX_BRIGHTNESS` | `220.0` | Maximum mean pixel brightness threshold. |

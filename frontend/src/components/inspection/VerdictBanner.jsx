@@ -117,14 +117,14 @@ export const VerdictBanner = ({
     .toUpperCase();
 
   return (
-    <div className={`p-6 sm:p-7 rounded-3xl border backdrop-blur-xl shadow-2xl space-y-6 ${bannerTheme}`}>
+    <div className={`p-4 sm:p-6 lg:p-7 rounded-3xl border backdrop-blur-xl shadow-2xl space-y-5 sm:space-y-6 ${bannerTheme}`}>
       {/* Top Banner Row: Verdict Title & Metrics */}
-      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 pb-6 border-b border-hud-border/70">
+      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 sm:gap-6 pb-5 sm:pb-6 border-b border-hud-border/70">
         {/* Left Side: Verdict & Category */}
         <div className="space-y-3 flex-1">
           <div className="flex flex-wrap items-center gap-3">
             <div
-              className={`p-3 rounded-2xl border shadow-inner ${
+              className={`p-2.5 sm:p-3 rounded-2xl border shadow-inner shrink-0 ${
                 isAccept
                   ? 'bg-emerald-950/80 border-emerald-500/50 text-emerald-400'
                   : isQuarantine
@@ -132,7 +132,7 @@ export const VerdictBanner = ({
                   : 'bg-amber-950/80 border-amber-500/50 text-amber-400'
               }`}
             >
-              <Icon className="w-7 h-7" />
+              <Icon className="w-6 h-6 sm:w-7 sm:h-7" />
             </div>
             <div>
               <div className="flex items-center gap-2">
@@ -141,7 +141,7 @@ export const VerdictBanner = ({
                 </span>
                 <StatusChip status={rawAction || verdict} size="md" />
               </div>
-              <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight font-telemetry mt-0.5">
+              <h2 className="text-xl sm:text-2xl lg:text-3xl font-black text-white tracking-tight font-telemetry mt-0.5">
                 {upperAction === 'ACCEPT'
                   ? 'Hardware Validated: Accept for Production'
                   : upperAction === 'QUARANTINE'
@@ -168,9 +168,9 @@ export const VerdictBanner = ({
         </div>
 
         {/* Right Side: High-Resolution Gauge Badges & Action CTAs */}
-        <div className="flex flex-wrap sm:flex-nowrap lg:flex-row items-center gap-4 shrink-0 w-full lg:w-auto">
+        <div className="flex flex-wrap sm:flex-nowrap lg:flex-row items-center gap-3 sm:gap-4 shrink-0 w-full lg:w-auto">
           {/* Fraud Risk Score */}
-          <div className="p-4 rounded-2xl bg-hud-card/90 border border-hud-border text-center flex-1 sm:w-36 lg:w-40">
+          <div className="p-3.5 sm:p-4 rounded-2xl bg-hud-card/90 border border-hud-border text-center flex-1 sm:w-36 lg:w-40">
             <div className="flex items-center justify-center gap-1 text-[11px] font-mono uppercase text-slate-400">
               <Activity className="w-3.5 h-3.5 text-rose-400" />
               <span>Fraud Risk</span>
@@ -201,7 +201,7 @@ export const VerdictBanner = ({
           </div>
 
           {/* AI Confidence */}
-          <div className="p-4 rounded-2xl bg-hud-card/90 border border-hud-border text-center flex-1 sm:w-36 lg:w-40">
+          <div className="p-3.5 sm:p-4 rounded-2xl bg-hud-card/90 border border-hud-border text-center flex-1 sm:w-36 lg:w-40">
             <div className="flex items-center justify-center gap-1 text-[11px] font-mono uppercase text-slate-400">
               <Bot className="w-3.5 h-3.5 text-cyan-400" />
               <span>Confidence</span>
@@ -244,10 +244,10 @@ export const VerdictBanner = ({
       </div>
 
       {/* AI Forensic Root-Cause Analysis Card */}
-      <div className="p-5 rounded-2xl bg-hud-bg/90 border border-hud-border space-y-4">
-        <div className="flex items-center justify-between gap-2 border-b border-hud-border/60 pb-3">
+      <div className="p-4 sm:p-5 rounded-2xl bg-hud-bg/90 border border-hud-border space-y-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-1.5 sm:gap-2 border-b border-hud-border/60 pb-3">
           <div className="flex items-center gap-2 text-sm font-mono font-bold text-cyan-400">
-            <Bot className="w-5 h-5 text-cyan-400" />
+            <Bot className="w-5 h-5 text-cyan-400 shrink-0" />
             <span>AI Lead Forensic Quality Inspector Analysis (Stage 07)</span>
           </div>
           <span className="text-[11px] font-mono text-slate-400">

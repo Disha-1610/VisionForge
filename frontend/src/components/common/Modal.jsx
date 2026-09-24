@@ -31,7 +31,7 @@ export const Modal = ({
 
       {/* Modal Box */}
       <div
-        className={`relative w-full ${maxWidth} rounded-2xl bg-hud-surface border border-hud-border shadow-2xl shadow-cyan-950/50 p-6 z-10 transform transition-all animate-in fade-in zoom-in-95 duration-200`}
+        className={`relative w-full ${maxWidth} rounded-2xl bg-hud-surface border border-hud-border shadow-2xl shadow-cyan-950/50 p-4 sm:p-6 z-10 transform transition-all animate-in fade-in zoom-in-95 duration-200`}
       >
         <div className="flex items-start justify-between pb-4 border-b border-hud-border/70">
           <div>

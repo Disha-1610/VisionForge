@@ -411,7 +411,7 @@ export const InspectionDetailPage = () => {
 
       {/* 4 Specialized AI Evidence Cards */}
       <div>
-        <div className="flex items-center justify-between pb-3 border-b border-hud-border/70 mb-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-1 sm:gap-2 pb-3 border-b border-hud-border/70 mb-4">
           <h3 className="text-base font-bold text-white tracking-wide font-telemetry">
             Multi-Agent Evidence Swarm Findings
           </h3>

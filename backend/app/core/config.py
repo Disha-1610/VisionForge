@@ -51,7 +51,7 @@ class Settings(BaseSettings):
     GROQ_JUDGE_MODEL: str = "openai/gpt-oss-20b"
 
     # ---------- LLM Common Settings ----------
-    LLM_TIMEOUT_SECONDS: float = 30.0
+    LLM_TIMEOUT_SECONDS: float = 10.0
     LLM_MAX_RETRIES: int = 3
     LLM_INITIAL_BACKOFF_SECONDS: float = 1.0
     LLM_MAX_BACKOFF_SECONDS: float = 8.0
