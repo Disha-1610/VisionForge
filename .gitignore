@@ -275,6 +275,9 @@ Thumbs.db
 docs/*INTERVIEW*.md
 docs/INTERVIEW_100_QA.md
 docs/INTERVIEW_DEPLOYMENT_GUIDE.md
+docs/*interview*
+docs/interview_discussion.md
+docs/interview_discusiion.md
 interview_script.txt
 *interview_script*
 
