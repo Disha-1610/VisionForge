@@ -49,7 +49,7 @@ export const StatusChip = ({ status, className = '', size = 'md' }) => {
     <span
       className={`inline-flex items-center font-mono font-semibold uppercase tracking-wider rounded-full border ${sizeClasses} ${config.color} ${className}`}
     >
-      <Icon className={`w-3.5 h-3.5 shrink-0 ${upper === 'RUNNING' ? 'animate-spin' : ''}`} />
+      <Icon className={`w-3.5 h-3.5 shrink-0 ${['RUNNING', 'IN_PROGRESS', 'PROCESSING'].includes(upper) ? 'animate-spin' : ''}`} />
       <span>{config.label}</span>
     </span>
   );

@@ -8,6 +8,8 @@ import {
   Layers,
   Calendar,
   Loader2,
+  CheckCircle2,
+  AlertCircle,
   FileDown,
 } from 'lucide-react';
 import { inspectionsAPI } from '../services/api';
@@ -103,9 +105,22 @@ export const InspectionDetailPage = () => {
     fetchInspection();
   }, [fetchInspection]);
 
-  const effectiveStatus = isDone
+  const isPipelineCompleted =
+    isDone ||
+    inspection?.status?.toLowerCase() === 'completed' ||
+    sseStatus === 'completed';
+
+  const isPipelineFailed =
+    !isPipelineCompleted &&
+    (inspection?.status?.toLowerCase() === 'failed' || sseStatus === 'failed');
+
+  const effectiveStatus = isPipelineCompleted
     ? 'completed'
-    : inspection?.status?.toLowerCase() || sseStatus;
+    : isPipelineFailed
+    ? 'failed'
+    : 'running';
+
+  const isPipelineRunning = effectiveStatus === 'running';
   const effectiveVerdict = inspection?.verdict || sseVerdict;
   const effectivePolicy = inspection?.policy_action || ssePolicyAction;
 
@@ -320,8 +335,28 @@ export const InspectionDetailPage = () => {
           </div>
         </div>
 
-        {/* Metadata Badges */}
+        {/* Metadata Badges & Live Status */}
         <div className="flex flex-wrap items-center gap-2 text-xs font-mono text-slate-300">
+          {/* Live Pipeline Running / Complete Button Indicator */}
+          {isPipelineRunning && (
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-cyan-950/80 border border-cyan-400 text-cyan-200 font-bold shadow-lg shadow-cyan-500/25 animate-pulse">
+              <Loader2 className="w-3.5 h-3.5 text-cyan-400 animate-spin shrink-0" />
+              <span>Analyzing Stage {currentStage}/8...</span>
+            </div>
+          )}
+          {isPipelineCompleted && (
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-950/60 border border-emerald-500/60 text-emerald-300 font-bold">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+              <span>Pipeline Complete (8/8)</span>
+            </div>
+          )}
+          {isPipelineFailed && (
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-rose-950/60 border border-rose-500/60 text-rose-300 font-bold">
+              <AlertCircle className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+              <span>Pipeline Failed</span>
+            </div>
+          )}
+
           <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-hud-surface border border-hud-border min-w-0 max-w-full">
             <Building2 className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
             <span className="truncate">Vendor: {inspection?.vendor_name || '—'}</span>

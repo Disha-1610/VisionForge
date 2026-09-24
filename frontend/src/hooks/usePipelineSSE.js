@@ -104,6 +104,8 @@ export const usePipelineSSE = (inspectionId, onComplete) => {
           console.error('Error in onComplete callback:', err);
         }
       }
+    } else {
+      setStatus('running');
     }
   }, []);
 

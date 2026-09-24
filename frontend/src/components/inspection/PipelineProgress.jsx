@@ -37,9 +37,14 @@ export const PipelineProgress = ({
   stages,
   currentStage,
   completedStages = [],
-  status, // 'running' | 'completed' | 'failed'
+  status, // 'running' | 'processing' | 'in_progress' | 'completed' | 'failed'
   stageDetails,
 }) => {
+  const normStatus = (status || '').toLowerCase();
+  const isCompleted = normStatus === 'completed';
+  const isFailed = normStatus === 'failed';
+  const isRunning = !isCompleted && !isFailed;
+
   const displayDetail = formatTelemetryDetail(stageDetails);
 
   return (
@@ -48,9 +53,9 @@ export const PipelineProgress = ({
         <div className="flex items-center gap-3 min-w-0">
           <span
             className={`w-3 h-3 rounded-full shrink-0 ${
-              status === 'completed'
+              isCompleted
                 ? 'bg-emerald-400'
-                : status === 'failed'
+                : isFailed
                 ? 'bg-rose-400'
                 : 'bg-cyan-400 animate-ping'
             }`}
@@ -60,19 +65,22 @@ export const PipelineProgress = ({
           </h3>
         </div>
 
-        <div className="text-xs font-mono text-slate-400">
+        <div className="flex items-center gap-2 text-xs font-mono text-slate-400">
           Status:{' '}
           <span
             className={`font-bold uppercase ${
-              status === 'completed'
+              isCompleted
                 ? 'text-emerald-400'
-                : status === 'failed'
+                : isFailed
                 ? 'text-rose-400'
                 : 'text-cyan-400'
             }`}
           >
-            {status}
+            {isCompleted ? 'COMPLETED' : isFailed ? 'FAILED' : 'RUNNING'}
           </span>
+          {isRunning && (
+            <Loader2 className="w-3.5 h-3.5 text-cyan-400 animate-spin ml-1" />
+          )}
         </div>
       </div>
 
@@ -80,8 +88,8 @@ export const PipelineProgress = ({
       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 relative">
         {stages.map((st) => {
           const isDone = completedStages.includes(st.id);
-          const isCurrent = currentStage === st.id && status === 'running';
-          const isFailed = status === 'failed' && currentStage === st.id;
+          const isCurrent = currentStage === st.id && isRunning;
+          const isStageFailed = isFailed && currentStage === st.id;
 
           let nodeStyle = 'bg-hud-card/60 border-hud-border/50 text-slate-500';
           let icon = <span className="text-xs font-mono font-bold">0{st.id}</span>;
@@ -93,7 +101,7 @@ export const PipelineProgress = ({
             nodeStyle =
               'bg-cyan-950/70 border-cyan-400 text-cyan-200 shadow-lg shadow-cyan-500/25 animate-pulse';
             icon = <Loader2 className="w-4 h-4 text-cyan-400 animate-spin" />;
-          } else if (isFailed) {
+          } else if (isStageFailed) {
             nodeStyle = 'bg-rose-950/70 border-rose-500 text-rose-300';
             icon = <AlertCircle className="w-4 h-4 text-rose-400" />;
           }
