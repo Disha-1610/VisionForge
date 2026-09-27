@@ -64,8 +64,8 @@ A simple picture of the relationships:
                                           └──────────────────────┘
 ```
 
-**Important:** the old documentation also described a table called `AuditLog`. There is no such
-table. There is no audit trail table in this project.
+**Important:** there is no audit trail table in this project. Five tables is the complete list, and
+nothing logs who changed what.
 
 ## 2. Which database is used
 
@@ -150,16 +150,14 @@ The known-good images that incoming photos are compared against.
 | `created_at` | Timestamp | Not null | |
 | `updated_at` | Timestamp | Not null | |
 
-**Three corrections to the old documentation:**
+Three details that are easy to get wrong:
 
-- `image_path`, `thumbnail_path`, and `roi_template_path` are `VARCHAR(512)`, not `VARCHAR(500)`.
-- `embedding_id` and `roi_template_path` are both **nullable**. The old documentation said they were
-  required.
-- The default `view_angle` is `"front"`, not `"top"`.
+- `image_path`, `thumbnail_path`, and `roi_template_path` are `VARCHAR(512)`.
+- `embedding_id` and `roi_template_path` are both **nullable**. They are not required.
+- The default `view_angle` is `"front"`.
 
-**The old documentation also claimed `view_angle` is limited to `"top"`, `"iso"`, or `"pins"`.**
-There is no such limit. It is free text, and the only value actually used anywhere in the project is
-`"front"`.
+**`view_angle` has no allowed-value list.** It is free text. It is not limited to `"top"`, `"iso"`,
+or `"pins"`, and the only value actually used anywhere in the project is `"front"`.
 
 **A note on `embedding_id`:** this column is written on upload but is never read back. The FAISS
 index stores its own ID list, keyed on the record's `id`, not on `embedding_id`. So this column is
@@ -230,11 +228,10 @@ One row per inspection. This is the biggest table, with **30 columns**.
 | `created_at` | Timestamp | Not null, indexed | |
 | `updated_at` | Timestamp | Not null | |
 
-**The old documentation listed only 15 of these 30 columns.** The 15 missing ones are:
-`image_count`, `error_message`, `quality_failure_reason`, `authenticity_flagged`,
+All 30 columns are listed above. The two timestamp columns, `created_at` and `updated_at`, plus
+`created_by`, `image_count`, `error_message`, `quality_failure_reason`, `authenticity_flagged`,
 `judge_confidence`, `fraud_category`, `root_cause`, `review_decision`, `reviewed_by`,
-`reviewer_comment`, `reviewed_at`, `created_by`, `created_at`, and `updated_at`, plus the missing
-`id` default.
+`reviewer_comment`, and `reviewed_at` are the ones most often missed.
 
 **One field is not a column.** `vendor_name` looks like a field on this table but is a calculated
 value that looks up the supplier. Same for `product_type`, which is derived from the working memory.
@@ -268,18 +265,16 @@ one row.
 **There is no `updated_at` column,** which fits the idea that evidence should not change. There is
 also no `sequence` column — the in-memory records are numbered, but that number is never saved.
 
-**The old documentation listed 13 of these 18 columns.** The 5 missing ones are: `roi_type`,
-`raw_output`, `failed`, `failure_reason`, and `created_at`.
+Five columns on this table are easy to overlook: `roi_type`, `raw_output`, `failed`, `failure_reason`,
+and `created_at`.
 
 **There is no range check on `confidence` at the database level.** The in-memory records check that
 it is between 0 and 1, but the column itself accepts anything.
 
 #### About "append-only"
 
-The old documentation made this a headline security feature: evidence is permanent, cannot be
-edited, and cannot be deleted.
-
-**That is not true.** Here is what actually exists:
+"Evidence is append-only" sounds like a strong security property, but the database does not
+enforce it. Here is what actually exists:
 
 - The model file has a comment saying never to update, only insert. That is a comment.
 - **There is no database trigger, rule, or constraint** that would reject an update or a delete.
@@ -304,8 +299,8 @@ See [KNOWN_ISSUES.md](KNOWN_ISSUES.md) issue 9.
 | `inspections.reviewed_by` | `users.id` | Many inspections per reviewer | Set to null |
 | `evidence.inspection_id` | `inspections.id` | Many evidence rows per inspection | **Deleted** |
 
-**The old documentation listed 4 of these 5.** It missed `inspections.reviewed_by`, which is the
-second link to `users` and the one that nulls out rather than blocking.
+**`inspections.reviewed_by` is easy to miss.** It is the second link to `users`, and it is the one
+that nulls out rather than blocking a delete.
 
 **A real caveat about the "blocked" rules.** They are declared correctly in the models, and
 PostgreSQL enforces them. But SQLite does not enforce foreign keys unless it is switched on, and
@@ -355,8 +350,8 @@ converting function is given. So the database contains `ADMIN` while the API sen
 This is invisible on SQLite. It is not invisible on PostgreSQL, and it is part of why the migration
 script is broken. See [problems](#10-problems-to-be-aware-of).
 
-The old documentation's list of verdicts and actions did not match the code. It used names like
-`VERIFIED` and `TAMPERED` that do not exist.
+These six lists are the only valid values. Names like `VERIFIED`, `TAMPERED`, and `VERIFY` are not
+used anywhere in this codebase.
 
 ## 6. Indexes
 
@@ -382,13 +377,11 @@ There are **15 indexes**. Three of them enforce uniqueness.
 
 **There are no indexes that span more than one column.** Every index covers a single column.
 
-**The old documentation claimed a combined index on `(vendor_id, created_at)` existed.** It does
-not. It appears nowhere in the models, the migration, or the live database. That claim was
-fabricated.
+**There is no combined index on `(vendor_id, created_at)`.** It appears nowhere in the models, the
+migration, or the live database.
 
-**The old documentation also said evidence was "partially indexed" on `agent_type` and
-`confidence`.** Only `agent_type` is indexed. `confidence` is not. And there are no partial indexes
-anywhere in this database.
+**On the `evidence` table, only `agent_type` is indexed.** `confidence` is not, and there are no
+partial indexes anywhere in this database.
 
 **Columns with no index that you might expect one on:**
 
@@ -433,8 +426,8 @@ The current index was built with the Google model at 3,072 numbers, which matche
 a 3,072-number index, the code raises a clear error instead of silently corrupting the index. This
 is a real safeguard and is tested.
 
-**The old documentation said OpenCLIP was the primary embedder.** It is the fallback. The 3,072
-number Google model is primary.
+**OpenCLIP is the fallback embedder, not the primary one.** The 3,072 number Google model is
+primary.
 
 ## 8. Reference region templates
 
@@ -451,10 +444,8 @@ and which specialist should look at each one. There are three such files, shippe
 For the motherboard, the 8 regions are: serial label, QC seal, capacitor bank 1, resistor array,
 main IC chip, I/O connector bank, mounting screws, and a general surface check.
 
-**The old documentation said the motherboard has 6 regions. It has 8.**
-
-The old documentation also said the template loading code rebuilds paths relative to the backend
-folder. It does not. It tries the path as given, then a few known folders, and finally matches on
+**Path resolution is worth understanding.** The template loading code does not rebuild paths relative
+to the backend folder. It tries the path as given, then a few known folders, and finally matches on
 the file name alone. If none of those work, it raises an error rather than guessing.
 
 ## 9. Default data created at startup
@@ -510,7 +501,7 @@ PostgreSQL.
 
 **4. Evidence is not fully append-only.**
 No trigger or constraint prevents updates or deletes, and deletes do happen through the cascade
-from inspections. The claim in the old documentation was not true.
+from inspections.
 
 **One more, smaller thing:** the report list endpoint loads every matching row into memory and then
 slices it to the requested page. Fine now, will not stay fine.

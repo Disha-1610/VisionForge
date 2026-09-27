@@ -8,10 +8,8 @@
 
 ## Read this first
 
-**There is no Docker setup in this repository.** The old version of this document showed a full
-multi-container configuration and said the project "provides" it. There is no `Dockerfile` and no
-`docker-compose.yml`. Every Docker and cloud section in the old document was written as a plan and
-never turned into files.
+**There is no Docker setup in this repository.** There is no `Dockerfile`, no `docker-compose.yml`,
+and no `.dockerignore`.
 
 If you want to run this, run it locally. That is the only method that is actually built.
 
@@ -40,8 +38,8 @@ If you want to run this, run it locally. That is the only method that is actuall
 | Node.js | **20.19+ or 22.12+** | `node --version` |
 | npm | Comes with Node | `npm --version` |
 
-**Node 18 will not work.** The old document said Node 18 was the minimum. Vite 8 needs a newer
-version, and it fails in a way that is not easy to read.
+**Node 18 will not work.** Vite 8 needs 20.19 or 22.12 or later, and it fails in a way that is not
+easy to read.
 
 **A cloud API key is optional.** The system runs without one. Only two of the five AI components
 need it, and the AI judge has a fallback that needs nothing. See
@@ -157,11 +155,11 @@ run_visionforge.bat
 4. Starts the backend with Uvicorn.
 5. Starts the frontend with Vite, and opens the browser.
 
-**Two claims from the old document that are wrong:**
+**Two things the script does not do:**
 
-- It said the script creates a virtual environment and installs dependencies. **It does not.** If
+- **It does not create a virtual environment or install dependencies.** If
   dependencies are missing, it will fail. Do the setup in section 2 first.
-- It said the script seeds the database. **It does not.** Seeding happens inside the backend when it
+- **It does not seed the database.** Seeding happens inside the backend when it
   starts, and it is wrapped in a handler that only logs a warning if it fails.
 
 There are also two smaller scripts:
@@ -189,23 +187,22 @@ example `https://something-random.trycloudflare.com`, and writes it to `frontend
 app to show it. `run_visionforge.bat` does this for you.
 
 **Then the operator scans the QR code** in the app with their phone, and the same page opens on the
-phone. They photograph the part there, and it appears on the desktop.
+phone. They photograph the part there and submit it on the phone. **That result does not appear on
+the desktop automatically.** The two devices are separate sessions.
 
 **Two things to be clear about:**
 
 - **This exposes the whole frontend development server**, not just the inspection page. Anyone with
   the address can reach every page.
-- **The old document said the backend starts this automatically, and that the operator scans a QR
-  code to reach a dedicated mobile intake page.** Neither is true. A person starts the tunnel, and
-  the QR code opens the same page rather than a special mobile one.
+- **The tunnel is not started by the backend, and the QR code does not open a dedicated mobile intake
+  page.** A person starts the tunnel, and the QR code opens the same page the desktop is on.
 
 **This is a demo tool.** It is the right answer for showing the project on a factory floor. It is not
 a deployment.
 
 ## 6. Every setting you can change
 
-All of them live in `backend/.env`. The old document listed 15. **There are around 48.** The ones
-worth knowing about:
+All of them live in `backend/.env`. **There are around 48.** The ones worth knowing about:
 
 ### The basics
 
@@ -267,9 +264,8 @@ schema. Do not rely on it. See [KNOWN_ISSUES.md](KNOWN_ISSUES.md) issue 6.
 | `LLM_MAX_BACKOFF_SECONDS` | `8.0` | |
 | `CLIP_MODEL` | `openai/clip-vit-base-patch32` | **Note: this setting is never actually read.** The code uses a hard-coded `ViT-B-32` |
 
-**A note on model names.** The old document referred to "Gemini 3.5 Flash" in several places. **There
-is no such model.** The setting is `gemini-2.5-flash`. The wrong name appears to have come from a
-stale line in `.env.example`, which still says 3.5. Fix that file.
+**A note on model names.** **There is no "Gemini 3.5 Flash" model.** The setting is
+`gemini-2.5-flash`. A wrong name still sits in `.env.example`, which says 3.5. Fix that file.
 
 ### The quality thresholds
 
@@ -296,8 +292,8 @@ touching the code.
 | `SCREENSHOT_UNIFORMITY_THRESHOLD` | `0.92` | Above this, treated as a screenshot |
 | `DUPLICATE_HASH_MAX_DISTANCE` | `4` | Fingerprint distance treated as a repeat |
 
-**The old documentation listed a "calibrate quality thresholds" feature for admins.** No such
-feature exists. These are `.env` values only.
+**There is no admin feature for calibrating these thresholds.** They are `.env` values only, and
+changing one needs a restart.
 
 **The front end has one setting:**
 
@@ -323,8 +319,8 @@ Everything goes under `backend/data/`.
 **The paths are configurable.** `UPLOAD_DIR`, `GOLDEN_IMAGE_DIR`, `FAISS_INDEX_PATH`,
 `ROI_TEMPLATE_DIR`, `YOLO_WEIGHTS_DIR`, and `REPORTS_DIR` can each be changed.
 
-**One gotcha.** The path resolution code does not build paths from the backend folder, as the old
-document said. It tries the path as given, then a few known folders, then finally matches on the
+**One gotcha.** The path resolution code does not build paths from the backend folder.
+It tries the path as given, then a few known folders, then finally matches on the
 file name alone. If none of those work, it raises an error rather than guessing. So a file in an
 unusual place will not be found, even if it exists.
 
@@ -397,8 +393,8 @@ Both choices are reasonable for a demo. Both are worth knowing about before you 
 **The health check will not tell you either.** It only returns the service name and version. It does
 not check the database, the vector index, or the model.
 
-**The old document described a health endpoint reporting the database, vector index, and model
-status, and a `tunnel-url` endpoint.** Neither exists. The only system endpoint is one that returns
+**There is no health endpoint that reports the database, vector index, and model
+status, and there is no `tunnel-url` endpoint.** The only system endpoint under `/api/v1` returns
 the machine's network address.
 
 ## 10. What is not built yet
@@ -407,7 +403,7 @@ Stated plainly, so nothing is a surprise:
 
 | Missing | Notes |
 |---|---|
-| **Docker packaging** | No `Dockerfile`, no `docker-compose.yml`, no `.dockerignore`. The old document's compose file was a plan |
+| **Docker packaging** | No `Dockerfile`, no `docker-compose.yml`, no `.dockerignore` |
 | **Continuous integration** | No `.github` folder, no pipeline configuration. Tests are run by a person |
 | **A production frontend build served by the backend** | The backend serves the API and some static files. The frontend is built and served separately |
 | **A real health check** | Only the name and version. It does not verify anything is working |
@@ -419,12 +415,11 @@ Stated plainly, so nothing is a surprise:
 | **A frontend test suite** | No tests for the web app at all |
 | **Measured performance** | No timing has ever been recorded |
 
-**On the old cloud deployment sections.** The old document described deploying to ECS with SQS and
-S3, and a comparison table of cloud providers with prices. None of that is implemented and none of
-the prices can be checked. The project runs locally, or behind the demo tunnel. Anything else would
-be starting from scratch.
+**On cloud deployment.** Nothing cloud-specific is implemented. There is no ECS setup, no SQS
+queue, no S3 bucket, and no infrastructure code of any kind. The project runs locally, or behind
+the demo tunnel. Anything else would be starting from scratch.
 
-**The one part of that section that is right:** the ports. The backend is on 8000 and the frontend
+**The port numbers to keep in mind:** the backend is on 8000 and the frontend
 on 5173, and the tunnel points at the frontend.
 
 ---

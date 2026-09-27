@@ -146,8 +146,8 @@ explanation. It runs on Groq's `gpt-oss-20b` model, with Gemini as a backup.
 - **Files:** Uploaded photos, reference photos, and generated PDFs are stored on disk in folders
   under `backend/data/`.
 
-**One thing to be clear about:** the documentation used to say the evidence table is permanently
-append-only, and that it protects against anyone editing past results. That rule is not actually
+**One thing to be clear about:** the evidence table is **not** permanently
+append-only, and it does not protect against anyone editing past results. That rule is not actually
 enforced anywhere. It is a comment in the code and nothing more, and deleting an inspection also
 deletes its evidence. See [KNOWN_ISSUES.md](KNOWN_ISSUES.md) issue 9.
 
@@ -186,7 +186,7 @@ The stages run in this fixed order:
                     8. policy_engine  -> save to database, build PDF, tell the frontend
 ```
 
-**Stage 5 runs twice.** This is not in the old documentation and it is worth knowing about:
+**Stage 5 runs twice.** This is worth knowing about:
 
 - **Pass one** sends each cropped region to whichever specialist the reference file assigns to it.
 - **Pass two** sends every region the structural specialist looked at to the VLM specialist, so the
@@ -239,13 +239,12 @@ Events. The browser holds the connection open and the server pushes small messag
   nothing finalises within about 60 seconds.
 - The connection closes after 120 checks, which is about 60 seconds.
 
-**Two important corrections to the old documentation:**
+**Two things people get wrong about this:**
 
-- The old documentation listed events called `stage_progress`, `evidence_card`, and
-  `pipeline_complete`. None of those exist. Only `verdict` and `error` are ever sent.
-- The old documentation said the fallback polls "every 2.5 seconds" as if the server controlled it.
-  The 2.5 second interval is in the frontend, and the server's own internal check is every 0.5
-  seconds.
+- The only named events are `verdict` and `error`. Names like `stage_progress`, `evidence_card`, and
+  `pipeline_complete` are not used anywhere in the backend.
+- The 2.5 second fallback polling interval is in the frontend, not the server. The server's own
+  internal check is every 0.5 seconds.
 
 **Two more things to know:** there is no keepalive signal on the connection, so an aggressive proxy
 can close it during a quiet period. And the connection currently requires no login, which is a
@@ -263,8 +262,7 @@ The project uses two cloud AI providers so that a problem with one does not stop
 | Final judgement | Groq `gpt-oss-20b` | Google Gemini 2.5 Flash, then a rule-based fallback |
 | Image fingerprints | Google `gemini-embedding-2` | OpenCLIP ViT-B-32 |
 
-Note that Groq is the **primary** for the judge, and Gemini is the backup. The old documentation had
-this backwards in several places.
+Note that Groq is the **primary** for the judge, and Gemini is the backup. Gemini is not the primary.
 
 **How failures are handled:**
 
@@ -277,9 +275,9 @@ this backwards in several places.
 - If a specialist agent fails, the pipeline does not stop. A failed result is recorded with its
   error message, and the fusion stage treats it as a mild anomaly.
 
-**About speed:** the old documentation gave precise timings for every stage and for the whole
-inspection, such as "3.2 seconds". No such measurement has ever been taken, and there is no
-benchmark script in the project. Do not quote those numbers. See
+**About speed:** no timing has ever been measured. There is no benchmark script in the project, and
+the two stages that call cloud models each allow 10 seconds before giving up. Do not quote a
+per-stage or whole-inspection figure. See
 [KNOWN_ISSUES.md](KNOWN_ISSUES.md) and [PIPELINE.md](PIPELINE.md).
 
 ## 8. Design decisions and why they were made
@@ -313,14 +311,13 @@ Being clear about the gaps:
 
 - **No measured accuracy or speed figures.** The YOLO model runs for real, but no evaluation has
   been recorded. Any accuracy or timing number in a demo would be a guess.
-- **No Docker packaging.** There is no `Dockerfile` or `docker-compose.yml`, despite what earlier
-  versions of this documentation said.
+- **No Docker packaging.** There is no `Dockerfile` and no `docker-compose.yml`.
 - **No continuous integration.** Tests are run manually.
 - **No signed reports.** PDFs are generated with text and tables only. No hashing, no signature, and
   no images embedded in the report.
 - **No rate limiting** on any endpoint.
-- **No image alignment step.** The old documentation mentioned one as a planned fix for tilted
-  photos. It does not exist and is not in the roadmap.
+- **No image alignment step.** There is no rotation or alignment handling anywhere, and none is in
+  the roadmap. Tilted photos are not corrected before analysis.
 - **The judge can disagree with the policy stage.** The judge's own fallback rules use a threshold
   of 0.65, while the policy stage uses 0.70. This is not reconciled anywhere.
 

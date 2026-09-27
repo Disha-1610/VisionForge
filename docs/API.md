@@ -22,7 +22,7 @@
 9. [Reports - `/reports`](#9-reports-reports)
 10. [Analytics - `/analytics`](#10-analytics-analytics)
 11. [System - `/system` and root](#11-system-system-and-root)
-12. [Routes the old documentation got wrong](#12-routes-the-old-documentation-got-wrong)
+12. [Routes people assume exist](#12-routes-people-assume-exist)
 
 ---
 
@@ -102,9 +102,8 @@ framework's own handler runs instead and returns a list of problems:
 }
 ```
 
-So `detail` is a string in one case and a list in the other. Clients need to handle both. The old
-documentation described a single format with `error_code` and `timestamp` fields, which do not
-exist anywhere in the code.
+So `detail` is a string in one case and a list in the other. Clients need to handle both. There is
+no `error_code` field and no `timestamp` field in either shape.
 
 **Status codes used:**
 
@@ -234,14 +233,14 @@ Send `multipart/form-data`.
 }
 ```
 
-Four fields only. The old documentation showed `image_count` and `created_at` here, and left out
-`message`. Those were wrong.
+Four fields only: `id`, `case_number`, `status`, `message`. There is no `image_count` and no
+`created_at` in this response.
 
 **Case number format:** `CASE-<YYYYMMDDHHMMSS>-<6 hex characters>`, for example
 `CASE-20260917120754-38350E`.
 
-**There is no way to choose the reference image through this endpoint.** The old documentation
-listed a `golden_reference_id` form field. It does not exist. Stage 3 always finds the match itself.
+**There is no way to choose the reference image through this endpoint, and no `golden_reference_id`
+form field.** Stage 3 always finds the match itself.
 The database column exists but is never filled from user input.
 
 ### 5.2 List inspections
@@ -287,8 +286,7 @@ This is the fallback the frontend uses when the live stream is blocked.
 - `detail` — an error message if it failed, or extra information about the current stage.
 - `verdict` and `policy_action` — only present once the inspection has finished.
 
-The old documentation showed `id`, `fraud_probability`, and `report_path` in this response. None of
-those fields exist.
+The status response has no `id`, no `fraud_probability`, and no `report_path`.
 
 ### 5.5 Approve an inspection
 
@@ -324,8 +322,8 @@ Unlike approve, this one **requires** a comment. An empty comment returns `400` 
 
 ### 5.7 There is no `/review` endpoint
 
-The old documentation described `POST /api/v1/inspections/{id}/review` with a body of
-`{"decision": ..., "comment": ...}`. That endpoint does not exist and those field names are wrong.
+`POST /api/v1/inspections/{id}/review` does not exist, and the body fields are `review_decision` and
+`reviewer_comment`, not `decision` and `comment`.
 
 The frontend still calls it, so the review dialog in the web app returns 404. See
 [KNOWN_ISSUES.md](KNOWN_ISSUES.md) issue 3.
@@ -380,9 +378,9 @@ event: error
 data: {"error": "stream_timeout"}
 ```
 
-**Events that do not exist.** The old documentation described `stage_progress`, `evidence_card`,
-and `pipeline_complete`. Searching the whole backend for those strings returns nothing outside the
-Markdown files. They were never implemented.
+**Events that do not exist.** `stage_progress`, `evidence_card`, and `pipeline_complete` are not
+event names in this system. Searching the whole backend for those strings returns nothing outside
+the Markdown files.
 
 **The frontend fallback.** If the live connection errors, `usePipelineSSE.js` starts asking the
 status endpoint every 2500 milliseconds. That interval is in the frontend code. The server's own
@@ -417,8 +415,8 @@ This endpoint also accepts `.webp`, which the inspection endpoint does not.
 Uploading computes the image fingerprint, adds it to the FAISS index, and looks for a matching
 region template file in `backend/data/roi_templates/`.
 
-**The old documentation missed** the `POST /api/v1/products` JSON endpoint entirely, and did not
-mention that the upload field is named `image`.
+There are two ways to add a reference image: the multipart `POST /api/v1/products/upload` form, and
+the `POST /api/v1/products` JSON endpoint that registers an image by file path.
 
 ## 8. Suppliers - `/vendors`
 
@@ -456,7 +454,7 @@ column. Sending it returns success and does nothing. See
 
 **List query parameters:** `vendor_id`, `verdict`, `policy_action`, `page`, `page_size`, `limit`.
 
-There is no `date_range` parameter. The old documentation mentioned one; it does not exist.
+There is no `date_range` parameter.
 
 **Two things to know:**
 
@@ -468,18 +466,16 @@ There is no `date_range` parameter. The old documentation mentioned one; it does
   delete in the project is admin-only. See [KNOWN_ISSUES.md](KNOWN_ISSUES.md) issue 11.
 
 **About the PDFs themselves.** They are real, generated with ReportLab, and contain text and tables.
-They are **not** signed, not hashed, and contain no images. The old documentation described a
-SHA-256 hash stamp, a chain-of-custody signature block, and side-by-side comparison images with
-bounding boxes. The signature table is drawn as text, but no hashing happens anywhere in the
-backend, and no images are embedded.
+They are **not** signed, not hashed, and contain no images. There is no SHA-256 hash stamp and no
+embedded comparison images with bounding boxes. The signature table is drawn as text, but no hashing
+happens anywhere in the backend, and no images are embedded.
 
 **Download filenames** come from the case number, and the frontend saves the file as
 `inspection-report-<first 8 characters of the id>.pdf`.
 
 ## 10. Analytics - `/analytics`
 
-Every response except `summary` is wrapped in an object with an `items` list. The old documentation
-showed bare arrays.
+Every response except `summary` is wrapped in an object with an `items` list, not a bare array.
 
 | Path | What it returns |
 |---|---|
@@ -496,7 +492,7 @@ locations and trend. These are hidden from the API documentation page.
 **`summary` fields:** `total_inspections`, `fraud_detected_count`, `fraud_rate_pct`,
 `pending_reviews_count`, `accepted_count`, `quarantined_count`, `avg_confidence_pct`.
 
-There is no `active_vendors` field. The old documentation listed one.
+There is no `active_vendors` field.
 
 **Supplier risk item fields:** `vendor_id`, `vendor_name`, `total_inspections`, `fraud_count`,
 `fraud_rate_pct`, `risk_level`. The risk level is `LOW`, `MEDIUM`, or `HIGH`. An item is `HIGH` if
@@ -513,12 +509,11 @@ name, `period` is day-level, formatted like `"Sep 24"`, not `"2026-09"`.
 `approved_count`, `overridden_count`.
 
 **Who sees what:** an `admin` sees everything. An `operator` is quietly limited to inspections they
-created themselves. The old documentation did not mention this at all.
+created themselves. This filtering is not obvious from the route definition and is easy to miss.
 
 ## 11. System - `/system` and root
 
-The old documentation had a whole section here describing a health endpoint and a tunnel endpoint.
-**Neither exists.** This is the actual situation.
+There are only three system-level routes:
 
 | Method | Path | Access | Response |
 |---|---|---|---|
@@ -526,7 +521,7 @@ The old documentation had a whole section here describing a health endpoint and 
 | `GET` | `/health` | public | `{"status": "healthy", "app": "VisionForge-AI", "version": "0.1.0"}` |
 | `GET` | `/api/v1/system/network` | login needed | `{"ip": "192.168.1.42", "hostname": "factory-pc-04"}` |
 
-**Things the old documentation claimed that are not real:**
+**Endpoints and fields that are not real:**
 
 - `GET /api/v1/system/health` — does not exist. The real one is `GET /health`, at the server root,
   not under `/api/v1`.
@@ -536,19 +531,18 @@ The old documentation had a whole section here describing a health endpoint and 
 - A field called `yolo_model` — does not exist.
 - `GET /api/v1/system/tunnel-url` — does not exist. The public tunnel address is a frontend build
   setting, not a backend endpoint.
-- The field was called `app_name`. The real field is `app`.
+- The field is called `app`, not `app_name`.
 
-The `/system/network` endpoint is the only route in that file, and the old documentation did not
-mention it at all.
+`/system/network` is the only route in that file.
 
 **Also on the server root:** `/docs`, `/redoc`, and `/openapi.json`, all public. Plus two static file
 serves at `/static/uploads` and `/static/golden`.
 
-## 12. Routes the old documentation got wrong
+## 12. Routes people assume exist
 
 A quick list, so nothing is a surprise:
 
-| Old documentation said | Reality |
+| Assumed | Reality |
 |---|---|
 | Errors include `error_code` and `timestamp` | Only `detail` |
 | Create inspection returns `image_count` and `created_at` | Returns `id`, `case_number`, `status`, `message` |

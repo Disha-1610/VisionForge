@@ -9,11 +9,11 @@
 
 This section describes what is actually built, including the parts that are not built yet.
 
-**Two of the security claims in the old documentation are not true at all:**
+**Two things that are often assumed but are not true here:**
 
-- It said evidence records are permanent and cannot be changed or deleted. **Nothing enforces
-  that**, and deleting an inspection does delete its evidence.
-- It said reports are stamped with a SHA-256 hash to prove they were not altered. **There is no
+- **Evidence records are not permanent and cannot be assumed unchangeable.** Nothing enforces
+  that, and deleting an inspection does delete its evidence.
+- **Reports are not stamped with a SHA-256 hash to prove they were not altered.** **There is no
   hashing anywhere in the backend.** The module that would need it is not even imported.
 
 Both are covered below and in [KNOWN_ISSUES.md](KNOWN_ISSUES.md).
@@ -168,8 +168,8 @@ or to change the signing key, which logs everyone out.
 ### Medium: the tunnel URL is written in plain text
 
 `frontend/.env` holds the public tunnel address, and `frontend/.tunnel.url` holds it again. The
-tunnel exposes the whole development server, not just the inspection page. An old claim that the
-tunnel was "only exposed to authenticated operators through dynamic QR codes" was wrong.
+tunnel exposes the whole development server, not just the inspection page. It is not restricted to
+authenticated operators.
 
 ### Medium: the tunnel runs the development server
 
@@ -182,9 +182,9 @@ as one.
 `backend/app/utils/file_utils.py` checks that the filename ends in an allowed extension, then
 saves the file under a fresh random name. It does not look at the contents.
 
-**The old documentation claimed file type validation using a magic byte library, and a 15 MB size
-limit on each image.** Neither exists. `python-magic` is not installed and not imported, and there
-is no size check anywhere in the upload path.
+**There is no file content validation and no upload size limit.** `python-magic` is not installed
+and not imported, and there is no size check anywhere in the upload path. A 15 MB per-image limit
+does not exist.
 
 There is good news here, though. The check is against a fixed list of image extensions, the file is
 renamed to a generated UUID, and the stored name is built from that UUID rather than from anything
@@ -205,23 +205,19 @@ security.
 
 **Genuinely absent, not just weak:**
 
-| Missing | What the old documentation said |
+| Missing | Notes |
 |---|---|
-| File content validation | "Magic byte validation using python-magic" |
-| Upload size limit | "A maximum of 15 MB per image" |
-| Rate limiting | Not mentioned |
-| Evidence immutability enforcement | "Append-only and immutable. The record cannot be edited" |
-| Report signing or hashing | "Cryptographic SHA-256 stamping, logged in the database" |
-| Rejecting wildcard origins in production | "Wildcard origins are explicitly rejected in production mode" |
-| A health endpoint that reports component status | "Reports database, vector index, and model status" |
-| CSRF protection | Not mentioned. Worth noting, since the access token is kept in local storage rather than a cookie, which is the usual reason CSRF matters less |
+| File content validation | Extension check only. No magic byte validation |
+| Upload size limit | None. No size check anywhere in the upload path |
+| Rate limiting | Not present on any endpoint |
+| Evidence immutability enforcement | No trigger or constraint. Deletes happen through the cascade from inspections |
+| Report signing or hashing | No hashing in the backend at all |
+| Rejecting wildcard origins in production | The allowed origins are a plain list, and the middleware takes whatever is in it. No `*` check |
+| A health endpoint that reports component status | The only health check returns the service name and version |
+| CSRF protection | Not present. Worth noting, since the access token is kept in local storage rather than a cookie, which is the usual reason CSRF matters less |
 | Security headers | None are set. No strict transport security, no content type policy, no frame options |
-| Audit log | The old documentation listed an `AuditLog` table. No such table exists |
+| Audit log | No audit trail table exists |
 | Input length limits on text fields | None, beyond what the database column widths impose |
-
-**On the wildcard origins claim:** the allowed origins are a plain list in the settings, and the
-middleware takes whatever is in that list. There is no check for a `*` entry. If someone put a
-wildcard in the settings, it would be accepted.
 
 **On the health endpoint:** the only health check returns the service name and version. It does not
 report whether the database, the vector index, or the model loaded successfully. So a deployment

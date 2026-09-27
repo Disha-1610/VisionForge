@@ -18,7 +18,7 @@
 8. [The AI judge](#8-the-ai-judge)
 9. [Spreading the load between cloud providers](#9-spreading-the-load-between-cloud-providers)
 10. [When things go wrong](#10-when-things-go-wrong)
-11. [What the old documentation got wrong](#11-what-the-old-documentation-got-wrong)
+11. [Easy things to get wrong](#11-easy-things-to-get-wrong)
 
 ---
 
@@ -80,9 +80,8 @@ Every specialist returns the same structure, so the pipeline can treat them iden
 **This structure is frozen**, meaning it cannot be changed after it is created. That is a deliberate
 choice: once a finding is recorded, nothing can quietly alter it later.
 
-**Two corrections to the old documentation.** It listed the fields as `agent_id`,
-`component_class`, `anomaly_score`, and `finding_summary`. None of those exist. And it showed
-`detector_name` as `"paddle_ocr"` — the real values are `ocr_agent`, `opencv_match_template`, and
+**Field names that do not exist in this codebase:** `agent_id`, `component_class`, `anomaly_score`,
+and `finding_summary`. The real `detector_name` values are `ocr_agent`, `opencv_match_template`, and
 `structural_ssim`.
 
 ## 4. The OCR specialist
@@ -102,9 +101,9 @@ Reads text and compares it against what the reference says it should say.
 
 **EasyOCR.**
 
-**The old documentation said PaddleOCR was the primary reader, with EasyOCR as the fallback. That is
-backwards in practice.** PaddleOCR is not in the requirements file, so in any clean install the
-import fails and EasyOCR always runs. The import is wrapped in a try and except, so this happens
+PaddleOCR is written in the code as the intended primary, with EasyOCR as the fallback, but this is
+backwards in practice. PaddleOCR is not in the requirements file, so in any clean install the
+import fails and **EasyOCR always runs**. The import is wrapped in a try and except, so this happens
 silently.
 
 If PaddleOCR is added later, the code calls it using an older version of its API, so that call would
@@ -112,34 +111,28 @@ need updating too. See [KNOWN_ISSUES.md](KNOWN_ISSUES.md) issue 13.
 
 ### How the comparison actually works
 
-This is where the old documentation was most wrong.
-
-**It described a Levenshtein distance formula:**
+**There is no edit distance function in this project.** Do not expect a Levenshtein formula such as:
 
 ```
 similarity = 1 - (edit_distance / longest_length)
 ```
 
-**There is no edit distance function in this project.** The code uses Python's built-in
+The code uses Python's built-in
 `difflib.SequenceMatcher`, which compares how the two strings line up in blocks. It is a different
-algorithm with different behaviour.
-
-**The worked example in the old documentation does not work either.** It showed a comparison scoring
-about 0.76 and being flagged as a defect. Under the algorithm actually used, that same pair scores
-around 0.94, which is above the 0.85 threshold, so **it would not be flagged.** The old example
-described a result the code cannot produce.
+algorithm with different behaviour, and the scores are not interchangeable. A pair that an edit
+distance would score around 0.76 scores around 0.94 here, which is above the 0.85 threshold, so
+**it is not flagged.**
 
 **Character-level differences** are also reported. When two strings differ, the code lists which
 positions changed and what the expected and actual characters were. This is a straightforward
 position-by-position comparison, not an edit distance.
 
-**The old documentation claimed the reader normalises common confusions**, such as treating the
-letter O and the digit zero as the same. It does not. The only normalisation applied is collapsing
-repeated whitespace and converting to upper case.
+**There is no confusion normalisation.** The letter O and the digit zero are not treated as the
+same. The only normalisation applied is collapsing repeated whitespace and converting to upper case.
 
-### The "not sure" case, which the old documentation left out
+### The "not sure" case
 
-**This is the most important behaviour in this specialist, and it was not documented.**
+**This is the most important behaviour in this specialist.**
 
 If neither the uploaded region nor the reference region yields any readable text, the specialist
 returns:
@@ -164,17 +157,15 @@ Checks that safety logos, seals, and stamps match the reference.
    these two patches of pixels look, regardless of brightness".
 4. If the score is below **0.80**, it is reported as a discrepancy.
 
-### The old description of this was wrong in two ways
+### Two details people often assume wrongly
 
-**It said the matching is "multi-scale", testing the template at several sizes to handle rotation and
-scaling.** There is no multi-scale loop. **A single `cv2.matchTemplate` call is made.** If the
-template is not the same size as the region, the code resizes it and tries once more, but there is no
-scale sweep.
+**The matching is not multi-scale.** There is no scale sweep, and nothing here handles rotation. **A
+single `cv2.matchTemplate` call is made.** If the template is not the same size as the region, the
+code resizes it and tries once more, and that is the only second attempt.
 
-**It described a two-tier calibration, saying a score of 0.88 or above is perfect and below 0.70 is
-a defect.** There is one threshold and it is 0.80. Neither 0.88 nor 0.70 is a setting in this
-specialist. The 0.70 figure appears in the judge, not here, which is likely where the old
-documentation picked it up.
+**There is one threshold, and it is 0.80.** There is no two-tier calibration, and 0.88 is not a
+setting in this specialist. The 0.70 figure that appears in this codebase belongs to the judge, not
+here.
 
 ### Two fallbacks worth knowing about
 
@@ -199,8 +190,8 @@ reported as different and the detection half is skipped.
 compared against the count in the reference.
 
 **Which SSIM is used.** The code prefers the `scikit-image` implementation, and falls back to a
-hand-written OpenCV version if that library is missing. The old documentation described this as
-"OpenCV SSIM" throughout, which is the less accurate of the two.
+hand-written OpenCV version if that library is missing. OpenCV is the less accurate of the two, and
+it is only reached when `scikit-image` is unavailable.
 
 ### The YOLO model
 
@@ -233,14 +224,13 @@ The comparison produces one of three statuses:
 | `extra` | More components found than expected |
 | `match` | The counts agree within tolerance |
 
-**The old documentation described "four-mode reasoning", including a fourth mode called position
-drift that compared the distance between where a component was found and where it should be.** There
-is no position comparison anywhere in the code. The agent has three statuses, and the third is
-"match", not "count divergence".
+**There are three statuses, and there is no position comparison anywhere in the code.** Do not
+expect a fourth "position drift" mode that measures the distance between where a component was found
+and where it should be. The third status is `match`, not "count divergence".
 
-Interestingly, the file's own comment at the top makes the same claim as the old documentation, which
-is probably where it came from. The judge also has a branch for a status the agent never produces,
-which is dead code.
+Worth knowing: the agent file's own comment at the top describes a position-comparison mode that the
+code does not implement, and the judge has a branch for a status the agent never produces, which is
+dead code.
 
 ## 7. The VLM specialist
 
@@ -254,9 +244,8 @@ cracks, discoloration.
 | Providers | Google Gemini 2.5 Flash, and Groq Qwen 3.8 27B |
 | How they are shared | Alternating, by region number |
 
-**The old documentation said "Gemini 3.5 Flash".** There is no such model. The configured value is
-`gemini-2.5-flash`. This wrong name appears in several documents and even in a code comment, and
-almost certainly came from a stale line in the example environment file.
+**The configured value is `gemini-2.5-flash`.** There is no "Gemini 3.5 Flash" model. That name
+appears in the example environment file and in a code comment, and it is wrong.
 
 ### What it sends
 
@@ -280,7 +269,7 @@ almost certainly came from a stale line in the example environment file.
 
 The code enforces this structure strictly. A reply that does not fit is treated as a failure.
 
-### Two details the old documentation missed
+### Two details worth knowing
 
 - Replies are capped at 1,024 tokens.
 - If the first attempt fails, the code retries once with different image contrast settings before
@@ -306,7 +295,7 @@ specialist about what it saw, because it never saw anything.
 | 2 | Google Gemini 2.5 Flash | If Groq fails |
 | 3 | A fixed set of rules in the code | If both cloud services fail |
 
-**The third tier is the important one, and the old documentation did not mention it exists.** It is
+**The third tier is the important one, and it is easy to miss.** It is
 a small block of ordinary code that looks at the fraud score and the fraud category and produces a
 verdict without calling anything. It is tested.
 
@@ -330,10 +319,9 @@ is a real inconsistency, listed in [PIPELINE.md](PIPELINE.md).
 }
 ```
 
-Five fields. **The old documentation showed `root_cause` and `risk_assessment`.** The real field is
-`root_cause_reasoning`, and there is no `risk_assessment` field anywhere in the project. It also
-showed a `risk_level` field with values like `LOW`, `MEDIUM`, `HIGH`, `CRITICAL`. That does not
-exist either.
+Five fields. The real field is `root_cause_reasoning`. There is no `root_cause` field, no
+`risk_assessment` field anywhere in the project, and no `risk_level` field with values like `LOW`,
+`MEDIUM`, `HIGH`, or `CRITICAL`.
 
 Verdicts are lowercase: `accept`, `reject`, `review`, `pending`.
 
@@ -344,17 +332,17 @@ category mismatch, the location, the authenticity score and flag, the reference 
 fraud score, the primary fraud category, a list of detected issues, a bulleted summary from each
 specialist, and a per-region summary.
 
-**The old documentation said it receives "the complete list of structured evidence cards" along with
-the supplier's identity and historical risk rating.** It receives neither. The supplier is not named
-in the judge's context, and there is no historical risk information in the model at all.
+**The supplier is not named in the judge's context**, and there is no historical risk information in
+the model at all. If a diagram suggests the judge receives the complete list of structured evidence
+cards along with the supplier's identity and risk rating, that is not what happens.
 
 ### The system prompt
 
 The real prompt is short. It instructs the model to return the five fields, to be specific and
 factual, to cite the specialist findings that support the verdict, and not to invent measurements.
 
-**The old documentation included a quoted prompt with different fields and a `risk_level` output.**
-That quoted prompt was not the prompt in the code.
+Any prompt text you see quoted elsewhere with different fields and a `risk_level` output is not the
+prompt in the code.
 
 ## 9. Spreading the load between cloud providers
 
@@ -365,11 +353,10 @@ Two cloud providers are used so a problem with one does not stop inspections.
 **For image analysis**, regions are dealt out alternately between the two providers. Even-numbered
 regions go to one, odd-numbered to the other, so roughly half go to each.
 
-There is a second, independent alternating counter inside the shared client, so the choice is a
-blend of the region number and a global counter. The old documentation described only the first.
+There is a second, independent alternating counter inside the shared client, so the actual choice is
+a blend of the region number and a global counter, not a pure even/odd split.
 
-**For the judge**, Groq is always tried first and Gemini second. The old documentation claimed the
-opposite in three separate places.
+**For the judge**, Groq is always tried first and Gemini second. Gemini is not the primary.
 
 ### Timeouts and retries
 
@@ -380,9 +367,8 @@ opposite in three separate places.
 | First wait between attempts | 1.0 second |
 | Longest wait between attempts | 8.0 seconds |
 
-**The old documentation said the timeout was 8 seconds in one place and 10 seconds in another.** Both
-were in the same file. The 10 second figure is the real timeout. The 8 second figure is the longest
-wait between retries, which is a different thing.
+**The timeout is 10 seconds.** The 8 second figure is the longest wait between retries, which is a
+different setting. They are easy to mix up.
 
 **What triggers a switch to the other provider:**
 
@@ -390,15 +376,15 @@ wait between retries, which is a different thing.
 - A network failure.
 - Taking longer than 10 seconds.
 
-**The old documentation described a "fast-fail" that switches providers in under 180 milliseconds.**
-There is no such timed fast path. Failover happens when a call actually fails, not on a timer.
+**There is no timed "fast-fail" path.** Failover happens when a call actually fails, not on a timer.
+No 180 millisecond switch exists.
 
-**Two other claims from the old documentation that are not real:**
+**Two things that are not in this codebase at all:**
 
-- That artificial waiting calls were removed to cut latency from 125 seconds. **No such code ever
-  existed.** There is no 1.2 second wait anywhere in the project.
-- That the client guarantees a specific token count per crop to stay inside a rate limit. There is no
-  token counting in the code.
+- There is no 1.2 second wait anywhere in the project, and no artificial waiting call that was
+  removed. No such code ever existed.
+- The client does not count tokens per crop to stay inside a rate limit. There is no token counting in
+  the code.
 
 ## 10. When things go wrong
 
@@ -419,38 +405,36 @@ dimension does not match the index, the code raises a clear error rather than co
 judge has its offline tier. Structural, label, and OCR analysis are all local and unaffected. This
 means a demo works out of the box.
 
-## 11. What the old documentation got wrong
+## 11. Easy things to get wrong
 
 Collected here so nothing is a surprise.
 
-| Old claim | Reality |
+| Common assumption | What this project actually does |
 |---|---|
 | Levenshtein distance for text comparison | Uses `difflib.SequenceMatcher`, a different algorithm |
-| The worked OCR example scores 0.76 and is flagged | It scores about 0.94 and is **not** flagged |
-| Normalises O/0 and I/1 confusions | Only collapses whitespace and upper-cases |
+| An OCR comparison scoring 0.76 gets flagged | It scores about 0.94 and is **not** flagged |
+| Text reading normalises O/0 and I/1 confusions | Only collapses whitespace and upper-cases |
 | PaddleOCR is the primary reader | Not installed. EasyOCR always runs |
 | Multi-scale template matching at 0.90 to 1.10 | One single matching call |
 | Label thresholds of 0.88 perfect and 0.70 defect | One threshold: 0.80 |
-| OpenCV SSIM as the engine | Uses `scikit-image` first, OpenCV as fallback |
-| Four-mode reasoning including position drift | Three statuses. No position comparison |
-| "Gemini 3.5 Flash" | `gemini-2.5-flash`. No such 3.5 model |
-| Judge returns `root_cause` and `risk_assessment` | Returns `root_cause_reasoning`. No `risk_assessment` |
-| Judge has a `risk_level` field | Does not exist |
-| A quoted judge system prompt | Not the prompt in the code |
-| Judge gets full evidence records and supplier risk | Gets a text summary, with no supplier information |
+| OpenCV SSIM is the engine | Uses `scikit-image` first, OpenCV as fallback |
+| Four reasoning modes including position drift | Three statuses. No position comparison |
+| The VLM model is "Gemini 3.5 Flash" | `gemini-2.5-flash`. No such 3.5 model |
+| The judge returns `root_cause` and `risk_assessment` | Returns `root_cause_reasoning`. No `risk_assessment` |
+| The judge has a `risk_level` field | Does not exist |
+| The judge receives full evidence records and supplier risk | Receives a text summary, with no supplier information |
 | Gemini is primary, Groq is backup for the judge | Groq is primary, Gemini is backup |
-| An 8-second timeout | 10 seconds. The 8 seconds is the retry backoff cap |
-| Fast-fail in under 180 milliseconds | No timed fast path exists |
+| The call timeout is 8 seconds | 10 seconds. The 8 seconds is the retry backoff cap |
+| There is a fast-fail in under 180 milliseconds | No timed fast path exists |
 | A 1.2 second wait was removed | Never existed |
 | A 1,000 token per-crop cap | No token counting exists |
-| A table of per-specialist latency and memory | Never measured |
-| A deterministic conflict-resolution table between specialists | Does not exist. The judge just reads all findings |
+| Per-specialist latency and memory are known | Never measured |
+| There is a deterministic conflict-resolution table between specialists | Does not exist. The judge just reads all findings |
 | Evidence card fields `agent_id`, `component_class`, `anomaly_score`, `finding_summary` | Real fields are listed in section 3 |
 | Intake accepts multi-angle photo arrays | A flat list of strings. No multi-angle handling |
 | Four specialists all run at once, once | Two passes. See [PIPELINE.md](PIPELINE.md) |
-| The offline judge fallback | Never mentioned. This is the most useful part of the design |
 
-**Not mentioned anywhere in the old documentation, but real and important:**
+**The easily missed behaviours, all real and all important:**
 
 - The OCR specialist's "not sure, report no defect" behaviour.
 - The judge's rule-based offline tier.

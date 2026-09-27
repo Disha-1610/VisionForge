@@ -181,8 +181,8 @@ Both return a successful response, so a caller believes the change was applied w
 committed and should only ever contain placeholders.
 
 Also, `backend/.env.example` is out of date in one place: it says `gemini-3.5-flash` where the
-code uses `gemini-2.5-flash`. This stale value appears to be where several wrong model names in
-the old documentation came from.
+code uses `gemini-2.5-flash`. This stale value is easy to pick up by mistake when writing
+documentation or answering questions.
 
 **Where it is:** `backend/.env`, `backend/.env.example`, `frontend/.env`.
 
@@ -195,8 +195,8 @@ keys are not live, and rotate them if they were ever pushed.
 
 **Severity: Low for a demo, High for a compliance story.**
 
-The documentation used to claim that evidence records are permanent and cannot be changed or
-deleted. That is not true.
+**Evidence records are not permanent.** They can be changed or deleted, and the model file's comment
+about append-only storage is not backed by a rule.
 
 - No database trigger, rule, or constraint stops an `UPDATE` or `DELETE` on the `evidence` table.
   The "append-only" rule is a comment in the model file, not a rule.

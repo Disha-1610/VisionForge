@@ -10,9 +10,8 @@
 **This project has never measured how accurate this model is.**
 
 There is no evaluation file, no results spreadsheet, no confusion matrix, no training log, and no
-training script in this repository. Earlier versions of this document quoted accuracy figures such
-as 88.4% and 98.4%. **Neither can be supported.** There is nothing in the repository that would let
-anyone reproduce or check them.
+training script in this repository. **No accuracy figure can be supported.** There is nothing in the
+repository that would let anyone reproduce or check one.
 
 **Do not quote an accuracy figure for this model.** If you need one, run an evaluation and record
 it. The command is in [How to evaluate it](#6-how-to-evaluate-it).
@@ -30,7 +29,7 @@ classes, how it is called, and the dataset it came from.
 4. [How the model is called](#4-how-the-model-is-called)
 5. [How the counts are compared](#5-how-the-counts-are-compared)
 6. [How to evaluate it](#6-how-to-evaluate-it)
-7. [What the old documentation claimed](#7-what-the-old-documentation-claimed)
+7. [Unsupported performance claims](#7-unsupported-performance-claims)
 8. [What is not known about this model](#8-what-is-not-known-about-this-model)
 
 ---
@@ -81,7 +80,8 @@ project substitutes a fake model that returns hard-coded results.
 | 7 | `gold_pin_connector` | The gold contact edge on a RAM module |
 
 These 8 names match the dataset configuration file exactly. There is no mismatch between the model
-and the data it came from.
+and the data it came from. Names like "solder joints", "barcodes", or "missing-component slots" are
+not classes in this model.
 
 **Two notes on the class list:**
 
@@ -93,9 +93,6 @@ of each compared to the other classes.
 containing gold pin connectors in total, and **all of them are in the training and validation splits.
 The test split contains zero.** So the model has never been checked on a held-out example of that
 class. Any claim about how well it detects gold pin connectors is unsupported.
-
-**The old documentation said the classes were "solder joints, seals, barcodes, and missing-component
-slots".** None of those are classes in this model.
 
 ## 4. How the model is called
 
@@ -119,15 +116,15 @@ recalled batch.
 So the model is deliberately over-eager. It finds more candidates than a normal detector would. The
 count comparison, not the detection, is what decides whether a region is a problem.
 
-**The old documentation said 0.20 was a "calibrated threshold" chosen by testing.** There is no
-record of any such calibration. It is a value in the code with a comment. That is a reasonable
-choice, but calling it calibrated implies a process that did not happen.
+**0.20 is a chosen value, not a calibrated one.** There is no record of any calibration
+process behind it. It is a value in the code with a comment. That is a reasonable choice, but
+calling it calibrated would imply a process that has not happened.
 
 ### The image size is not set
 
-The code does not pass a size argument, so the library uses its own default. The old documentation
-said 640x640 with letterbox resizing. That may match the library default, but it is not specified in
-this project's code, and it was not verified.
+The code does not pass a size argument, so the library uses its own default. 640x640 with letterbox
+resizing may match that library default, but this project does not specify it, and it has not been
+verified here.
 
 ## 5. How the counts are compared
 
@@ -149,16 +146,14 @@ detected area, so a region with more parts has more room before a difference cou
 2. **Count only if different.** If the similarity dropped below 0.80, run the model and compare
    counts.
 
-**This ordering is what the old documentation missed when it described "four-mode reasoning".** The
-real logic is a cheap check gating an expensive one.
+**This ordering matters: the real logic is a cheap check gating an expensive one.** There is no
+"four-mode reasoning" engine, and no position-comparison mode.
 
 ### The AI double-check
 
 After the specialists run, a second pass sends every region the structural specialist handled to the
-VLM specialist. So the AI looks at the same regions with a different tool and can disagree.
-
-**The old documentation showed a single four-way parallel split and never mentioned the second pass
-at all.**
+VLM specialist. So the AI looks at the same regions with a different tool and can disagree. This
+second pass is easy to overlook when reading the stage as a single parallel split.
 
 ## 6. How to evaluate it
 
@@ -187,19 +182,22 @@ down with the date and the command, so the next person can reproduce them.
 - **Gold pin connectors have no test examples.** The per-class average will silently skip that class.
   Say so, rather than letting it look like the model handles all 8.
 
-## 7. What the old documentation claimed
+## 7. Unsupported performance claims
 
-| Claim | Reality |
+If you are asked about this model's accuracy, these are the figures that sometimes get quoted, and
+what the repository actually supports:
+
+| Claimed figure or claim | What the repository supports |
 |---|---|
 | Accuracy improved from 74.2% to 88.4% | No metrics file exists to support either number |
-| Accuracy of 98.4% | Also unsupported, and contradicts the 88.4% in another document |
+| Accuracy of 98.4% | Also unsupported, and contradicts the 88.4% quoted elsewhere |
 | Precision dropped to 64% during consolidation | Unsupported |
 | Class oscillation fell from 18.4% to 1.2% | Unsupported |
 | False positives fell from 14.8 to 1.6 per 100 boards | Unsupported |
 | Box loss fell from 1.84 to 0.62 | No loss curves exist |
 | Class loss fell from 2.14 to 0.28 | No loss curves exist |
 | DFL loss fell to 0.84 | No loss curves exist |
-| Per-class test accuracy table | No evaluation script, no confusion matrix, no per-class results file |
+| A per-class test accuracy table | No evaluation script, no confusion matrix, no per-class results file |
 | Training used 100 epochs, batch 32, AdamW, specific learning rates | No training script and no training log in the repository |
 | The dataset went from 10 classes to 8 | The data file only ever declared 8. No 10-class version exists |
 | A pre-merge model of 5.9 MB | No such file exists |
@@ -208,10 +206,10 @@ down with the date and the command, so the next person can reproduce them.
 | Features expand 8x to 12x under magnification | The region files have no magnification or scale settings at all |
 
 **On the 74.2% to 88.4% figure specifically:** even taken at face value, going from 0.742 to 0.884 is
-a 19.1% relative increase, not the 14.2% the old document claimed. The document mixed up
-percentage points with percent.
+a 19.1% relative increase, not a 14.2% one. Claims of that kind mix up percentage points with
+percent.
 
-**Two claims that turned out to be true:**
+**Two things about this model that are checkable and true:**
 
 - The model file is about 5.2 MB.
 - The detection confidence really is 0.20.
@@ -226,9 +224,8 @@ Being clear about the gaps, because they matter if you are asked about this mode
 a finished artefact, with no record of how it was produced.
 
 **Dataset provenance is undocumented.** The data file does not say where the images came from, and
-there are no licence files, download scripts, or source records in the repository. An earlier version
-of the documentation named five public datasets as sources and described a cleaning process that
-merged classes and removed duplicates. **None of that can be checked.** For a project that would
+there are no licence files, download scripts, or source records in the repository. No cleaning or
+merging process is recorded. For a project that would
 ever be used commercially, the licence position on the training images needs to be established.
 
 **Some training images are of poor quality.** The dataset contains images as small as 153x287 pixels.
@@ -241,8 +238,8 @@ trained on that will be much better at the common classes. The dataset details a
 [DATASET.md](DATASET.md).
 
 **No augmentation record.** No training configuration exists, so the augmentation settings used are
-unknown. An earlier document listed specific values and also claimed a 94% reduction in false
-alarms, which cannot be checked.
+unknown. Any specific augmentation values, or any claimed reduction in false alarms, cannot be
+checked against the repository.
 
 **Gold pin connectors are untested.** No held-out examples exist.
 

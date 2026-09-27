@@ -13,8 +13,6 @@
 
 Across **23 test files**. The test suite is genuinely good, and running it is fast.
 
-**The old documentation said 203 tests.** The real number is 204.
-
 ## Table of contents
 
 1. [How to run the tests](#1-how-to-run-the-tests)
@@ -23,7 +21,7 @@ Across **23 test files**. The test suite is genuinely good, and running it is fa
 4. [What the tests do well](#4-what-the-tests-do-well)
 5. [What the tests do not cover](#5-what-the-tests-do-not-cover)
 6. [The tools, and what is missing](#6-the-tools-and-what-is-missing)
-7. [What the old documentation got wrong](#7-what-the-old-documentation-got-wrong)
+7. [Claims not supported by the tests](#7-claims-not-supported-by-the-tests)
 
 ---
 
@@ -80,8 +78,8 @@ replaced with controlled stand-ins. **You can run the whole suite with the inter
 **The slow part is one test file.** `test_image_utils.py` has 31 tests, and the SSE timeout test
 deliberately waits out a 60 second limit. That accounts for most of the 75 seconds.
 
-**The old documentation said the suite runs in 12 to 15 seconds.** It takes about 73. The 60 second
-timeout test makes anything under a minute impossible.
+**The suite takes about 75 seconds, and one test is why.** The SSE timeout test
+deliberately waits out a 60 second limit, so anything under a minute is impossible.
 
 ## 3. What each test file covers
 
@@ -196,9 +194,9 @@ no test that would fail if the concurrency were removed and everything ran one a
 | No test for the tunnel, because it is not run automatically |
 | One test file for the whole of stage 5, the second most complex stage |
 
-**A note on the old documentation's claim about concurrency.** It said there was a test for
-specialists running together through `asyncio.gather`. **The concurrency is real in the
-production code, but no test checks it.** The test file exists and tests other things in that stage.
+**A note on concurrency, because it is easy to assume a test covers it.** The specialists genuinely
+do run at the same time, limited to 4 at once. **No test checks it.** The test file exists and
+tests other things in that stage.
 
 ## 6. The tools, and what is missing
 
@@ -213,43 +211,42 @@ production code, but no test checks it.** The test file exists and tests other t
 
 ### What is missing
 
-**There is no shared fixtures file.** No `conftest.py` exists, anywhere. The old documentation
-described one at length, said the cloud models were decoupled through it, and said tests ran against
-an in-memory database with automatic rollback. **None of that exists.** Each test file builds its
-own stand-ins.
+**There is no shared fixtures file.** No `conftest.py` exists, anywhere. There is no shared
+fixture that decouples the cloud models, and no fixture that runs tests against an in-memory
+database with automatic rollback. Each test file builds its own stand-ins.
 
 **There is no coverage tool.** `pytest-cov` is not installed and there is no coverage configuration
-file. The old documentation's command to check coverage would fail immediately, because the plugin
-it needs is not there.
+file. A command such as `pytest --cov=app --cov-fail-under=85` would fail immediately, because the
+plugin it needs is not there.
 
-**There is no linter for the backend.** No flake8, no ruff, no black. The old documentation gave a
-flake8 command. That would fail. The only linter in the project is `oxlint`, and it only runs on the
-frontend.
+**There is no linter for the backend.** No flake8, no ruff, no black. A command such as
+`flake8 app tests --max-line-length=120` would fail. The only linter in the project is `oxlint`, and
+it only runs on the frontend.
 
-**There is no type checker configured.** No mypy, no pyright. The old documentation described a
-continuous integration setup running a type checker. There is no such setup.
+**There is no type checker configured.** No mypy, no pyright.
 
 **There is no continuous integration.** No `.github` folder, no pipeline configuration file of any
-kind. **The old documentation described a full CI pipeline that does not exist**, and said those
-gates "must pass". Nothing runs automatically. Tests are run by a person.
+kind. Nothing runs automatically. Tests are run by a person.
 
 **There is no pytest configuration file** either. No `pytest.ini`, no `pyproject.toml`, no
 `setup.cfg`. The defaults are used, which works fine here because the tests live in one folder and
 follow a naming convention.
 
-## 7. What the old documentation got wrong
+## 7. Claims not supported by the tests
+
+Things people often say this suite covers, and what it actually covers:
 
 | Claim | Reality |
 |---|---|
 | 203 tests | **204** |
 | The suite runs in 12 to 15 seconds | About **75 seconds** |
 | A `conftest.py` exists with shared fixtures | **No such file exists** |
-| Cloud models decoupled through fixtures in `conftest.py` | Each test file builds its own stand-ins |
+| Cloud models are decoupled through fixtures in `conftest.py` | Each test file builds its own stand-ins |
 | Tests run against an in-memory SQLite database | No database is involved in any test |
-| Automatic transaction rollback | No such fixture |
+| There is automatic transaction rollback | No such fixture |
 | Append-only evidence persistence is tested | The in-memory store's save function does nothing. Nothing is persisted |
-| `pytest --cov=app --cov-fail-under=85` | Would fail. `pytest-cov` is not installed |
-| `flake8 app tests --max-line-length=120` | Would fail. flake8 is not installed |
+| `pytest --cov=app --cov-fail-under=85` works | Would fail. `pytest-cov` is not installed |
+| `flake8 app tests --max-line-length=120` works | Would fail. flake8 is not installed |
 | GitHub Actions runs the gates | **No CI configuration exists** |
 | Pytest 8.x | 8.0 or later required, 9.0.3 installed |
 | OCR tests cover PaddleOCR and EasyOCR | Only the stand-in reader is tested. PaddleOCR is not installed |
@@ -262,7 +259,7 @@ follow a naming convention.
 | The VLM test checks odd and even routing | That is tested in the LLM client file, not the VLM file |
 | LLM failover is tested from a 429 on Gemini | It is the other way round. The test drives a 500 on Groq falling back to Gemini |
 | The fusion test uses 9 clean at 0.05 and 1 failed at 0.88, expecting 0.80 | The real test uses 9 clean regions and one missing chip, expecting at least 0.75 |
-| Policy thresholds of 0.08, 0.45, and 0.88 | The real ones are 0.10, 0.45, and 0.78 |
+| Policy thresholds are 0.08, 0.45, and 0.88 | The real ones are 0.10, 0.45, and 0.78 |
 | The stage 5 test checks concurrent execution | It checks the quality gate, a missing template, region counts, and failure isolation |
 | The week 3 integration test runs all 8 stages | It runs stages 4 and 5 |
 | The auth test covers proactive token rotation | It covers password hashing, token issue, and expiry. There is no server-side rotation |
@@ -271,9 +268,10 @@ follow a naming convention.
 | The evidence store test covers database behaviour | Three in-memory tests. No database, no foreign keys |
 | The report test validates the PDF | The file never imports the reporting code |
 
-**What was correct:** the test folder, the count of 23 test files, the commands to build and lint,
-the two claims that are nearly right (the base agent's crash protection, and the graph shortcut),
-and the general shape of the coverage for stages 1 to 3, the region files, and the stage runners.
+**Solid ground to stand on:** the test folder, the count of 23 test files, the commands to build and
+lint, the two claims that are nearly right (the base agent's crash protection, and the graph
+shortcut), and the general shape of the coverage for stages 1 to 3, the region files, and the stage
+runners.
 
 ---
 

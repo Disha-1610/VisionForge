@@ -7,15 +7,13 @@
 
 ## Read this first
 
-**The old roadmap had a different problem from the other documents.** It did not describe this
-project. It described a different, larger one.
-
-It claimed a "production complete" phase one, a judge running in about 420 milliseconds, a
+**Scope warning.** The project's planning notes describe a much larger system than the one in this
+repository: a "production complete" phase one, a judge running in about 420 milliseconds, a
 TensorRT export that would cut inference from 15 ms to 3.8 ms, a federated vector mesh
 synchronising worldwide in under 5 minutes, and robotic arms ejecting boards from a conveyor. **None
 of that is in this repository, and none of it can be measured.**
 
-It also called the current version `v0.1.0-production`. **The version in the code is `0.1.0`, and the
+The notes also call the current version `v0.1.0-production`. **The version in the code is `0.1.0`, and the
 environment defaults to `development`.**
 
 So this document does three things: says plainly what exists, lists what the project itself has
@@ -101,8 +99,8 @@ it is the shortest distance between what is there and what works.**
 | **Vendor `is_active`** | The API accepts it | The column does not exist, so the change is silently dropped |
 | **`vendor_id` on golden images** | The API returns it | The column does not exist |
 | **PaddleOCR** | The code tries to import it | It is not in the requirements file, so it is never used |
-| **Report signing** | Claimed in the old docs | No hashing exists anywhere in the backend |
-| **Evidence permanence** | Claimed in the old docs | Nothing enforces it. Deleting an inspection deletes its evidence |
+| **Report signing** | Nothing exists | No hashing exists anywhere in the backend |
+| **Evidence permanence** | Nothing enforces it | Deleting an inspection deletes its evidence |
 | **The health check** | Returns the name and version | It does not check the database, the index, or the model |
 | **The judge** | Cloud model with a rule-based fallback | The fallback produces fixed reasoning. It is not a measurement of anything |
 
@@ -193,8 +191,8 @@ need a reference photo and a hand-written region file before it could be checked
 
 ## 7. The hardware ideas
 
-**The old roadmap had a detailed Phase 2 and Phase 3. It is reproduced here in outline, with no
-numbers, because none of it can be checked.**
+**The project's own planning notes describe a Phase 2 and a Phase 3 of hardware and edge work. It is
+reproduced here in outline, with no numbers, because none of it can be checked.**
 
 **Phase 2, described as edge and hardware integration:**
 
@@ -211,9 +209,9 @@ numbers, because none of it can be checked.**
 - Sharing fraud signatures between sites
 - Driving a pneumatic reject arm through a PLC relay
 
-**What to be clear about:** every number attached to these in the old document was invented.
-"Sub-5ms inference", "15 ms down to 3.8 ms", "under 5 minutes worldwide" — there is no measurement
-behind any of it, and the project has not done any of the work.
+**What to be clear about:** the project has not done any of this work, and no measurement exists to
+put a number on it. Figures like "sub-5ms inference", "15 ms down to 3.8 ms", or "under 5 minutes
+worldwide" have nothing behind them.
 
 **The first two items on Phase 2 are the only ones with a natural next step**, and only because the
 detector already exists as a standard PyTorch file that any export tool can read.
@@ -229,10 +227,8 @@ measured is how you get a system that confidently rejects good parts.
 
 ## 8. How to report a problem
 
-**The old document said to open a GitHub issue with the input image, the PDF, and the raw evidence
-JSON attached. Attaching the raw evidence payload is a good instinct and worth keeping.**
-
-For a bug in this project, the most useful things to include are:
+**Attaching the raw evidence payload alongside the input image and the PDF is a good instinct and
+worth keeping.** For a bug in this project, the most useful things to include are:
 
 | Include | Why |
 |---|---|

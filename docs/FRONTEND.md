@@ -17,7 +17,7 @@
 8. [Talking to the backend](#8-talking-to-the-backend)
 9. [The phone QR code](#9-the-phone-qr-code)
 10. [Bundle size](#10-bundle-size)
-11. [What the old documentation got wrong](#11-what-the-old-documentation-got-wrong)
+11. [Assumptions to drop](#11-assumptions-to-drop)
 
 ---
 
@@ -37,7 +37,7 @@ The whole flow is designed around one person standing at a receiving dock with a
 
 ## 2. Technology and versions
 
-**The old documentation said React 18 and Vite 5. Both are wrong.**
+**This is a modern stack: React 19 and Vite 8.**
 
 | | Installed version |
 |---|---|
@@ -48,8 +48,7 @@ The whole flow is designed around one person standing at a receiving dock with a
 | Tailwind CSS | 3.4.19 |
 | Node required | **20.19+ or 22.12+** |
 
-**Node 18 does not work.** Vite 8 requires a newer version. The old documentation said Node 18 was
-the minimum.
+**Node 18 does not work.** Vite 8 requires a newer version, which is why the minimum is 20.19+.
 
 ### Everything installed
 
@@ -110,10 +109,10 @@ Eight routes, defined in `src/App.jsx`.
 checks for a valid token and redirects to the login page if there is not one. Inside that shell sits
 a sidebar, a top bar, and the page itself.
 
-**There is no mobile page and no mobile route.** The old documentation described a phone intake
-view that uploaded to a desktop queue. That does not exist. When the QR code is scanned, the phone
-opens the same inspection page, and the person takes the photo and submits it on the phone like any
-other upload. **The two devices are independent browser sessions and nothing synchronises them.**
+**There is no mobile page and no mobile route, and no phone-to-desktop queue.** When the QR code is
+scanned, the phone opens the same inspection page, and the person takes the photo and submits it on
+the phone like any other upload. **The two devices are independent browser sessions and nothing
+synchronises them.**
 
 ## 4. Components
 
@@ -131,7 +130,7 @@ Nineteen components, in four folders.
 | `StatCard.jsx` | 53 | One number on the dashboard, with a label and an icon |
 | `StatusChip.jsx` | 50 | A coloured pill showing a status or verdict |
 
-**The old documentation listed five of these seven.** It missed `EmptyState` and `Logo`.
+Seven shared components in total.
 
 ### Inspection components — `components/inspection/`
 
@@ -146,9 +145,8 @@ Nineteen components, in four folders.
 | `ReviewModal.jsx` | 138 | The approve and override dialog |
 | `VerdictBanner.jsx` | 327 | The big result banner at the top of a result |
 
-**The old documentation listed four of these eight.** It missed `DesktopGuardModal`,
-`MarkdownText`, `ReviewModal`, and `VerdictBanner` — the last being the most prominent thing on the
-result page.
+Eight inspection components in total. `VerdictBanner` is the most prominent thing on the result
+page.
 
 ### Layout components — `components/layout/`
 
@@ -175,9 +173,8 @@ result page.
 **The AuthContext exposes:** `user`, `token`, `role`, `isAdmin`, `isOperator`,
 `isAuthenticated`, `loading`, `login`, `register`, `logout`.
 
-**The old documentation claimed there was a `useInspectionDetail` hook holding the current case in
-context.** There is no such hook. The inspection state is held in the page component, not in a
-shared context.
+**There is no `useInspectionDetail` hook, and no shared context for the current case.** The
+inspection state is held in the page component.
 
 ## 5. The look and feel
 
@@ -202,16 +199,12 @@ Defined once in `tailwind.config.js`:
 | `amber` | `#f59e0b` | Warning, review |
 | `muted` | `#94a3b8` | Secondary text |
 
-**These were correct in the old documentation.**
-
 ### The fonts
 
 | Use | Font |
 |---|---|
 | Everything | Outfit, falling back to Inter, then the system font |
 | Anything technical, such as case numbers and scores | JetBrains Mono |
-
-**Also correct in the old documentation.**
 
 ### Two animations
 
@@ -231,15 +224,12 @@ progress rail.
 **The fallback.** If the live connection drops, the hook starts asking the server for the status
 every **2,500 milliseconds** instead. This is in the frontend code, not the server.
 
-**The old documentation said the server sets that interval. It does not.** The server checks its own
-record every 500 milliseconds. The 2.5 seconds is entirely the browser's choice.
+**This 2.5 second interval is entirely the browser's choice.** The server does not set it. The
+server checks its own record every 500 milliseconds.
 
-### What the hook actually listens for
+### What the hook listens for
 
-**The old documentation said it listened for `stage_progress`, `evidence_card`, and
-`pipeline_complete`.** It does not. **None of those event names exist anywhere in the backend.**
-
-What the hook actually listens for:
+Three things only:
 
 | What | How |
 |---|---|
@@ -247,17 +237,17 @@ What the hook actually listens for:
 | The final result | An event named `verdict` |
 | A stream timeout | An event named `error` |
 
-**So the hook is correct and the old documentation was wrong.** The frontend and backend agree with
-each other. Only the documentation was out of step.
+**`stage_progress`, `evidence_card`, and `pipeline_complete` are not event names in this system.**
+None of them exist in the backend, and the frontend does not listen for them. The frontend and
+backend agree with each other on the three names above.
 
 ### What it tracks
 
 `currentStage`, `stageName`, `completedStages`, `status`, `verdict`, `policyAction`, `error`,
 `detail`, `isDone`.
 
-**The old documentation showed a single `evidenceCards` array with a reducer that appended each
-card as it arrived.** There is no such array and no such reducer. Cards are fetched once at the end,
-from the inspection record, not streamed.
+**Cards are not streamed.** There is no `evidenceCards` array and no appending reducer. Cards are
+fetched once at the end, from the inspection record.
 
 ### The bug worth knowing about
 
@@ -273,9 +263,8 @@ The fix is a small change on the server. See [KNOWN_ISSUES.md](KNOWN_ISSUES.md) 
 The API client reads the expiry time out of the access token and schedules a refresh **60 seconds
 before it expires.**
 
-**The old documentation said a fixed 29-minute timer.** There is no fixed timer. The client reads
-the actual expiry out of the token, which is better, because it survives a server change to the
-token lifetime.
+**There is no fixed refresh timer.** The client reads the actual expiry out of the token, which
+survives a server change to the token lifetime.
 
 ### Where the token lives
 
@@ -334,17 +323,16 @@ will take a better photo, and shows a QR code.
   a phone upload.
 - The camera uses the rear-facing camera where available.
 
-**Four corrections to the old documentation:**
+**Four things worth stating plainly:**
 
-- It said the backend starts the tunnel automatically. **It does not.** A person runs
-  `npm run tunnel`, and the tunnel process is a script in the frontend folder.
-- It said photos taken on the phone upload "directly to the desktop queue". They do not. The photo
-  is a file in the phone's browser, submitted the same way any other upload is.
-- It said the photo "appears in the desktop browser". **It does not.** The two devices are separate
-  sessions. If the operator wants the result on the desktop, they open the inspection there
-  afterwards.
-- It said the tunnel exposes only the inspection intake. **It exposes the whole development server**,
-  which is every page.
+- The tunnel is **not** started by the backend. A person runs `npm run tunnel`, and the tunnel
+  process is a script in the frontend folder.
+- A photo taken on the phone is a file in the phone's browser, submitted the same way any other
+  upload is. It does not go to a desktop queue.
+- The photo does **not** appear in the desktop browser. The two devices are separate sessions. If
+  the operator wants the result on the desktop, they open the inspection there afterwards.
+- The tunnel exposes **the whole development server**, which is every page, not just the inspection
+  intake.
 
 ## 10. Bundle size
 
@@ -357,45 +345,44 @@ Measured from the last production build in `frontend/dist`:
 | `index.html` | 0.8 KB | — |
 | `icons.svg` | 4.9 KB | — |
 
-**One JavaScript file, 284 KB gzipped.** The old documentation claimed "under 350 KB gzipped" with
-code splitting and lazy loading. The total happens to be in that range, but the mechanism is not
-there.
-
-**There is no code splitting.** There is no `React.lazy` anywhere in the project, and no dynamic
-import. Everything loads in one file, in one request.
+**One JavaScript file, 284 KB gzipped. There is no code splitting and no lazy loading.** There is no
+`React.lazy` anywhere in the project, and no dynamic import. Everything loads in one file, in one
+request.
 
 The obvious split points, if it were worth doing, are the routes. The analytics page pulls in Recharts,
 which is most of the weight, and nobody on the receiving dock needs it.
 
-## 11. What the old documentation got wrong
+## 11. Assumptions to drop
 
-| Claim | Reality |
+Things people commonly believe about this front end, and what it actually does:
+
+| Assumption | Reality |
 |---|---|
 | React 18.3 | **React 19.2.8** |
 | Vite 5.4 | **Vite 8.3.0** |
 | Node 18 minimum | **Node 20.19+ or 22.12+** |
 | A fixed 29-minute token timer | Reads the real expiry, refreshes 60 seconds early |
-| Listens for `stage_progress` | Listens for the default message handler |
-| Listens for `evidence_card` | No such event exists |
-| Listens for `pipeline_complete` | Listens for `verdict` |
+| The hook listens for `stage_progress` | Listens for the default message handler |
+| The hook listens for `evidence_card` | No such event exists |
+| The hook listens for `pipeline_complete` | Listens for `verdict` |
 | An `evidenceCards` array with an appending reducer | Does not exist. Cards are fetched at the end |
 | The backend starts a Cloudflare tunnel | A frontend script, started by a person |
 | A mobile intake page uploads to a desktop queue | No mobile route. The same page on a phone |
-| Synchronised zoom **and pan** | **There is no pan.** A shared zoom level only |
-| Bounding boxes drawn as SVG on a canvas | Plain absolutely positioned boxes over an image |
-| Green, red, and yellow boxes for pass, fail, and low confidence | Boxes are coloured by component type |
-| Hover tooltips on the boxes | The boxes cannot be clicked. No tooltips |
-| Client-side image dimension validation | Thumbnails are generated, but there is no size check |
-| A raw JSON drawer on the evidence card | Does not exist |
-| Filter reports by vendor, verdict, and date range | Free text search, a verdict filter, and a policy filter. No date range, no vendor dropdown |
-| Lazy loading and code splitting | One bundle, no lazy loading |
-| 7 shared and 4 inspection components | 7 shared and 8 inspection |
-| A `useInspectionDetail` hook | Does not exist |
-| The 2.5 second polling interval is set by the server | It is a frontend constant |
+| Zoom is synchronised **and pannable** | **There is no pan.** A shared zoom level only |
+| Bounding boxes are drawn as SVG on a canvas | Plain absolutely positioned boxes over an image |
+| Boxes are green, red, and yellow for pass, fail, and low confidence | Boxes are coloured by component type |
+| The boxes have hover tooltips | The boxes cannot be clicked. No tooltips |
+| Images are dimension-validated on the client | Thumbnails are generated, but there is no size check |
+| The evidence card has a raw JSON drawer | Does not exist |
+| Reports filter by vendor, verdict, and date range | Free text search, a verdict filter, and a policy filter. No date range, no vendor dropdown |
+| There is lazy loading and code splitting | One bundle, no lazy loading |
+| There are 4 inspection components | 8 inspection components |
+| There is a `useInspectionDetail` hook | Does not exist |
+| The server sets the 2.5 second polling interval | It is a frontend constant |
 
-**What was correct:** the colour palette, the fonts, the route structure and which pages are
-protected, the 2.5 second polling interval itself, the component list apart from the two omissions,
-the AuthContext surface, and cleaning up the live connection when the page closes.
+**Solid, and worth keeping in mind:** the colour palette, the fonts, the route structure and which
+pages are protected, the 2.5 second polling interval itself, the full component list, the AuthContext
+surface, and cleaning up the live connection when the page closes.
 
 ---
 

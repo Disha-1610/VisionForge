@@ -1,7 +1,7 @@
 # VisionForge Documentation
 
-These documents describe the VisionForge project. They were rewritten in September 2026 after
-checking every claim against the actual code.
+These documents describe the VisionForge project. They were written in September 2026 by checking
+every claim against the actual code.
 
 ## Read this first
 
@@ -10,9 +10,9 @@ and the test suite.** Where something could not be verified, the document says s
 guessing.
 
 If you find a claim in here that does not match the code, that is a bug in the docs. Please report
-it. Earlier versions of these files claimed to be "authoritative" while containing a large number of
-invented details — including model accuracy scores, response times, endpoints that do not exist, and a
-Docker setup that was never written. Those have all been removed.
+it. Nothing in this folder is a source of truth except the code: model accuracy scores, response
+times, and endpoints are not documented here unless they exist in the repository, and a Docker setup
+is not claimed because none was written.
 
 **Two numbers to be aware of, because they are the ones people ask for most:**
 

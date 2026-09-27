@@ -8,17 +8,17 @@
 
 ## Read this first
 
-**Two things the old documentation said that are not true:**
+**The numbers that are easy to get wrong:**
 
-- It gave the total as **59,773 boxes**. That number is the training split only. The whole dataset
-  has **76,672 boxes**.
-- It said the images range from 640x640 to 3840x2160. **They do not.** They range from 153 pixels
+- **The total is 76,672 boxes, not 59,773.** The 59,763 figure is the training split alone. The
+  whole dataset has **76,672 boxes**.
+- **Images do not range from 640x640 to 3840x2160.** They range from 153 pixels
   wide to 4,624, and 129 pixels tall to 5,632. Some of them are very small.
 
-It also quoted a **98.4% mAP@50** for the trained model. **There is no training record anywhere in
-this repository.** No `results.csv`, no `best.pt`, no evaluation script, no training script at all.
-The only file in the model folder is the weight file itself. The accuracy number cannot be checked,
-so this document does not repeat it. See [KNOWN_ISSUES.md](KNOWN_ISSUES.md).
+**No model accuracy can be quoted for this data either.** There is no training record anywhere in
+this repository. No `results.csv`, no `best.pt`, no evaluation script, no training script at all.
+The only file in the model folder is the weight file itself. Any mAP figure would be
+unsupported, so this document does not repeat one. See [KNOWN_ISSUES.md](KNOWN_ISSUES.md).
 
 ---
 
@@ -70,9 +70,6 @@ file, no dataset card, and no record of how the labels were checked.
 | Test | 340 | 5,673 | 7.6% |
 | **Total** | **4,448** | **76,672** | 100% |
 
-**The old documentation quoted these same percentages and they are right.** The image counts per
-split are also right. The box totals were not.
-
 **On the split names.** The folder is called `valid`, not `val`. `data.yaml` points at
 `valid/images`, so it works, but it is worth knowing if you are following an example that assumes
 `val`.
@@ -118,33 +115,19 @@ kinds of chip. A classifier trained on this will learn these 8 groups, not 8 tid
 
 Sorted from most common to least, which is more useful for reading the table.
 
-**On average there are 17.2 boxes per image.** The old document said 13.4, which was based on the
-wrong total.
+**On average there are 17.2 boxes per image.** Divide by the whole dataset, not just the training
+split, or the average comes out about 25% too high.
 
 **Three things in this table are worth stopping on:**
 
-1. **`connector` is 42.5% of everything.** More than the next three classes combined. The old
-   document said 45.2%, which was based on the wrong total, and also said a class loss weight of
-   2.5x was applied to fix the imbalance. **No loss weighting is configured anywhere.** There is no
-   training code in the repository to configure it in.
+1. **`connector` is 42.5% of everything.** More than the next three classes combined. **No loss
+   weighting is configured anywhere.** There is no training code in the repository to configure it
+   in, and no record that any balancing was applied.
 2. **`seal` has 490 boxes in the entire dataset.** 480 of them are in the training split, 6 in
    validation, 4 in test. You cannot measure a model on 4 examples. **Any claim about seal
    detection accuracy is unsupported.**
 3. **`gold_pin_connector` has no test examples at all.** Zero. So the test split cannot say anything
    about that class either.
-
-**Where the old documentation's table was right and wrong:**
-
-| Class | Old valid/test figures | Correct? |
-|---|---|---|
-| `capacitor`, `resistor`, `ic_chip`, `connector`, `battery_cell` | matched exactly | Yes |
-| `screw` | said 412 and 215, total 3,559 | No. Real: 357 and 167, total 3,456 |
-| `seal` | said 78 and 44, total 602 | No. Real: 6 and 4, total 490 |
-| `gold_pin_connector` | said 214 and 118, total 1,860 | No. Real: 659 and 0, total 2,187 |
-| All totals | said 59,773 / 10,918 / 5,879 / 76,570 | No. Real: 59,763 / 11,236 / 5,673 / 76,672 |
-
-The training-split column was accurate for all 8 classes. The validation and test columns were
-accurate for 5 of 8.
 
 ## 5. The images themselves
 
@@ -213,11 +196,9 @@ coordinates.
 valuable. It teaches the model that a picture of a blank board should produce no detections, rather
 than hallucinating a capacitor somewhere.
 
-**The old document said 51 empty files were deliberately added to the training split to cut
-false positives by 94%.** The count of 51 is correct. **The 94% is not supported by anything**, and
-the word "deliberately" is an assumption. These are almost certainly just images that had no
-annotations after cleaning, kept because the export included them. That is a reasonable outcome. It
-is not a recorded experiment.
+**These empty files are not the result of a recorded experiment.** They are almost certainly just
+images that had no annotations after cleaning, kept because the export included them. That is a
+reasonable outcome. Nothing in the repository claims a measured effect on false positives.
 
 **The empty files are only in the first line sense** — they are 0 bytes, so the parser reads no
 boxes and the image is treated as a negative. Nothing in the project reads this dataset, so there is
@@ -255,7 +236,7 @@ missing rather than what is present:
 
 ## 9. What cannot be checked
 
-**Being clear about the limits of this dataset, because the old document was not.**
+**Being clear about the limits of this dataset.**
 
 | Question | Can it be answered? |
 |---|---|

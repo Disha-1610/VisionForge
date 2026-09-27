@@ -55,11 +55,12 @@ quota is spent on a bad photo.
 
 Every other stage always runs, whatever happened before.
 
-**The old documentation claimed three shortcuts:** one for a failed tamper check going to
-quarantine, and one for unrecognised hardware skipping the specialists. **Neither exists.** A photo
-that fails the tamper check still goes through all the remaining stages, and ends up with a
-`vendor_verification` action rather than a quarantine. And hardware that does not match a reference
-still goes to stage 4.
+Two things people often expect to find here, and that are **not** in the graph:
+
+- A failed tamper check does not go to quarantine. The photo still runs through every remaining
+  stage and ends up with a `vendor_verification` action at stage 8.
+- Unrecognised hardware does not skip the specialists. Hardware that does not match a reference
+  still goes to stage 4.
 
 ## 2. What gets passed between stages
 
@@ -75,7 +76,7 @@ Stages do not return raw dictionaries. Each one returns a small result object wi
 
 The things that carry forward are held in a `WorkingMemory` object.
 
-**A naming caution, because the old documentation got this wrong.** The LangGraph state type is
+**A naming caution.** The LangGraph state type is
 `PipelineGraphState`, and it only has three fields: `inspection_id`, `state`, and `error`. The
 detailed state is `WorkingMemory`.
 
@@ -87,14 +88,14 @@ detailed state is `WorkingMemory`.
 | `part_code` | The part number of the matched reference |
 | `declared_product_type` | What the operator said it was |
 | `hardware_category_mismatch` | Whether the photo does not match the declared type |
-| `similarity_score` | How well it matched. **Not** called `reference_similarity` |
-| `roi_execution_plan` | The work plan. **Not** called `scheduled_rois` |
-| `evidence_refs` | IDs pointing at stored evidence. **Not** a list of evidence cards |
+| `similarity_score` | How well it matched |
+| `roi_execution_plan` | The work plan |
+| `evidence_refs` | IDs pointing at stored evidence |
 | `fused_evidence` | The combined findings |
-| `fraud_probability` | The score being built up. **Not** called `composite_fraud_score` |
+| `fraud_probability` | The score being built up |
 | `stage_history` | What each stage did |
 
-**Four field names the old documentation invented do not exist anywhere in the code:** `blur_score`,
+**Four field names that do not exist anywhere in the code:** `blur_score`,
 `brightness_score`, `anomaly_map`, and `quality_failure_reason`. Blur and brightness live in the
 stage result's `data`, not in the carried state. There is no anomaly map.
 
@@ -117,14 +118,14 @@ A bad photo produces a meaningless result, so this stage rejects bad photos earl
 The photo is converted to greyscale, then a Laplacian filter is applied and the variance of the
 result is calculated.
 
-**Two corrections to the old documentation:**
+**Two details worth knowing:**
 
-- It said a 3x3 kernel is used. The code uses the default kernel size, which is 1x1.
-- It said brightness is measured "across all channels". The photo is converted to **greyscale**
-  first, and the brightness is a plain average of that greyscale. **There is no histogram.** The
-  word "histogram" in the old documentation was wrong.
+- The code uses the default kernel size, which is 1x1, for the Laplacian filter. It does not pass a
+  size argument.
+- Brightness is **not** measured "across all channels". The photo is converted to **greyscale**
+  first, and the brightness is a plain average of that greyscale. **There is no histogram step.**
 
-### The duplicate check, which the old documentation left out
+### The duplicate check
 
 The stage also computes a perceptual hash, sometimes called an average hash. This reduces the image
 to a short fingerprint of its overall brightness pattern. Two images of the same board will have
@@ -139,8 +140,8 @@ fake reference image copied from an existing one.
 ### What happens on failure
 
 The graph jumps straight to stage 8. The action is set to `retake`, and the operator is told to
-photograph the part again. **The verdict field is left alone.** The old documentation said a quality
-failure produces a `reject`. It does not. Only stage 7 sets a verdict, and it is skipped here.
+photograph the part again. **The verdict field is left alone.** A quality failure does not produce a
+`reject`; only stage 7 sets a verdict, and it is skipped here.
 
 ## 4. Stage 2: Was the photo edited?
 
@@ -155,7 +156,7 @@ The difference between the original and the re-saved version is an "error map".
 Why this works: in an untouched photo, the error is spread evenly. In an edited region, the pixels
 were changed and they compress differently, so the error jumps.
 
-The code does not simply scale the error map to its maximum, as the old documentation described. It
+The code does not simply scale the error map to its maximum. It
 compares the standard deviation of the error against a threshold, then scores the result as:
 
 ```
@@ -168,16 +169,14 @@ The photo is divided into a 4x4 grid of patches. Each patch's noise level is mea
 In a genuine photo the patches should be similar. Patches that are much noisier than the others
 suggest a local edit.
 
-**The old documentation left this out entirely.**
-
 ### 4.3 Screenshot detection
 
 A photo of a screen has a very even look. The code measures how uniform the image is, and if it is
-more uniform than 0.92 it is flagged as a screenshot. The old documentation did not mention this.
+more uniform than 0.92 it is flagged as a screenshot.
 
 ### 4.4 Cloned block detection
 
-This is the most forensically useful check, and the old documentation did not mention it either.
+This is the most forensically useful check.
 
 Someone who clones a serial number from one part of the photo to another has copied a block of
 pixels. The code slides a 16x16 window across the image looking for near-identical blocks in
@@ -200,9 +199,8 @@ different places. A block counts as suspicious if:
 | `COPY_MOVE_MATCH_THRESHOLD` | 200 | Similarity needed to count as a clone |
 | `COPY_MOVE_MIN_DUPLICATE_RATIO` | 0.03 | Minimum duplicated area |
 
-**The old documentation said a failed tamper check sends the case straight to quarantine.** It does
-not. The pipeline carries on through all remaining stages. The flagged photo ends up with a
-`vendor_verification` action at stage 8.
+**A failed tamper check does not stop the pipeline.** The flagged photo still carries on through all
+remaining stages, and ends up with a `vendor_verification` action at stage 8.
 
 ## 5. Stage 3: What part is this?
 
@@ -223,10 +221,8 @@ The code checks the sizes match and refuses to mix them.
 
 ### What happens when nothing matches
 
-**The old documentation said unmatched hardware is classified `UNKNOWN_HARDWARE` and skips straight
-to stage 8.** There is no such status anywhere in the code.
-
-What actually happens is much quieter. If the best match scores below 0.75:
+There is no `UNKNOWN_HARDWARE` status anywhere in the code, and nothing skips to stage 8 here. What
+actually happens is much quieter. If the best match scores below 0.75:
 
 - The match status becomes `flagged`.
 - The reason is set to `below_similarity_threshold`.
@@ -235,7 +231,7 @@ What actually happens is much quieter. If the best match scores below 0.75:
 So an unrecognised board still gets its regions examined. That may or may not be what you want, but
 it is what the code does.
 
-### A second check the old documentation left out
+### A second check
 
 There is also a hardware category check. If the operator said this is a motherboard but the matched
 reference is a battery pack, that is recorded as a `hardware_category_mismatch`. **This has a real
@@ -257,17 +253,16 @@ Every region is one of four types:
 | `structural` | Component areas. Goes to the structural specialist |
 | `visual` | General surface. Goes to the VLM specialist |
 
-**The old documentation called the fourth type `SURFACE`.** The actual name is `visual`.
+The four region types are `text`, `label`, `structural`, and `visual`. `SURFACE` is not a type
+name in this codebase; the fourth type is `visual`.
 
 ### How regions are prioritised
 
 The template lists regions in order of importance. The code sorts them using a fixed priority
-order defined in one place, then groups them.
+order defined in one place, then groups them. There is no priority queue; the ordering comes from a
+fixed sort.
 
-**The old documentation said this used a Python priority queue.** There is no priority queue. The
-ordering comes from a fixed sort.
-
-### How the work is grouped, which the old documentation missed
+### How the work is grouped
 
 This is the part worth knowing. The scheduler does not produce a flat list. It produces a **batched
 plan**:
@@ -286,8 +281,6 @@ the full set still runs.
 | Battery pack | **7** |
 | RAM module | **5** |
 
-**The old documentation said the motherboard has 6 regions. It has 8.**
-
 ### Validation
 
 The scheduler also checks the template file before trusting it. It rejects templates with duplicate
@@ -299,8 +292,7 @@ producing nonsense.
 
 ### This stage runs twice, not once
 
-**The old documentation showed a single flat four-way split, running in parallel once.** That is
-not what happens. There are two passes:
+The stage is not a single flat four-way split run once in parallel. There are two passes:
 
 - **Pass one** sends each region to whichever specialist the template assigns.
 - **Pass two** sends every region the structural specialist handled to the VLM specialist, so the AI
@@ -337,13 +329,13 @@ So one agent crashing produces a slightly suspicious result rather than a dead i
 
 Full detail is in [AI_AGENTS.md](AI_AGENTS.md).
 
-**One correction:** the old documentation listed PaddleOCR as the primary text reader. PaddleOCR is
+**Text reading:** the primary reader is EasyOCR, not PaddleOCR. PaddleOCR is
 not in the requirements file, so in a clean install the import always fails and **EasyOCR always
 runs**. The fallback is silent.
 
 ## 8. Stage 6: Turning findings into one score
 
-This is the most important stage to get right, and the old documentation described it incorrectly.
+This is the most important stage to get right.
 
 ### The problem it solves
 
@@ -392,13 +384,12 @@ else:
 That `0.75` check is the real protection. Once a single critical finding reaches 0.75, it wins
 outright and no amount of clean results can average it away.
 
-**The old documentation got this wrong in three ways:**
+**Three numbers to get right here:**
 
-- It said the blend was 70% average and 30% worst. **It is 65% and 35%.**
-- It described a "criticality weight" ranging from 1.0 to 1.5. **No such weight exists.** The real
-  weights are the fixed per-specialist numbers above.
-- It did not mention the 0.75 override, which is the mechanism that actually does what the
-  description was reaching for.
+- The blend is 65% average and 35% worst, not 70/30.
+- There is no "criticality weight" ranging from 1.0 to 1.5. The only weights are the fixed
+  per-specialist numbers above.
+- The 0.75 override is the mechanism that actually protects a serious finding.
 
 ### Two extra findings get folded in
 
@@ -432,8 +423,7 @@ grounded in the specialists' actual measurements rather than its own impression 
 | 2nd | Google Gemini 2.5 Flash |
 | 3rd | A set of fixed rules in the code |
 
-**Groq is the primary, not the backup.** The old documentation had this backwards in several
-places.
+**Groq is the primary, not the backup.** Gemini is the fallback.
 
 **The third option matters more than it sounds.** If both cloud services fail, the code falls back to
 a simple set of rules that always produces a verdict. This is tested. It means the system can be
@@ -452,12 +442,10 @@ no verdict at all.
 }
 ```
 
-**Five fields. The old documentation described `root_cause` and `risk_assessment`, neither of which
-exists.** The real field is `root_cause_reasoning`. There is no `risk_assessment` and no
-`risk_level` field anywhere.
+**Five fields.** The real field is `root_cause_reasoning`. There is no `root_cause`, no
+`risk_assessment`, and no `risk_level` field anywhere in the codebase.
 
-Valid verdicts are lowercase: `accept`, `reject`, `review`, `pending`. The old documentation showed
-them in capitals.
+Valid verdicts are lowercase: `accept`, `reject`, `review`, `pending`.
 
 ### What the judge is given
 
@@ -466,9 +454,9 @@ product type, whether there was a category mismatch, the location, the authentic
 whether it was flagged, the reference similarity, the fraud score, the primary fraud category, a
 list of detected issues, a bulleted summary of each specialist's findings, and a per-region summary.
 
-**The old documentation said the judge receives "the complete list of structured evidence cards"
-plus the supplier's identity and historical risk rating.** It receives neither the full raw records
-nor any supplier risk information.
+It is **not** given the complete list of structured evidence cards, and it is given nothing about the
+supplier's identity or historical risk rating. It receives neither the full raw records nor any
+supplier information.
 
 ## 10. Stage 8: Applying the rules
 
@@ -500,12 +488,12 @@ This stage turns the score into a decision, saves everything, and builds the PDF
 supplier name, the verdict, the policy action, the fraud score, the written explanation, and a
 table of the evidence findings.
 
-**What the old documentation claimed, and the truth:**
+**What the report does not do:**
 
-| Claimed | Reality |
+| Not implemented | Reality |
 |---|---|
 | A SHA-256 hash stamp proving it was not altered | No hashing anywhere. `hashlib` is not even imported |
-| Cryptographically signed | Unsigned |
+| Cryptographic signing | Unsigned |
 | Side-by-side comparison images with boxes drawn on them | No images in the report at all |
 | The operator's ID | Only the case number and supplier name are included |
 
@@ -527,19 +515,18 @@ This is the whole thing in one table. The fraud score runs from 0 to 1.
 | Below 0.30 | Category mismatch | `accept` | `vendor_verification` |
 | Below 0.30 | Clean | `accept` | `accept` |
 
-**Two things the old documentation got wrong here:**
+**Two things people get wrong about this table:**
 
-- **It said the review band starts at 0.20. It starts at 0.30.** A score of 0.25 results in an
+- **The review band starts at 0.30, not 0.20.** A score of 0.25 results in an
   accept, not a review.
-- **It said a flagged photo goes to quarantine. It goes to `vendor_verification`.**
+- **A flagged photo goes to `vendor_verification`, not quarantine.**
 
 **The valid values are:**
 
 - Verdicts: `accept`, `reject`, `review`, `pending`
 - Actions: `accept`, `retake`, `quarantine`, `vendor_verification`
 
-The old documentation used a different set of names in different places, including `VERIFIED`,
-`TAMPERED`, and `VERIFY`. None of those exist.
+Names like `VERIFIED`, `TAMPERED`, and `VERIFY` are not valid values in this system.
 
 ## 12. Known problems
 
@@ -550,19 +537,17 @@ other. This is not reconciled anywhere.
 
 **2. Unmatched hardware is not handled clearly.**
 Below the similarity threshold, the pipeline sets a flag and carries on to stage 4. An unrecognised
-board is analysed as though it matched something. Whether that is intended or not, it is not what
-the documentation claimed.
+board is analysed as though it matched something. Whether that is intended or not, it is not
+obvious from the code.
 
 **3. A failed tamper check does not stop the pipeline.**
 An edited photo still goes through all the specialists, which wastes quota on an image already known
 to be unreliable. It is caught at stage 8, but late.
 
 **4. There is no measured timing.**
-**The old documentation gave precise timings for every stage and for the whole inspection** — 0.2
-seconds for the gates, 3.2 seconds overall, and so on. **No benchmark has ever been run.** There is
-no timing script in the project and no recorded results. The two pipeline stages that call cloud
-models each allow 10 seconds before giving up, so the theoretical worst case is well over 20
-seconds, not under 4.
+**No benchmark has ever been run.** There is no timing script in the project and no recorded
+results. The two pipeline stages that call cloud models each allow 10 seconds before giving up, so
+the theoretical worst case is well over 20 seconds.
 
 **Do not quote any timing figure for this system.**
 
