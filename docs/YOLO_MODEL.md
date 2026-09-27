@@ -1,231 +1,252 @@
-# 👁️ YOLO11n Hardware Detection Model Specification
+# The Component Detection Model
 
-> **A Deep Technical Analysis of the Fine-Tuned YOLO11n Micro-Component Detector**  
-> **Status:** Authoritative (Reflects Actual Implemented Codebase)  
-> **Model Weights:** `backend/data/yolo_weights/component_detector.pt` (5.2 MB)  
-> **Training Corpus:** 4,448 images, 59,773 annotated hardware bounding boxes  
-> **Inference Engine:** `backend/app/pipeline/agents/structural_agent.py`
+> This describes the YOLO model that finds components on a board.
+> Checked against the model file, the code, and the dataset in September 2026.
 
 ---
 
-## 📖 Table of Contents
+## Read this first
 
-- [1. Model Architecture & Detection Philosophy](#1-model-architecture--detection-philosophy)
-- [2. The 8 Unified Component Classes](#2-the-8-unified-component-classes)
-- [3. Architectural Honesty: 8-Class Unified Model vs. 10-Class Spec](#3-architectural-honesty-8-class-unified-model-vs-10-class-spec)
-- [4. Training Configuration & Loss Convergence](#4-training-configuration--loss-convergence)
-- [5. Empirical Test Diagnostics (340 Unseen Benchmark Images)](#5-empirical-test-diagnostics-340-unseen-benchmark-images)
-- [6. The Scale Drift Phenomenon: Full-Board vs. Cropped ROI](#6-the-scale-drift-phenomenon-full-board-vs-cropped-roi)
-- [7. Dual-Layer Fail-Safe: YOLO11n + OpenCV SSIM](#7-dual-layer-fail-safe-yolo11n--opencv-ssim)
-- [8. Four-Mode Structural Delta Reasoning Engine](#8-four-mode-structural-delta-reasoning-engine)
-- [9. Hardware Inference Benchmarks & Edge Deployment](#9-hardware-inference-benchmarks--edge-deployment)
+**This project has never measured how accurate this model is.**
 
----
+There is no evaluation file, no results spreadsheet, no confusion matrix, no training log, and no
+training script in this repository. Earlier versions of this document quoted accuracy figures such
+as 88.4% and 98.4%. **Neither can be supported.** There is nothing in the repository that would let
+anyone reproduce or check them.
 
-## 1. Model Architecture & Detection Philosophy
+**Do not quote an accuracy figure for this model.** If you need one, run an evaluation and record
+it. The command is in [How to evaluate it](#6-how-to-evaluate-it).
 
-### Why Real-Time Object Detection on Hardware Components?
-Pixel-based image comparison (such as OpenCV template matching or Mean Squared Error) can detect that *something* changed between two images. However, it cannot explain *what* changed. In hardware fraud disputes, a factory manager cannot issue a vendor chargeback based on a generic statement like: *"Pixel similarity dropped to 0.72."*
-
-They need concrete, legally defensible facts:
-- *"Electrolytic capacitor at coordinate (420, 115) is missing."*
-- *"Integrated Circuit chip U4 has been desoldered and removed."*
-- *"Battery cell count is 4 instead of the rated 6 cells."*
-
-VisionForge fine-tuned **Ultralytics YOLO11n (Nano Object Detection)** to provide structured, discrete component facts:
-
-```
-┌──────────────────────────────────────────────────────────────────────────────┐
-│                    YOLO11n ARCHITECTURAL SPECIFICATIONS                      │
-├──────────────────────────────────────────────────────────────────────────────┤
-│  Model Variant:       Ultralytics YOLO11n (Nano Object Detection)            │
-│  Parameter Count:     ~2.6 Million Parameters                                │
-│  Input Resolution:    640 × 640 pixels (Letterbox RGB)                       │
-│  Backbone:            Modified CSPDarknet with C3k2 Feature Blocks           │
-│  Neck:                Path Aggregation Network (PANet) Feature Pyramid       │
-│  Head:                Decoupled Anchor-Free Detection Head                   │
-│  Weight File:         backend/data/yolo_weights/component_detector.pt (~5.2M)│
-│  Precision:           FP32 / FP16 Native PyTorch                             │
-└──────────────────────────────────────────────────────────────────────────────┘
-```
-
-#### Why the Nano Variant?
-1. **Edge PC Inference:** At 2.6M parameters, YOLO11n executes in **~15ms on GPU** and **~65ms on standard factory CPUs**, completely eliminating the need for expensive multi-thousand-dollar GPU servers on receiving docks.
-2. **Micro-Feature Sensitivity:** YOLO11n's C3k2 feature extractors accurately resolve micro-components down to $12 \times 12$ pixels inside localized ROI crops.
-3. **Single Shared Model:** Inspects Motherboards, Battery Packs, and RAM modules using a single set of weights, eliminating model-swapping latency in memory.
+What this document does give you is everything that *is* verifiable: the model file, its size, its
+classes, how it is called, and the dataset it came from.
 
 ---
 
-## 2. The 8 Unified Component Classes
+## Table of contents
 
-The model is trained to detect, classify, and bound **8 discrete industrial hardware classes**:
-
-```mermaid
-pie title Unified 8-Class Dataset Distribution (59,773 Total Annotations)
-    "connector" : 27014
-    "capacitor" : 14155
-    "ic_chip" : 5998
-    "battery_cell" : 4065
-    "resistor" : 3591
-    "screw" : 2932
-    "gold_pin_connector" : 1528
-    "seal" : 480
-```
-
-| Class ID | Class Name | Target Hardware Items | Forensic Fraud Signal Detected |
-|:---:|:---|:---|:---|
-| **0** | `capacitor` | Electrolytic cans, SMD ceramic capacitors | Missing filter caps, desoldered power rails, substituted ratings. |
-| **1** | `resistor` | 0805 / 0603 / 0402 SMD surface-mount resistors | Stripped pull-up resistors, bridged solder pads. |
-| **2** | `ic_chip` | Microcontrollers, QFP, BGA, SOP silicon packages | Stolen ICs, pirated chips, laser-scraped package tops. |
-| **3** | `connector` | Molex headers, USB-C, JST, SATA, PCIe sockets | Bent pins, missing headers, broken socket retention clips. |
-| **4** | `screw` | Grounding screws, chassis mounts, retention bolts | Assembly incompleteness, missing EMI/ESD grounding screws. |
-| **5** | `seal` | QC passed stickers, holographic warranty seals | Broken, removed, photocopied, or tampered warranty seals. |
-| **6** | `battery_cell` | 18650 / 21700 lithium cells, prismatic packs | Cell count fraud (e.g. 4 real cells + 2 dummy weight tubes). |
-| **7** | `gold_pin_connector` | PCIe edge fingers, DDR4 / DDR5 RAM contacts | Burnt, scratched, degraded, or corroded gold contact pins. |
+1. [What the model does](#1-what-the-model-does)
+2. [The model file](#2-the-model-file)
+3. [The 8 classes](#3-the-8-classes)
+4. [How the model is called](#4-how-the-model-is-called)
+5. [How the counts are compared](#5-how-the-counts-are-compared)
+6. [How to evaluate it](#6-how-to-evaluate-it)
+7. [What the old documentation claimed](#7-what-the-old-documentation-claimed)
+8. [What is not known about this model](#8-what-is-not-known-about-this-model)
 
 ---
 
-## 3. Architectural Honesty: 8-Class Unified Model vs. 10-Class Spec
+## 1. What the model does
 
-Early architectural planning called for a **10-class model** featuring dedicated classes for `terminal` (battery terminals) and `ram_ic_chip` (server RAM memory chips). 
+The model looks at one cropped region of a board and lists every electronic component it can see.
 
-During dataset curation and empirical error analysis across 4,448 images, two critical failure modes emerged:
-1. **`terminal` vs. `connector` Visual Ambiguity:** Heavy-duty screw power terminals and high-density industrial Molex connectors share identical geometric features. Training separate classes caused high class-oscillation during inference (Precision dropped to $64\%$).
-2. **`ram_ic_chip` vs. `ic_chip` Redundancy:** BGA memory chips on a RAM stick and BGA microcontrollers on a motherboard share identical silicone package dimensions and solder ball arrangements. Artificially segregating them fragmented backpropagation gradients.
+This is what makes the whole counting check possible. Without it, there is no reliable way to answer
+"is one capacitor missing from this row of ten?" — the parts are tiny and identical.
 
-> 🧠 **Engineering Decision: Class Consolidation**  
-> We unified `terminal` into `connector` and `ram_ic_chip` into `ic_chip`. This eliminated class confusion, boosting overall model **mAP@50 from 0.742 to 0.884 (+14.2%)** and reducing false-positive defect alarms by **89%**.
+**It only runs when the image comparison says the region is different from the reference.** There is
+a cheaper check first: if the region matches the reference closely, there is nothing to count. The
+model is only asked when the region already looks wrong. That saves a lot of work.
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                    CLASS CONSOLIDATION IMPACT ANALYSIS                      │
-├─────────────────────────────────────────────────────────────────────────────┤
-│  Metric                │ 10-Class Spec (Pre-Merge) │ 8-Class Unified Model  │
-├────────────────────────┼───────────────────────────┼────────────────────────┤
-│  Overall mAP@50        │ 0.742                     │ 0.884 (+14.2%)         │
-│  Class Oscillation Rate│ 18.4%                     │ 1.2%                   │
-│  False Positive Alarms │ 14.8 per 100 boards       │ 1.6 per 100 boards     │
-│  Model Weight Size     │ 5.9 MB                    │ 5.2 MB                 │
-└────────────────────────┴───────────────────────────┴────────────────────────┘
-```
+## 2. The model file
 
----
+| | |
+|---|---|
+| **File** | `component_detector.pt` |
+| **Location** | `backend/data/yolo_weights/` |
+| **Size** | 5,468,826 bytes, which is about 5.2 MB |
+| **Type** | Ultralytics YOLO detection model |
+| **Architecture** | YOLO11n, the smallest of the YOLO11 family |
+| **Class count** | 8 |
+| **Size in pixels** | Not set in the code, so the library default is used |
 
-## 4. Training Configuration & Loss Convergence
+**The model is real and genuinely runs.** The code loads it with the real Ultralytics library and
+runs real inference on it. It is not a mock, a stub, or a placeholder.
 
-The model was fine-tuned using PyTorch and Ultralytics on a high-memory CUDA GPU instance:
+**The only test that touches it** loads the file, reads the class names out of it, and checks there
+are 8 of them. **No test runs actual inference on a real image.** Every other detection test in the
+project substitutes a fake model that returns hard-coded results.
 
-```yaml
-# Training Hyperparameters
-model: yolo11n.pt
-data: visionforge-dataset/data.yaml
-epochs: 100
-batch: 32
-imgsz: 640
-optimizer: AdamW
-lr0: 0.001
-lrf: 0.01
-momentum: 0.937
-weight_decay: 0.0005
-warmup_epochs: 3.0
-box: 7.5      # Complete IoU (CIoU) box loss gain
-cls: 0.5      # Binary Cross-Entropy (BCE) classification loss gain
-dfl: 1.5      # Distribution Focal Loss gain
-```
+**The library requirement** is Ultralytics 8.3 or later, declared in `backend/requirements.txt`.
 
-### Loss Convergence Curves
-- **Box Loss ($L_{\text{box}}$):** Converged from $1.84$ to $0.62$, indicating high spatial precision on micro-component coordinates.
-- **Class Loss ($L_{\text{cls}}$):** Decreased smoothly from $2.14$ to $0.28$, demonstrating clean class separation across the 8 unified categories.
-- **Distribution Focal Loss ($L_{\text{dfl}}$):** Converged to $0.84$, refining sub-pixel edge boundaries around tiny surface-mount resistors and capacitors.
+## 3. The 8 classes
 
----
+| # | Class name | What it is |
+|---|---|---|
+| 0 | `capacitor` | Small ceramic or electrolytic capacitors |
+| 1 | `resistor` | Resistors and other small surface-mount parts |
+| 2 | `ic_chip` | Integrated circuits, the black chips with pins |
+| 3 | `connector` | Connectors, sockets, headers |
+| 4 | `screw` | Mounting screws |
+| 5 | `seal` | Tamper seals, warranty seals |
+| 6 | `battery_cell` | Individual cells inside a battery pack |
+| 7 | `gold_pin_connector` | The gold contact edge on a RAM module |
 
-## 5. Empirical Test Diagnostics (340 Unseen Benchmark Images)
+These 8 names match the dataset configuration file exactly. There is no mismatch between the model
+and the data it came from.
 
-Following training, the model underwent automated diagnostic evaluation across all 8 classes on the official test partition (`visionforge-dataset/test/`):
+**Two notes on the class list:**
 
-| Class | Ground Truth in Test Split | Empirical Test Detection Performance | Confidence Range | Production Deployment Strategy |
-|:---|:---:|:---|:---:|:---|
-| 🔋 **`battery_cell`** | 265 test images | **Exact match on cell counts** | **88% – 91%** | Primary fraud detector for battery pack tampering |
-| 🛡️ **`seal`** | Intact / tampered seals | **High-precision single-pass detection** | **93%** | Paired with Label Agent cross-correlation |
-| 🔩 **`screw`** | Assembly retention | **Accurate count & retention detection** | **81% – 90%** | Structural completeness verification |
-| 🔲 **`ic_chip`** | Controller / Power ICs | **Clear presence detection & bounding** | **50% – 61%** | Missing / stolen IC chip verification |
-| ⚡ **`capacitor`** | Dense SMD capacitor banks | **Detected in localized ROI crops** | **30% – 45%** | Calibrated threshold (`conf=0.20`) on cropped ROIs |
-| 🔌 **`connector`** | Header sockets & I/O ports | **Detected at localized crop scale** | **30% – 36%** | Calibrated threshold (`conf=0.20`) on cropped ROIs |
-| 📏 **`resistor`** | Microscopic SMD passives | 0 detected at full-image scale | < 15% | **SSIM Safety Net:** Pixel drift & MSE catch anomalies |
-| 💾 **`gold_pin_connector`**| RAM edge pins | High-contrast geometric feature | Handled | Structural SSIM + edge diffing verification |
+**Screws and seals are in there on purpose.** They are small and easy to remove, and a missing
+mounting screw or a broken warranty seal is a real tampering signal. The dataset has relatively few
+of each compared to the other classes.
 
----
+**Gold pin connectors have no test examples.** Looking at the test split, there are 117 images
+containing gold pin connectors in total, and **all of them are in the training and validation splits.
+The test split contains zero.** So the model has never been checked on a held-out example of that
+class. Any claim about how well it detects gold pin connectors is unsupported.
 
-## 6. The Scale Drift Phenomenon: Full-Board vs. Cropped ROI
+**The old documentation said the classes were "solder joints, seals, barcodes, and missing-component
+slots".** None of those are classes in this model.
 
-One of the most important engineering lessons discovered during development was the **Scale Drift Phenomenon**:
+## 4. How the model is called
 
-```text
-FULL 4K BOARD RESIZED TO 640×640
-┌─────────────────────────────────────────────────────────┐
-│ 0402 Resistor = 2 × 1 pixels (YOLO confidence < 0.10)   │ ❌ Missed!
-└─────────────────────────────────────────────────────────┘
+### The settings
 
-LOCALIZED STAGE 4 CROP (260×180) RESIZED TO 640×640
-┌─────────────────────────────────────────────────────────┐
-│ 0402 Resistor = 42 × 24 pixels (YOLO confidence = 0.45) │ ✅ Detected!
-└─────────────────────────────────────────────────────────┘
-```
+| Setting | Value | What it does |
+|---|---|---|
+| Detection confidence | **0.20** | The minimum score for a detection to be counted |
+| Count tolerance | **25** | How much two counts may differ before it is called a mismatch |
+| Image similarity threshold | **0.80** | Below this, the model is not even run |
 
-1. When a full $3000 \times 2000$ motherboard image is downsampled to $640 \times 640$, microscopic components shrink below the receptive field of YOLO's first convolutional stride.
-2. In VisionForge, **Stage 4 (ROI Scheduler) crops specific sub-regions** (e.g. $260 \times 180$ power delivery stages) before passing them to YOLO.
-3. Because the input to YOLO is an already localized crop, component features expand by **$8\times$ to $12\times$**, allowing capacitors and connectors to be detected reliably at calibrated confidence ($\tau = 0.20$).
+### The confidence threshold of 0.20 is deliberate and worth understanding
 
----
+A general object detector is usually run at 0.25 or 0.5, throwing away anything less certain. **This
+one runs at 0.20, which is low.**
 
-## 7. Dual-Layer Fail-Safe: YOLO11n + OpenCV SSIM
+The reasoning: in safety inspection, missing something is much worse than looking at something that
+is not there. A false alarm costs an operator thirty seconds. A missed missing capacitor costs a
+recalled batch.
 
-VisionForge **never relies on object detection alone**. While YOLO detects discrete component absences, **OpenCV Structural Similarity (SSIM)** simultaneously measures continuous pixel intensity distributions:
+So the model is deliberately over-eager. It finds more candidates than a normal detector would. The
+count comparison, not the detection, is what decides whether a region is a problem.
 
-```mermaid
-flowchart LR
-    Crop["Inspection Crop Pair"] --> YOLO["Ultralytics YOLO11n<br/>(Discrete Component Counts)"]
-    Crop --> SSIM["OpenCV SSIM Engine<br/>(Continuous Pixel Field)"]
-    
-    YOLO --> Merge{"Structural Agent Reasoning"}
-    SSIM --> Merge
-    
-    Merge --> Out["Standardized Evidence Card<br/>(Count Delta + SSIM Float)"]
+**The old documentation said 0.20 was a "calibrated threshold" chosen by testing.** There is no
+record of any such calibration. It is a value in the code with a comment. That is a reasonable
+choice, but calling it calibrated implies a process that did not happen.
+
+### The image size is not set
+
+The code does not pass a size argument, so the library uses its own default. The old documentation
+said 640x640 with letterbox resizing. That may match the library default, but it is not specified in
+this project's code, and it was not verified.
+
+## 5. How the counts are compared
+
+### The three outcomes
+
+| Status | What it means |
+|---|---|
+| `missing` | Fewer components found than the reference has |
+| `extra` | More components found than the reference has |
+| `match` | The two counts are within the tolerance of 25 |
+
+**The tolerance of 25 is a pixel-area threshold, not a count.** It is compared against the total
+detected area, so a region with more parts has more room before a difference counts.
+
+### The two halves of the check, in order
+
+1. **Image similarity first.** Compare the region against the reference. If the similarity is at or
+   above 0.80, stop — the region matches and there is nothing to count.
+2. **Count only if different.** If the similarity dropped below 0.80, run the model and compare
+   counts.
+
+**This ordering is what the old documentation missed when it described "four-mode reasoning".** The
+real logic is a cheap check gating an expensive one.
+
+### The AI double-check
+
+After the specialists run, a second pass sends every region the structural specialist handled to the
+VLM specialist. So the AI looks at the same regions with a different tool and can disagree.
+
+**The old documentation showed a single four-way parallel split and never mentioned the second pass
+at all.**
+
+## 6. How to evaluate it
+
+If you need a real accuracy number, this is how to get one. Note that this has not been run, which is
+why no number appears in this document.
+
+The dataset is configured in `visionforge-dataset/data.yaml`, with the training, validation, and test
+splits laid out as directories. Ultralytics can evaluate directly from that:
+
+```bash
+# from the repository root, with the backend environment active
+yolo val model=backend/data/yolo_weights/component_detector.pt \
+       data=visionforge-dataset/data.yaml \
+       split=test \
+       imgsz=640
 ```
 
-### Why the Dual-Layer Fail-Safe is Indispensable
-- If a microscopic resistor is too small for YOLO's bounding box confidence threshold, the **SSIM metric immediately drops** from $0.98$ to $0.74$, signaling a localized structural anomaly.
-- If lighting variances cause an artificial drop in SSIM, the **YOLO component count confirms that all 4 capacitors and 2 chips are physically present**, preventing false-positive rejections.
+**What to record if you run this.** The mean average precision at 50% overlap, the mean average
+precision at 50 to 95% overlap, the precision, the recall, and the per-class results. Write them
+down with the date and the command, so the next person can reproduce them.
+
+**Two things to be careful about when you do:**
+
+- **The test split is small.** 340 images. A result from 340 images has real uncertainty in it.
+  Report the interval, not just the number.
+- **Gold pin connectors have no test examples.** The per-class average will silently skip that class.
+  Say so, rather than letting it look like the model handles all 8.
+
+## 7. What the old documentation claimed
+
+| Claim | Reality |
+|---|---|
+| Accuracy improved from 74.2% to 88.4% | No metrics file exists to support either number |
+| Accuracy of 98.4% | Also unsupported, and contradicts the 88.4% in another document |
+| Precision dropped to 64% during consolidation | Unsupported |
+| Class oscillation fell from 18.4% to 1.2% | Unsupported |
+| False positives fell from 14.8 to 1.6 per 100 boards | Unsupported |
+| Box loss fell from 1.84 to 0.62 | No loss curves exist |
+| Class loss fell from 2.14 to 0.28 | No loss curves exist |
+| DFL loss fell to 0.84 | No loss curves exist |
+| Per-class test accuracy table | No evaluation script, no confusion matrix, no per-class results file |
+| Training used 100 epochs, batch 32, AdamW, specific learning rates | No training script and no training log in the repository |
+| The dataset went from 10 classes to 8 | The data file only ever declared 8. No 10-class version exists |
+| A pre-merge model of 5.9 MB | No such file exists |
+| Benchmarks on an RTX 4060, Jetson Orin, i7, and Raspberry Pi 5 | No benchmark script, and TensorRT, OpenVINO, and ONNX Runtime are not even in the requirements file |
+| Benchmarks were based on 500 inference runs | No such run was recorded |
+| Features expand 8x to 12x under magnification | The region files have no magnification or scale settings at all |
+
+**On the 74.2% to 88.4% figure specifically:** even taken at face value, going from 0.742 to 0.884 is
+a 19.1% relative increase, not the 14.2% the old document claimed. The document mixed up
+percentage points with percent.
+
+**Two claims that turned out to be true:**
+
+- The model file is about 5.2 MB.
+- The detection confidence really is 0.20.
+
+## 8. What is not known about this model
+
+Being clear about the gaps, because they matter if you are asked about this model:
+
+**Never measured.** No accuracy, no precision, no recall, no speed. Nothing.
+
+**Never retrained in this repository.** There is no training script. The model file is committed as
+a finished artefact, with no record of how it was produced.
+
+**Dataset provenance is undocumented.** The data file does not say where the images came from, and
+there are no licence files, download scripts, or source records in the repository. An earlier version
+of the documentation named five public datasets as sources and described a cleaning process that
+merged classes and removed duplicates. **None of that can be checked.** For a project that would
+ever be used commercially, the licence position on the training images needs to be established.
+
+**Some training images are of poor quality.** The dataset contains images as small as 153x287 pixels.
+The product rejects anything under 640x480 at stage 1. So the model is partly trained on images the
+system itself would reject. The distribution of image sizes in the dataset is 140 different
+resolutions, from 153x287 up to 4624x3472.
+
+**No per-class balance.** One class has 32,564 labelled instances and another has 490. A model
+trained on that will be much better at the common classes. The dataset details are in
+[DATASET.md](DATASET.md).
+
+**No augmentation record.** No training configuration exists, so the augmentation settings used are
+unknown. An earlier document listed specific values and also claimed a 94% reduction in false
+alarms, which cannot be checked.
+
+**Gold pin connectors are untested.** No held-out examples exist.
 
 ---
 
-## 8. Four-Mode Structural Delta Reasoning Engine
-
-Inside `backend/app/pipeline/agents/structural_agent.py`, the agent compares YOLO bounding boxes between the Golden Master crop ($B_{\text{golden}}$) and the Test Board crop ($B_{\text{test}}$) using a four-mode reasoning engine:
-
-1. **Missing Component:** A component exists in the golden template ($N_{\text{golden}} > 0$) but is absent in the test image ($N_{\text{test}} = 0$).
-2. **Extra Component:** An unauthorized component is detected in the test image ($N_{\text{test}} > 0$) that was never present on the blueprint ($N_{\text{golden}} = 0$).
-3. **Count Mismatch:** Components exist in both images, but counts diverge ($N_{\text{test}} \neq N_{\text{golden}}$).
-4. **Position Drift (Misaligned / Bent Component):** Counts match, but Euclidean center distance exceeds tolerance:
-   $$\Delta_{\text{pos}} = \sqrt{(x_{\text{test}} - x_{\text{golden}})^2 + (y_{\text{test}} - y_{\text{golden}})^2} > \tau_{\text{pos}}$$
-
-These findings are packaged into the structured `component_findings` payload of `AgentResult` and transmitted to Stage 6 for non-diluting Anomaly Max-Pooling.
-
----
-
-## 9. Hardware Inference Benchmarks & Edge Deployment
-
-Benchmarked across 500 inference runs on various hardware tiers:
-
-| Hardware Platform | Execution Mode | Precision | Single-Crop Latency | Full 6-ROI Board Time |
-|:---|:---|:---:|:---:|:---:|
-| **NVIDIA RTX 4060 (Laptop)** | PyTorch CUDA | FP16 | **12.4ms** | **~75ms** |
-| **NVIDIA Jetson Orin Nano (Edge)**| TensorRT Engine | FP16 | **14.8ms** | **~90ms** |
-| **Intel Core i7-13700H (CPU)** | OpenVINO / CPU | FP32 | **58.2ms** | **~350ms** |
-| **Raspberry Pi 5 (Edge Gateway)** | ONNX Runtime | INT8 | **142.0ms** | **~850ms** |
-
----
-
-*For detailed analysis of the training data corpus, consult [`docs/DATASET.md`](DATASET.md).*  
-*To see how the Structural Agent integrates into the pipeline, consult [`docs/AI_AGENTS.md`](AI_AGENTS.md).*
+*Next: [DATASET.md](DATASET.md) for the training data in detail, or
+[AI_AGENTS.md](AI_AGENTS.md) for how this model fits into the wider inspection.*

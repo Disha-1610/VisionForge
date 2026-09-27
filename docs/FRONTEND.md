@@ -1,267 +1,402 @@
-# 🖥️ Frontend Architecture & Workstation HUD
+# The Web App
 
-> **Technical Specification of the React 18 Industrial Workstation & Real-Time Telemetry HUD**  
-> **Status:** Authoritative (Reflects Actual Implemented Codebase)  
-> **Framework:** React 18.3 + Vite 5.4  
-> **Theme:** Industrial Dark / Cyberpunk HUD (Tailwind CSS 3.4)  
-> **Source Directory:** `frontend/src/`
+> This describes the operator-facing web app.
+> Checked against the code in September 2026.
 
 ---
 
-## 📖 Table of Contents
+## Table of contents
 
-- [1. Workstation Design Philosophy & Factory Floor Ergonomics](#1-workstation-design-philosophy--factory-floor-ergonomics)
-- [2. Component & Directory Topology](#2-component--directory-topology)
-- [3. Proactive Authentication & Token Rotation Engine](#3-proactive-authentication--token-rotation-engine)
-- [4. Real-Time Telemetry: The `usePipelineSSE` Hook](#4-real-time-telemetry-the-usepipelinesse-hook)
-- [5. Dual Intake Modalities (Desktop & Mobile QR Handoff)](#5-dual-intake-modalities-desktop--mobile-qr-handoff)
-- [6. Core Workstation Components](#6-core-workstation-components)
-  - [6.1 `DualImageCanvas.jsx` — Synchronized Forensic Comparator](#61-dualimagecanvasjsx--synchronized-forensic-comparator)
-  - [6.2 `PipelineProgress.jsx` — 8-Stage Real-Time Stepper](#62-pipelineprogressjsx--8-stage-real-time-stepper)
-  - [6.3 `VerdictBanner.jsx` — AI Judge Causal Display](#63-verdictbannerjsx--ai-judge-causal-display)
-  - [6.4 `EvidenceCard.jsx` — Forensic Findings & YOLO Telemetry](#64-evidencecardjsx--forensic-findings--yolo-telemetry)
-- [7. Application Pages & Workstation Views](#7-application-pages--workstation-views)
-- [8. State Management & Data Flow Architecture](#8-state-management--data-flow-architecture)
-
----
-
-## 1. Workstation Design Philosophy & Factory Floor Ergonomics
-
-### Why an Industrial Dark HUD?
-Standard enterprise SaaS interfaces (white backgrounds, subtle grey text, low contrast) fail on electronics manufacturing lines:
-1. **Harsh Lighting & Eye Fatigue:** Receiving docks feature intense fluorescent lighting. Glare washes out low-contrast UI elements.
-2. **Safety Equipment Constraints:** Line operators wear anti-static safety glasses and nitrile gloves. They require high-contrast typography, large click targets, and unmistakable color-coded status chips.
-3. **Split-Second Verdict Comprehension:** An operator needs to know within $0.5\text{ seconds}$ whether a circuit board passed, failed, or was quarantined.
-
-VisionForge implements an **Industrial Dark / Cyberpunk HUD**:
-- **Background:** Deep obsidian (`#070b12` / `bg-hud-bg`) that absorbs ambient factory glare.
-- **Accents:** High-visibility electric cyan (`#00f0ff`) and tactical emerald (`#10b981`).
-- **Defect Alerts:** High-contrast crimson (`#ef4444`) and warning amber (`#f59e0b`).
-- **Typography:** JetBrains Mono for machine telemetry and serial codes; Outfit for legible headings.
+1. [What the operator does](#1-what-the-operator-does)
+2. [Technology and versions](#2-technology-and-versions)
+3. [Pages and routes](#3-pages-and-routes)
+4. [Components](#4-components)
+5. [The look and feel](#5-the-look-and-feel)
+6. [Watching an inspection live](#6-watching-an-inspection-live)
+7. [Keeping the user logged in](#7-keeping-the-user-logged-in)
+8. [Talking to the backend](#8-talking-to-the-backend)
+9. [The phone QR code](#9-the-phone-qr-code)
+10. [Bundle size](#10-bundle-size)
+11. [What the old documentation got wrong](#11-what-the-old-documentation-got-wrong)
 
 ---
 
-## 2. Component & Directory Topology
+## 1. What the operator does
 
-```
-frontend/src/
-├── App.jsx                     # Route architecture & ProtectedRoute guard
-├── main.jsx                    # React 18 DOM mount point
-├── index.css                   # Custom scrollbars, font definitions, glow utilities
-├── context/
-│   ├── AuthContext.jsx         # User credentials, login/logout, RBAC helpers
-│   └── ToastContext.jsx        # Non-blocking factory notification system
-├── hooks/
-│   └── usePipelineSSE.js       # Server-Sent Events subscriber with polling failover
-├── services/
-│   └── api.js                  # Axios client, 29m token timer, 401 retry queue
-├── components/
-│   ├── common/                 # Button, Modal, StatCard, StatusChip, SkeletonLoader
-│   ├── inspection/             # DualImageCanvas, PipelineProgress, EvidenceCard, CameraModal
-│   ├── layout/                 # AppLayout, Topbar, Sidebar
-│   └── products/               # GoldenRepositoryDrawer blueprint catalog
-└── pages/
-    ├── LandingPage.jsx         # Public overview & interactive pipeline demo
-    ├── LoginPage.jsx           # Authentication view with demo account presets
-    ├── DashboardPage.jsx       # Factory throughput KPI dashboard
-    ├── NewInspectionPage.jsx   # Drag-and-drop & smartphone QR camera intake
-    ├── InspectionDetailPage.jsx# Live 8-stage execution & human review view
-    ├── ReportsPage.jsx         # Historical audit archive & PDF downloads
-    ├── AnalyticsPage.jsx       # Supplier risk ranking & Recharts trend graphs
-    └── NotFoundPage.jsx        # 404 tactical screen
-```
+The whole flow is designed around one person standing at a receiving dock with a part in their hand.
+
+1. **Log in.** Email and password.
+2. **Upload a photo.** Drag it onto the page, use the computer's camera, or open the same page on a
+   phone and photograph it there.
+3. **Watch it work.** A progress rail fills up as the 8 pipeline stages run.
+4. **Read the result.** A banner shows the verdict and the written explanation. Below it, the two
+   images sit side by side with boxes over anything that was found.
+5. **Decide.** Approve the result, or override it with a note. That note is saved.
+6. **Download the PDF** if they need to file it.
+7. **Check trends** on the analytics page.
+
+## 2. Technology and versions
+
+**The old documentation said React 18 and Vite 5. Both are wrong.**
+
+| | Installed version |
+|---|---|
+| React | **19.2.8** |
+| React DOM | 19.2.8 |
+| Vite | **8.3.0** |
+| React Router | 7.18.3 |
+| Tailwind CSS | 3.4.19 |
+| Node required | **20.19+ or 22.12+** |
+
+**Node 18 does not work.** Vite 8 requires a newer version. The old documentation said Node 18 was
+the minimum.
+
+### Everything installed
+
+**Main dependencies:**
+
+| Package | Version | What it does |
+|---|---|---|
+| axios | 1.20.0 | Talking to the backend |
+| react-router-dom | 7.18.3 | Page navigation |
+| recharts | 3.10.1 | Charts on the analytics page |
+| lucide-react | 1.46.0 | The icon set |
+| react-markdown | 10.1.0 | Rendering the judge's written explanation |
+| qrcode.react | 4.2.0 | The phone QR code |
+| clsx | 2.1.1 | Conditional class names |
+| tailwind-merge | 3.7.0 | Merging Tailwind classes safely |
+
+**Development dependencies:**
+
+| Package | Version |
+|---|---|
+| Vite | 8.3.0 |
+| React plugin for Vite | 6.1.1 |
+| Tailwind CSS | 3.4.19 |
+| PostCSS | 8.5.28 |
+| autoprefixer | 10.6.0 |
+| oxlint | 1.81.0 |
+| TypeScript types | React 19.2.18, React DOM 19.2.7 |
+
+**Scripts:**
+
+| Command | What it does |
+|---|---|
+| `npm run dev` | Start the development server on port 5173 |
+| `npm run build` | Build for production |
+| `npm run lint` | Run oxlint |
+| `npm run preview` | Preview a production build |
+| `npm run tunnel` | Start a public Cloudflare tunnel |
+
+**There is no `test` script and no frontend test suite.** All 204 tests are on the backend. There
+are no tests for the React components.
+
+## 3. Pages and routes
+
+Eight routes, defined in `src/App.jsx`.
+
+| Path | Page | Who can see it |
+|---|---|---|
+| `/` | LandingPage | Anyone |
+| `/login` | LoginPage | Anyone |
+| `/dashboard` | DashboardPage | Logged in |
+| `/inspections/new` | NewInspectionPage | Logged in |
+| `/inspections/:id` | InspectionDetailPage | Logged in |
+| `/reports` | ReportsPage | Logged in |
+| `/analytics` | AnalyticsPage | Logged in |
+| anything else | NotFoundPage | Anyone |
+
+**Five of the seven real pages are wrapped in a protected shell.** The `ProtectedRoute` component
+checks for a valid token and redirects to the login page if there is not one. Inside that shell sits
+a sidebar, a top bar, and the page itself.
+
+**There is no mobile page and no mobile route.** The old documentation described a phone intake
+view that uploaded to a desktop queue. That does not exist. When the QR code is scanned, the phone
+opens the same inspection page, and the person takes the photo and submits it on the phone like any
+other upload. **The two devices are independent browser sessions and nothing synchronises them.**
+
+## 4. Components
+
+Nineteen components, in four folders.
+
+### Shared components — `components/common/`
+
+| File | Lines | What it does |
+|---|---|---|
+| `Button.jsx` | 52 | A button with a loading spinner built in |
+| `EmptyState.jsx` | 27 | Shown when a list has nothing in it |
+| `Logo.jsx` | 160 | The logo mark and the wordmark |
+| `Modal.jsx` | 48 | A popup dialog |
+| `SkeletonLoader.jsx` | 13 | A pulsing placeholder while loading |
+| `StatCard.jsx` | 53 | One number on the dashboard, with a label and an icon |
+| `StatusChip.jsx` | 50 | A coloured pill showing a status or verdict |
+
+**The old documentation listed five of these seven.** It missed `EmptyState` and `Logo`.
+
+### Inspection components — `components/inspection/`
+
+| File | Lines | What it does |
+|---|---|---|
+| `CameraModal.jsx` | 154 | Live camera in the browser, returns a photo as a file |
+| `DesktopGuardModal.jsx` | 101 | Warns desktop users their photo may be rejected, and shows a QR code for using a phone instead |
+| `DualImageCanvas.jsx` | 315 | The two images side by side, with a shared zoom control and boxes over detections |
+| `EvidenceCard.jsx` | 315 | One specialist's finding, as a card |
+| `MarkdownText.jsx` | 155 | Renders the judge's written explanation, cleaning it up first |
+| `PipelineProgress.jsx` | 131 | The 8-stage progress rail |
+| `ReviewModal.jsx` | 138 | The approve and override dialog |
+| `VerdictBanner.jsx` | 327 | The big result banner at the top of a result |
+
+**The old documentation listed four of these eight.** It missed `DesktopGuardModal`,
+`MarkdownText`, `ReviewModal`, and `VerdictBanner` — the last being the most prominent thing on the
+result page.
+
+### Layout components — `components/layout/`
+
+| File | Lines | What it does |
+|---|---|---|
+| `AppLayout.jsx` | 37 | The shell: sidebar, top bar, and the page |
+| `Sidebar.jsx` | 123 | Navigation, and the sign-out button |
+| `Topbar.jsx` | 62 | Page title, connection status, who is logged in |
+
+### Product components — `components/products/`
+
+| File | Lines | What it does |
+|---|---|---|
+| `GoldenRepositoryDrawer.jsx` | 234 | A slide-over panel for browsing and uploading reference images |
+
+### State and data
+
+| File | What it does |
+|---|---|
+| `context/AuthContext.jsx` | Holds the logged-in user, the token, and the role. Exposes login, register, and logout |
+| `context/ToastContext.jsx` | Short notifications that appear and disappear |
+| `hooks/usePipelineSSE.js` | Opens the live connection and tracks progress |
+
+**The AuthContext exposes:** `user`, `token`, `role`, `isAdmin`, `isOperator`,
+`isAuthenticated`, `loading`, `login`, `register`, `logout`.
+
+**The old documentation claimed there was a `useInspectionDetail` hook holding the current case in
+context.** There is no such hook. The inspection state is held in the page component, not in a
+shared context.
+
+## 5. The look and feel
+
+A dark industrial dashboard, designed to stay readable under bright factory lighting.
+
+### The colours
+
+Defined once in `tailwind.config.js`:
+
+| Name | Hex | Used for |
+|---|---|---|
+| `bg` | `#070b12` | The page background. Near-black with a blue tint |
+| `surface` | `#0d1527` | Panels |
+| `card` | `#121e36` | Cards |
+| `panel` | `#162340` | Raised panels |
+| `border` | `#1f3154` | Dividers and card edges |
+| `border-light` | `#2b4474` | Hover states |
+| `accent` | `#06b6d4` | Links and highlights |
+| `cyan` | `#00f0ff` | The primary highlight colour |
+| `emerald` | `#10b981` | Pass, accept, good |
+| `crimson` | `#ef4444` | Fail, reject, bad |
+| `amber` | `#f59e0b` | Warning, review |
+| `muted` | `#94a3b8` | Secondary text |
+
+**These were correct in the old documentation.**
+
+### The fonts
+
+| Use | Font |
+|---|---|
+| Everything | Outfit, falling back to Inter, then the system font |
+| Anything technical, such as case numbers and scores | JetBrains Mono |
+
+**Also correct in the old documentation.**
+
+### Two animations
+
+A slow pulse and a glow effect, both defined in the Tailwind config. The glow is used on the primary
+highlight elements.
+
+## 6. Watching an inspection live
+
+This is the custom hook, `usePipelineSSE.js`, and it is the most interesting piece of the front end.
+
+### How it works
+
+When an inspection starts, the hook opens a live connection to the server and listens for messages.
+Each message tells it which stage is running and how far along the inspection is. That drives the
+progress rail.
+
+**The fallback.** If the live connection drops, the hook starts asking the server for the status
+every **2,500 milliseconds** instead. This is in the frontend code, not the server.
+
+**The old documentation said the server sets that interval. It does not.** The server checks its own
+record every 500 milliseconds. The 2.5 seconds is entirely the browser's choice.
+
+### What the hook actually listens for
+
+**The old documentation said it listened for `stage_progress`, `evidence_card`, and
+`pipeline_complete`.** It does not. **None of those event names exist anywhere in the backend.**
+
+What the hook actually listens for:
+
+| What | How |
+|---|---|
+| Ordinary progress messages | The default message handler |
+| The final result | An event named `verdict` |
+| A stream timeout | An event named `error` |
+
+**So the hook is correct and the old documentation was wrong.** The frontend and backend agree with
+each other. Only the documentation was out of step.
+
+### What it tracks
+
+`currentStage`, `stageName`, `completedStages`, `status`, `verdict`, `policyAction`, `error`,
+`detail`, `isDone`.
+
+**The old documentation showed a single `evidenceCards` array with a reducer that appended each
+card as it arrived.** There is no such array and no such reducer. Cards are fetched once at the end,
+from the inspection record, not streamed.
+
+### The bug worth knowing about
+
+On the most common path, the final `verdict` message **does not contain the verdict**. The hook reads
+`data.verdict` and `data.policyAction`, gets nothing, and the result banner shows a blank verdict.
+
+The fix is a small change on the server. See [KNOWN_ISSUES.md](KNOWN_ISSUES.md) issue 4.
+
+## 7. Keeping the user logged in
+
+### Refreshing the token
+
+The API client reads the expiry time out of the access token and schedules a refresh **60 seconds
+before it expires.**
+
+**The old documentation said a fixed 29-minute timer.** There is no fixed timer. The client reads
+the actual expiry out of the token, which is better, because it survives a server change to the
+token lifetime.
+
+### Where the token lives
+
+In the browser's local storage. That is convenient and it has a downside: a script running on the
+same origin could read it. For this project's scale that is an accepted trade-off, but it is worth
+knowing.
+
+### A real bug
+
+The QR code modal fetches the machine's network address with a bare `fetch`, without the token.
+That request fails with 401, so the fallback quietly breaks. See
+[KNOWN_ISSUES.md](KNOWN_ISSUES.md) issue 5.
+
+## 8. Talking to the backend
+
+### The base address
+
+Hard-coded as `/api/v1` in `src/services/api.js`.
+
+**`frontend/.env.example` sets `VITE_API_BASE_URL=/api/v1`, but that setting is never read.** It is
+declared and unused. Changing it does nothing.
+
+### The development proxy
+
+`vite.config.js` forwards two paths to the backend on port 8000:
+
+| Path | Goes to |
+|---|---|
+| `/api` | `http://localhost:8000` |
+| `/static` | `http://localhost:8000` |
+
+So in development the browser calls `/api/v1/...` on port 5173, and Vite passes it through. No
+cross-origin request, so no CORS trouble in development.
+
+### The tunnel
+
+`vite.config.js` allows three tunnel hostnames through, so the dev server works behind a public
+tunnel: `.trycloudflare.com`, `.ngrok.app`, and `.loca.lt`.
+
+### The request client
+
+One client handles everything: attaching the token, refreshing it when it is close to expiring, and
+retrying once after a refresh if the first attempt came back unauthorised.
+
+## 9. The phone QR code
+
+When a desktop user opens the new inspection page, the app shows a modal explaining that a phone
+will take a better photo, and shows a QR code.
+
+**What is actually happening, precisely:**
+
+- The QR code contains **the current page address**, not a special mobile intake route.
+- Scanning it opens the same page on the phone.
+- The person photographs on the phone and submits it there. **The photo does not appear on the
+  desktop.** There is no synchronisation between the two sessions, and nothing polls the desktop for
+  a phone upload.
+- The camera uses the rear-facing camera where available.
+
+**Four corrections to the old documentation:**
+
+- It said the backend starts the tunnel automatically. **It does not.** A person runs
+  `npm run tunnel`, and the tunnel process is a script in the frontend folder.
+- It said photos taken on the phone upload "directly to the desktop queue". They do not. The photo
+  is a file in the phone's browser, submitted the same way any other upload is.
+- It said the photo "appears in the desktop browser". **It does not.** The two devices are separate
+  sessions. If the operator wants the result on the desktop, they open the inspection there
+  afterwards.
+- It said the tunnel exposes only the inspection intake. **It exposes the whole development server**,
+  which is every page.
+
+## 10. Bundle size
+
+Measured from the last production build in `frontend/dist`:
+
+| File | Uncompressed | Gzipped |
+|---|---|---|
+| `index-D2YeOHG0.js` | 976 KB | 284 KB |
+| `index-DAP4uHhA.css` | 48 KB | 9 KB |
+| `index.html` | 0.8 KB | — |
+| `icons.svg` | 4.9 KB | — |
+
+**One JavaScript file, 284 KB gzipped.** The old documentation claimed "under 350 KB gzipped" with
+code splitting and lazy loading. The total happens to be in that range, but the mechanism is not
+there.
+
+**There is no code splitting.** There is no `React.lazy` anywhere in the project, and no dynamic
+import. Everything loads in one file, in one request.
+
+The obvious split points, if it were worth doing, are the routes. The analytics page pulls in Recharts,
+which is most of the weight, and nobody on the receiving dock needs it.
+
+## 11. What the old documentation got wrong
+
+| Claim | Reality |
+|---|---|
+| React 18.3 | **React 19.2.8** |
+| Vite 5.4 | **Vite 8.3.0** |
+| Node 18 minimum | **Node 20.19+ or 22.12+** |
+| A fixed 29-minute token timer | Reads the real expiry, refreshes 60 seconds early |
+| Listens for `stage_progress` | Listens for the default message handler |
+| Listens for `evidence_card` | No such event exists |
+| Listens for `pipeline_complete` | Listens for `verdict` |
+| An `evidenceCards` array with an appending reducer | Does not exist. Cards are fetched at the end |
+| The backend starts a Cloudflare tunnel | A frontend script, started by a person |
+| A mobile intake page uploads to a desktop queue | No mobile route. The same page on a phone |
+| Synchronised zoom **and pan** | **There is no pan.** A shared zoom level only |
+| Bounding boxes drawn as SVG on a canvas | Plain absolutely positioned boxes over an image |
+| Green, red, and yellow boxes for pass, fail, and low confidence | Boxes are coloured by component type |
+| Hover tooltips on the boxes | The boxes cannot be clicked. No tooltips |
+| Client-side image dimension validation | Thumbnails are generated, but there is no size check |
+| A raw JSON drawer on the evidence card | Does not exist |
+| Filter reports by vendor, verdict, and date range | Free text search, a verdict filter, and a policy filter. No date range, no vendor dropdown |
+| Lazy loading and code splitting | One bundle, no lazy loading |
+| 7 shared and 4 inspection components | 7 shared and 8 inspection |
+| A `useInspectionDetail` hook | Does not exist |
+| The 2.5 second polling interval is set by the server | It is a frontend constant |
+
+**What was correct:** the colour palette, the fonts, the route structure and which pages are
+protected, the 2.5 second polling interval itself, the component list apart from the two omissions,
+the AuthContext surface, and cleaning up the live connection when the page closes.
 
 ---
 
-## 3. Proactive Authentication & Token Rotation Engine
-
-To ensure an active inspection is never interrupted by an expired JWT token, `frontend/src/services/api.js` implements a **proactive pre-expiry token rotation timer**:
-
-```mermaid
-sequenceDiagram
-    participant UI as 🖥️ Workstation
-    participant Timer as ⏱️ Background Timer
-    participant Interceptor as 🛡️ Axios Interceptor
-    participant API as ⚡ FastAPI Backend
-
-    Note over UI,API: Step 1: Initial Login
-    UI->>API: POST /api/v1/auth/login
-    API-->>UI: 200 OK (access_token: 30m, refresh_token: 7d)
-    UI->>Timer: Start timer for 29 minutes
-
-    Note over UI,API: Step 2: Proactive Pre-Expiry Renewal
-    Timer->>API: POST /api/v1/auth/refresh (at minute 29)
-    API-->>UI: 200 OK (new access_token + refresh_token)
-    UI->>Timer: Reset timer for another 29 minutes
-
-    Note over UI,API: Step 3: Reactive 401 Fallback
-    UI->>API: GET /api/v1/inspections (Network delay caused expiry)
-    API-->>Interceptor: 401 Unauthorized
-    Interceptor->>API: POST /api/v1/auth/refresh (queue pending requests)
-    API-->>Interceptor: 200 OK (new token)
-    Interceptor->>API: Replay queued requests with new token
-    API-->>UI: Return data seamlessly
-```
-
----
-
-## 4. Real-Time Telemetry: The `usePipelineSSE` Hook
-
-The `usePipelineSSE` custom hook (`frontend/src/hooks/usePipelineSSE.js`) manages the real-time telemetry stream between the workstation and the LangGraph engine:
-
-```javascript
-// Conceptual SSE Lifecycle
-export function usePipelineSSE(inspectionId) {
-  const [stage, setStage] = useState(1);
-  const [evidenceCards, setEvidenceCards] = useState([]);
-  const [verdict, setVerdict] = useState(null);
-
-  useEffect(() => {
-    if (!inspectionId) return;
-    
-    // Connect to Server-Sent Events stream
-    const eventSource = new EventSource(`/api/v1/inspections/${inspectionId}/events`);
-
-    eventSource.addEventListener('stage_progress', (e) => {
-      const data = JSON.parse(e.data);
-      setStage(data.stage);
-    });
-
-    eventSource.addEventListener('evidence_card', (e) => {
-      const card = JSON.parse(e.data);
-      setEvidenceCards((prev) => [...prev, card]);
-    });
-
-    eventSource.addEventListener('pipeline_complete', (e) => {
-      const result = JSON.parse(e.data);
-      setVerdict(result);
-      eventSource.close();
-    });
-
-    // Fallback: 2.5s HTTP polling if SSE connection drops
-    eventSource.onerror = () => {
-      eventSource.close();
-      startPollingFallback(inspectionId);
-    };
-
-    return () => eventSource.close();
-  }, [inspectionId]);
-}
-```
-
----
-
-## 5. Dual Intake Modalities (Desktop & Mobile QR Handoff)
-
-Factory inspection setups vary widely: some stations have fixed high-resolution USB microscopes, while others require roving operators with smartphones. VisionForge supports both:
-
-```mermaid
-flowchart LR
-    subgraph IntakeModalities["Dual Ingestion Modes"]
-        Desktop["🖥️ Desktop Intake<br/>Drag-and-Drop 4K JPEGs<br/>(Local File System)"]
-        Mobile["📱 Smartphone Intake<br/>Scan Screen QR Code<br/>(Cloudflare Quick Tunnel)"]
-    end
-
-    Desktop --> IntakeAPI["POST /api/v1/inspections"]
-    Mobile --> IntakeAPI
-```
-
-1. **Desktop Direct Upload:** Drag-and-drop 4K imagery directly onto the HUD with immediate client-side thumbnail rendering and dimension validation.
-2. **Mobile Smartphone Handoff:** Click "Mobile Camera" on the desktop HUD. The backend spins up an automated **Cloudflare Quick Tunnel** (`cloudflared`) and generates a dynamic QR code. The operator scans the QR code with their phone, opens the mobile-optimized camera page, snaps a photo, and the image streams directly into the desktop inspection queue in under $1\text{ second}$.
-
----
-
-## 6. Core Workstation Components
-
----
-
-### 6.1 `DualImageCanvas.jsx` — Synchronized Forensic Comparator
-- **Source File:** `frontend/src/components/inspection/DualImageCanvas.jsx`
-- **Purpose:** Renders the incoming hardware test board side-by-side with the manufacturer's golden blueprint.
-- **Capabilities:**
-  - **Synchronized Zoom & Pan:** Panning or zooming on the test board automatically pans and zooms the golden master to the identical relative coordinate.
-  - **Interactive Bounding Box Overlays:** Renders color-coded SVG rectangles over ROIs:
-    - 🟢 Green: Passed component check.
-    - 🔴 Crimson: Failed component check (missing part, broken seal).
-    - 🟡 Amber: Low confidence / review required.
-  - **Hover Tooltips:** Clicking any bounding box opens an overlay displaying the specific agent's confidence, expected component count, and defect explanation.
-
----
-
-### 6.2 `PipelineProgress.jsx` — 8-Stage Real-Time Stepper
-- **Source File:** `frontend/src/components/inspection/PipelineProgress.jsx`
-- **Purpose:** Visualizes the progress of the 8 LangGraph stages in real time.
-- **Visual Indicators:**
-  - Pulsing electric cyan halo around the currently executing stage.
-  - Emerald checkmark for completed stages with millisecond latency badges.
-  - Crimson alert badge if Stage 1 (Blur) or Stage 2 (Authenticity) triggers a fast-fail exit.
-
----
-
-### 6.3 `VerdictBanner.jsx` — AI Judge Causal Display
-- **Source File:** `frontend/src/components/inspection/VerdictBanner.jsx`
-- **Purpose:** Renders the final legal arbitration decision at the top of the detail page.
-- **Visual Design:**
-  - **ACCEPT:** Emerald glowing border with `AUTHENTIC HARDWARE` badge.
-  - **REJECT:** Crimson pulsing border with `COUNTERFEIT / DEFECT DETECTED` badge.
-  - **REVIEW:** Amber border with `OPERATOR REVIEW REQUIRED` badge.
-  - **Markdown Narrative:** Formats the AI Judge's formal root-cause explanation with bold highlights on missing parts and lot code discrepancies.
-
----
-
-### 6.4 `EvidenceCard.jsx` — Forensic Findings & YOLO Telemetry
-- **Source File:** `frontend/src/components/inspection/EvidenceCard.jsx`
-- **Purpose:** Modular card rendering individual agent findings.
-- **Sections:**
-  - **Agent Identity:** Icon and badge (`OCR`, `LABEL`, `STRUCTURAL`, `VLM`).
-  - **Anomaly Metric:** Circular progress gauge displaying normalized anomaly score ($0.0$ to $1.0$).
-  - **YOLO Delta Table:** For structural cards, displays discrete expected vs. detected component counts:
-    ```text
-    Component: capacitor | Expected: 4 | Detected: 3 | Status: MISSING (-1)
-    ```
-  - **Raw JSON Drawer:** Expandable accordion displaying raw model outputs for deep engineering diagnostics.
-
----
-
-## 7. Application Pages & Workstation Views
-
-1. **`LandingPage.jsx`:** Public marketing and engineering overview featuring interactive pipeline simulations, live demo accounts, and technology breakdown.
-2. **`LoginPage.jsx`:** High-security authentication portal with one-click demo presets (`System Admin` and `Line Operator`).
-3. **`DashboardPage.jsx`:** Real-time factory KPI view displaying total inspections, rejection rate, recent case history, and quick-inspection launch cards.
-4. **`NewInspectionPage.jsx`:** Ingestion hub with drag-and-drop upload, vendor dropdown, location tagging, and mobile QR pairing modal.
-5. **`InspectionDetailPage.jsx`:** The core forensic workstation. Contains the synchronized `DualImageCanvas`, real-time `PipelineProgress` stepper, AI Judge `VerdictBanner`, and the interactive `EvidenceCard` grid.
-6. **`ReportsPage.jsx`:** Searchable audit archive allowing operators to filter historical reports by vendor, verdict, and date range, with one-click PDF downloads.
-7. **`AnalyticsPage.jsx`:** High-level supply-chain intelligence powered by Recharts, graphing supplier risk scores, monthly counterfeit trends, and defect distributions by location.
-
----
-
-## 8. State Management & Data Flow Architecture
-
-VisionForge avoids bloated global state stores (such as Redux) in favor of **focused React Contexts and custom hooks**:
-
-```mermaid
-flowchart TD
-    subgraph StateProviders["React Context Architecture"]
-        Auth["AuthContext<br/>(User Session & RBAC Guards)"]
-        Toast["ToastContext<br/>(Factory Notification Hub)"]
-        SSE["usePipelineSSE Hook<br/>(Live Stage & Evidence Telemetry)"]
-    end
-
-    subgraph Views["Workstation Views"]
-        DashView["DashboardPage"]
-        DetailView["InspectionDetailPage"]
-        AnalyticsView["AnalyticsPage"]
-    end
-
-    Auth --> DashView & DetailView & AnalyticsView
-    Toast --> DetailView
-    SSE --> DetailView
-```
-
-- **Authentication State:** Managed via `AuthContext.jsx`, exposing `user`, `isAuthenticated`, `login()`, `logout()`, and role helper flags (`isAdmin`, `isOperator`).
-- **Telemetry State:** Managed strictly inside `usePipelineSSE.js` during active inspections, tearing down socket connections upon navigation to prevent memory leaks.
-
----
-
-*For backend APIs powering this frontend, see [`docs/API.md`](API.md).*  
-*For deployment instructions, see [`docs/DEPLOYMENT.md`](DEPLOYMENT.md).*
+*Next: [TESTING.md](TESTING.md) for how the code is checked.*
