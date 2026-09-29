@@ -14,7 +14,7 @@ from sqlalchemy.orm import selectinload
 
 from app.core.database import AsyncSessionLocal, get_db
 from app.core.security import get_current_user, require_roles
-from app.models.inspection import Inspection, InspectionStatus, ReviewDecision
+from app.models.inspection import Inspection, InspectionStatus, InspectionVerdict, ReviewDecision
 from app.models.user import User, UserRole
 from app.models.vendor import Vendor
 from app.pipeline.state import inspection_state_registry
@@ -302,14 +302,14 @@ async def approve_inspection(
 ) -> InspectionResponse:
     inspection = await _get_completed_inspection_or_404(inspection_id, db)
 
-    inspection.review_decision = ReviewDecision.APPROVED
-    inspection.reviewed_by = current_user.id
-    inspection.reviewer_comment = payload.comment
-    inspection.reviewed_at = datetime.now(timezone.utc)
-
-    await db.commit()
-    await db.refresh(inspection)
-    return InspectionResponse.model_validate(inspection)
+    return await _record_review(
+        inspection,
+        ReviewDecision.APPROVED,
+        payload.reviewer_comment,
+        None,
+        current_user,
+        db,
+    )
 
 
 @router.post("/{inspection_id}/override", response_model=InspectionResponse)
@@ -320,17 +320,17 @@ async def override_inspection(
     current_user: User = Depends(require_roles(UserRole.ADMIN, UserRole.OPERATOR)),
 ) -> InspectionResponse:
     inspection = await _get_completed_inspection_or_404(inspection_id, db)
-    if not payload.comment or not payload.comment.strip():
+    if not (payload.reviewer_comment or "").strip():
         raise HTTPException(http_status.HTTP_400_BAD_REQUEST, "Override requires a reviewer comment")
 
-    inspection.review_decision = ReviewDecision.OVERRIDDEN
-    inspection.reviewed_by = current_user.id
-    inspection.reviewer_comment = payload.comment
-    inspection.reviewed_at = datetime.now(timezone.utc)
-
-    await db.commit()
-    await db.refresh(inspection)
-    return InspectionResponse.model_validate(inspection)
+    return await _record_review(
+        inspection,
+        ReviewDecision.OVERRIDDEN,
+        payload.reviewer_comment,
+        None,
+        current_user,
+        db,
+    )
 
 
 async def _get_completed_inspection_or_404(inspection_id: UUID, db: AsyncSession) -> Inspection:
@@ -344,3 +344,114 @@ async def _get_completed_inspection_or_404(inspection_id: UUID, db: AsyncSession
             f"Inspection not reviewable, status={inspection.status.value}",
         )
     return inspection
+
+
+_REVIEW_DECISION_ALIASES = {
+    "approved": ReviewDecision.APPROVED,
+    "approve": ReviewDecision.APPROVED,
+    "accept": ReviewDecision.APPROVED,
+    "overridden": ReviewDecision.OVERRIDDEN,
+    "override": ReviewDecision.OVERRIDDEN,
+    "rejected": ReviewDecision.OVERRIDDEN,
+    "reject": ReviewDecision.OVERRIDDEN,
+}
+
+_OVERRIDDEN_VERDICT_ALIASES = {
+    "accept": InspectionVerdict.ACCEPT,
+    "accepted": InspectionVerdict.ACCEPT,
+    "genuine": InspectionVerdict.ACCEPT,
+    "pass": InspectionVerdict.ACCEPT,
+    "reject": InspectionVerdict.REJECT,
+    "rejected": InspectionVerdict.REJECT,
+    "fraud": InspectionVerdict.REJECT,
+    "fail": InspectionVerdict.REJECT,
+    "review": InspectionVerdict.REVIEW,
+    "manual": InspectionVerdict.REVIEW,
+}
+
+
+def _normalise_review_decision(raw: Optional[str]) -> Optional[ReviewDecision]:
+    if raw is None:
+        return None
+    return _REVIEW_DECISION_ALIASES.get(str(raw).strip().lower())
+
+
+def _normalise_overridden_verdict(raw: Optional[str]) -> Optional[InspectionVerdict]:
+    if raw is None:
+        return None
+    return _OVERRIDDEN_VERDICT_ALIASES.get(str(raw).strip().lower())
+
+
+async def _record_review(
+    inspection: Inspection,
+    decision: ReviewDecision,
+    comment: Optional[str],
+    verdict: Optional[InspectionVerdict],
+    reviewer: User,
+    db: AsyncSession,
+) -> InspectionResponse:
+    """Single write path for every human-review entry point."""
+    inspection.review_decision = decision
+    inspection.reviewed_by = reviewer.id
+    inspection.reviewer_comment = comment
+    inspection.reviewed_at = datetime.now(timezone.utc)
+    if verdict is not None:
+        inspection.verdict = verdict
+
+    # Read the primary key before commit: expire_on_commit drops every attribute,
+    # so touching inspection.id afterwards would lazy-refresh under async.
+    inspection_id = inspection.id
+    await db.commit()
+
+    # Re-read with the relationships that InspectionResponse derives its display
+    # fields from (vendor_name, product_type) eagerly loaded. After commit the
+    # identity is expired, so validating the in-memory instance would trigger a
+    # lazy load and raise MissingGreenlet under async.
+    refreshed = await db.execute(
+        select(Inspection)
+        .where(Inspection.id == inspection_id)
+        .options(
+            selectinload(Inspection.vendor),
+            selectinload(Inspection.golden_reference),
+        )
+    )
+    reloaded = refreshed.scalar_one_or_none()
+    if reloaded is None:
+        raise HTTPException(http_status.HTTP_404_NOT_FOUND, "Inspection not found")
+
+    return InspectionResponse.model_validate(reloaded)
+
+
+@router.post("/{inspection_id}/review", response_model=InspectionResponse)
+async def review_inspection(
+    inspection_id: UUID,
+    payload: InspectionReviewRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_roles(UserRole.ADMIN, UserRole.OPERATOR)),
+) -> InspectionResponse:
+    inspection = await _get_completed_inspection_or_404(inspection_id, db)
+
+    decision = _normalise_review_decision(payload.review_decision)
+    if decision is None:
+        raise HTTPException(
+            http_status.HTTP_400_BAD_REQUEST,
+            "review_decision must be 'approved' or 'overridden'",
+        )
+
+    verdict: Optional[InspectionVerdict] = None
+    if decision is ReviewDecision.OVERRIDDEN:
+        verdict = _normalise_overridden_verdict(payload.overridden_verdict)
+        if verdict is None:
+            raise HTTPException(
+                http_status.HTTP_400_BAD_REQUEST,
+                "overridden_verdict must be 'accept' or 'reject' when overriding",
+            )
+        if not (payload.reviewer_comment or "").strip():
+            raise HTTPException(
+                http_status.HTTP_400_BAD_REQUEST,
+                "Override requires a reviewer comment",
+            )
+
+    return await _record_review(
+        inspection, decision, payload.reviewer_comment, verdict, current_user, db
+    )

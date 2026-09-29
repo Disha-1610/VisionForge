@@ -2,62 +2,94 @@
   "schema_version": 1,
   "diagram_type": "architecture",
   "meta": {
-    "title": "VisionForge AI - System Architecture",
+    "title": "VisionForge — System Architecture",
     "output": "diagrams/01-system-architecture.html",
     "quality_profile": "showcase",
-    "viewBox": [1380, 560],
+    "viewBox": [1320, 580],
     "views": [
       {
         "id": "full-journey",
-        "label": "Complete inspection flow",
-        "focus": ["operator", "frontend", "api", "pipeline", "db", "storage"],
-        "note": "Primary inspection journey from the operator console to durable state."
+        "label": "Full inspection journey",
+        "focus": ["frontend", "api", "bg_task", "pipeline", "intake", "refmatch", "agents", "fusion", "judge", "policy", "db", "pdf"],
+        "note": "End-to-end flow from React console upload through 8-stage LangGraph pipeline to DB persistence and PDF report."
       },
       {
-        "id": "ai-models",
-        "label": "AI & Computer Vision Core",
-        "focus": ["pipeline", "yolo", "cv", "groq"],
-        "note": "Local YOLO11n detection, OpenCV heuristics, and Groq LPU causal arbitration."
+        "id": "api-gateway",
+        "label": "API gateway & background worker",
+        "focus": ["frontend", "api", "bg_task"],
+        "note": "FastAPI gateway handling JWT auth and dispatching async background inspection."
       },
       {
-        "id": "security-persistence",
-        "label": "Security and Persistence",
-        "focus": ["auth", "api", "db", "storage"],
-        "note": "JWT token lifecycle and append-only evidence persistence."
+        "id": "pipeline-core",
+        "label": "8-stage LangGraph pipeline",
+        "focus": ["pipeline", "intake", "refmatch", "agents", "fusion", "judge", "policy"],
+        "note": "Deterministic quality gates, FAISS golden retrieval, parallel agent execution swarm, Bayesian fusion, and policy engine."
+      },
+      {
+        "id": "persistence",
+        "label": "Persistence and reporting",
+        "focus": ["policy", "db", "pdf"],
+        "note": "Final verdict persistence in SQLite WAL and ReportLab cryptographically signed PDF audit report generation."
       }
     ]
   },
   "components": [
-    { "id": "operator", "type": "external", "label": "QA Inspector", "sublabel": "Industrial Station", "pos": [50, 260], "size": [130, 60] },
-    { "id": "frontend", "type": "frontend", "brand": "react", "label": "Tactical HUD", "sublabel": "React 18 + Vite :5173", "pos": [260, 260], "size": [140, 60], "tag": "Dual Canvas" },
-    { "id": "auth", "type": "security", "label": "JWT Auth & RBAC", "sublabel": "HS256 Rotation", "pos": [470, 110], "size": [140, 60], "tag": "Security" },
-    { "id": "api", "type": "backend", "brand": "fastapi", "label": "FastAPI Gateway", "sublabel": "Uvicorn :8000", "pos": [470, 260], "size": [140, 60], "tag": "REST + SSE" },
-    { "id": "yolo", "type": "backend", "label": "YOLO11n Engine", "sublabel": "component_detector.pt", "pos": [690, 110], "size": [150, 60], "tag": "Local PyTorch" },
-    { "id": "pipeline", "type": "backend", "label": "LangGraph Engine", "sublabel": "8-stage state machine", "pos": [690, 260], "size": [150, 60], "tag": "StateGraph" },
-    { "id": "cv", "type": "backend", "label": "CV Forensics", "sublabel": "OpenCV • ELA • SSIM", "pos": [690, 410], "size": [150, 60] },
-    { "id": "groq", "type": "cloud", "label": "Groq Cloud LPU", "sublabel": "gpt-oss-20b (~420ms)", "pos": [920, 110], "size": [140, 60], "tag": "Causal Judge" },
-    { "id": "db", "type": "database", "label": "Relational DB", "sublabel": "SQLAlchemy 2.0", "pos": [920, 260], "size": [140, 60], "tag": "Postgres/SQLite" },
-    { "id": "storage", "type": "database", "label": "Media Storage", "sublabel": "data/cases & reports", "pos": [1140, 260], "size": [130, 60], "tag": "Append-Only" }
+    { "id": "frontend", "type": "frontend", "brand": "react", "label": "React 19 + Vite", "sublabel": "Operator Console · SSE Stream", "pos": [60, 60], "size": [180, 66], "tag": "Tailwind UI" },
+    { "id": "api", "type": "backend", "brand": "fastapi", "label": "FastAPI /api/v1", "sublabel": "5 Routers · JWT Auth Guard", "pos": [390, 60], "size": [190, 66], "tag": "API Gateway" },
+    { "id": "bg_task", "type": "backend", "label": "Background Inspection", "sublabel": "FastAPI BackgroundTasks", "pos": [730, 60], "size": [190, 66], "tag": "Async Worker" },
+    { "id": "pipeline", "type": "backend", "label": "LangGraph Pipeline", "sublabel": "8-Stage StateGraph", "pos": [1070, 196], "size": [190, 68], "tag": "Orchestrator" },
+    { "id": "intake", "type": "backend", "label": "1. Quality & 2. ELA", "sublabel": "Laplacian Blur · Tamper Gate", "pos": [730, 196], "size": [190, 68], "tag": "Stages 1–2" },
+    { "id": "refmatch", "type": "backend", "label": "3. Ref & 4. ROI Sched", "sublabel": "FAISS Golden · Dynamic Crops", "pos": [390, 196], "size": [190, 68], "tag": "Stages 3–4" },
+    { "id": "agents", "type": "backend", "label": "5. Evidence Execution", "sublabel": "OCR · Label · Structural · VLM", "pos": [60, 196], "size": [190, 68], "tag": "4 Parallel Agents" },
+    { "id": "fusion", "type": "backend", "label": "6. Evidence Fusion", "sublabel": "Bayesian Score Pooling", "pos": [60, 334], "size": [190, 68], "tag": "Stage 6" },
+    { "id": "judge", "type": "cloud", "label": "7. AI Judge", "sublabel": "Gemini 2.5 · Groq Failover", "pos": [390, 334], "size": [190, 68], "tag": "Stage 7" },
+    { "id": "policy", "type": "backend", "label": "8. Policy Engine", "sublabel": "ACCEPT · QUARANTINE · RETAKE", "pos": [730, 334], "size": [190, 68], "tag": "Stage 8" },
+    { "id": "db", "type": "database", "label": "DB Persistence", "sublabel": "SQLAlchemy SQLite WAL", "pos": [540, 472], "size": [180, 68], "tag": "Audit Trail" },
+    { "id": "pdf", "type": "backend", "label": "PDF Report", "sublabel": "ReportLab Compliance Report", "pos": [870, 472], "size": [180, 68], "tag": "Signed Audit" }
   ],
   "boundaries": [
-    { "kind": "region", "label": "Industrial Edge Workstation", "wraps": ["operator", "frontend"] },
-    { "kind": "security-group", "label": "Zero-Trust API Gateway", "wraps": ["api", "auth"] },
-    { "kind": "region", "label": "VisionForge Backend Runtime", "wraps": ["pipeline", "yolo", "cv", "db", "storage"] }
+    { "kind": "region", "label": "Frontend & Ingestion Gateway", "wraps": ["frontend", "api", "bg_task"] },
+    { "kind": "region", "label": "LangGraph Autonomous Pipeline", "wraps": ["pipeline", "intake", "refmatch", "agents", "fusion", "judge", "policy"] },
+    { "kind": "region", "label": "Persistence & Audit Records", "wraps": ["db", "pdf"] }
   ],
   "connections": [
-    { "id": "c1", "from": "operator", "to": "frontend", "label": "scan UI" },
-    { "id": "c2", "from": "frontend", "to": "api", "label": "HTTPS :8000", "variant": "emphasis" },
-    { "id": "c3", "from": "api", "to": "auth", "label": "verify JWT", "variant": "security", "fromSide": "top", "toSide": "bottom" },
-    { "id": "c4", "from": "api", "to": "pipeline", "label": "dispatch scan", "variant": "emphasis" },
-    { "id": "c5", "from": "pipeline", "to": "yolo", "label": "YOLO11n", "fromSide": "top", "toSide": "bottom", "labelDy": -20, "labelDx": -16 },
-    { "id": "c6", "from": "pipeline", "to": "cv", "label": "OpenCV", "fromSide": "bottom", "toSide": "top", "labelDy": 24 },
-    { "id": "c7", "from": "pipeline", "to": "groq", "label": "causal judge", "variant": "emphasis", "fromSide": "top", "toSide": "left", "labelDy": -24 },
-    { "id": "c8", "from": "pipeline", "to": "db", "label": "save state", "fromSide": "right", "toSide": "left" },
-    { "id": "c9", "from": "db", "to": "storage", "label": "reports", "fromSide": "right", "toSide": "left", "labelDy": -20 }
+    { "id": "c1", "from": "frontend", "to": "api", "label": "upload / SSE", "variant": "emphasis" },
+    { "id": "c2", "from": "api", "to": "bg_task", "label": "enqueue task", "fromSide": "right", "toSide": "left" },
+    { "id": "c3", "from": "bg_task", "to": "pipeline", "label": "invoke graph", "variant": "emphasis", "fromSide": "right", "toSide": "top" },
+    { "id": "c4", "from": "pipeline", "to": "intake", "label": "stages 1–2", "fromSide": "left", "toSide": "right" },
+    { "id": "c5", "from": "intake", "to": "refmatch", "label": "stages 3–4", "fromSide": "left", "toSide": "right" },
+    { "id": "c6", "from": "refmatch", "to": "agents", "label": "crop ROIs", "fromSide": "left", "toSide": "right" },
+    { "id": "c7", "from": "agents", "to": "fusion", "label": "findings", "fromSide": "bottom", "toSide": "top", "labelAt": [155, 299] },
+    { "id": "c8", "from": "fusion", "to": "judge", "label": "fused scores", "variant": "emphasis", "fromSide": "right", "toSide": "left" },
+    { "id": "c9", "from": "judge", "to": "policy", "label": "verdict", "fromSide": "right", "toSide": "left" },
+    { "id": "c10", "from": "policy", "to": "db", "label": "save state", "fromSide": "bottom", "toSide": "top" },
+    { "id": "c11", "from": "policy", "to": "pdf", "label": "generate PDF", "fromSide": "bottom", "toSide": "top" }
   ],
   "cards": [
-    { "dot": "cyan", "title": "Client & Edge Ingestion", "items": ["React 18 Cyberpunk HUD with synchronized dual canvas and real-time SSE telemetry", "FastAPI gateway handling multipart image uploads and token authentication"] },
-    { "dot": "emerald", "title": "Local AI Core & LPU Inference", "items": ["LangGraph 8-stage state machine orchestrating 30ms defensive fast-fail gates", "Fine-tuned YOLO11n running localized inference on sub-regions", "Groq LPU (gpt-oss-20b) delivering sub-second root-cause reasoning"] },
-    { "dot": "rose", "title": "Persistence & Security", "items": ["PostgreSQL/SQLite dual-dialect persistence with append-only evidence", "Media storage with SHA-256 hash provenance and immutable audit trail"] }
+    {
+      "dot": "cyan",
+      "title": "Client & Gateway Layer",
+      "items": [
+        "React 19 + Vite console: dual canvas, camera intake, and real-time SSE progress streaming",
+        "FastAPI /api/v1: JWT Auth guard, 5 modular routers (Inspections, Products, Vendors, Reports, Analytics), and async background dispatch"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "8-Stage LangGraph Pipeline",
+      "items": [
+        "Stages 1–4: Deterministic Laplacian blur & ELA tamper gates, FAISS golden reference retrieval, dynamic ROI scheduler",
+        "Stage 5 Swarm: OCR Agent, Label Agent, Structural YOLO11n Detector, and Multimodal VLM running concurrently",
+        "Stages 6–8: Bayesian max-pooling evidence fusion, LLM forensic judge (Gemini 2.5 with Groq failover), and policy engine"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Persistence & Audit Compliance",
+      "items": [
+        "SQLAlchemy 2.0 with SQLite WAL mode stores inspections, operator audits, and live telemetry with zero mock data",
+        "ReportLab generates cryptographically sealed PDF audit reports with SHA-256 hashes and dual-control override signatures"
+      ]
+    }
   ]
 }

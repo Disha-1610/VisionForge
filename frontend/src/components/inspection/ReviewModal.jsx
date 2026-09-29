@@ -7,7 +7,7 @@ import { useToast } from '../../context/ToastContext';
 
 export const ReviewModal = ({ isOpen, onClose, inspectionId, currentVerdict, onReviewComplete }) => {
   const [reviewAction, setReviewAction] = useState('APPROVED'); // 'APPROVED' | 'OVERRIDDEN'
-  const [newVerdict, setNewVerdict] = useState(currentVerdict === 'GENUINE' ? 'FRAUD' : 'GENUINE');
+  const [newVerdict, setNewVerdict] = useState(currentVerdict === 'accept' ? 'reject' : 'accept');
   const [reviewerNotes, setReviewerNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -24,7 +24,7 @@ export const ReviewModal = ({ isOpen, onClose, inspectionId, currentVerdict, onR
     setSubmitting(true);
     try {
       const payload = {
-        review_status: reviewAction,
+        review_status: reviewAction.toLowerCase(),
         reviewer_notes: reviewerNotes.trim() || `Approved AI verdict (${currentVerdict})`,
         overridden_verdict: reviewAction === 'OVERRIDDEN' ? newVerdict : undefined,
       };
@@ -104,8 +104,8 @@ export const ReviewModal = ({ isOpen, onClose, inspectionId, currentVerdict, onR
               onChange={(e) => setNewVerdict(e.target.value)}
               className="w-full px-3 py-2 rounded-xl bg-hud-surface border border-hud-border text-sm text-white font-mono"
             >
-              <option value="GENUINE">GENUINE (Accept Part)</option>
-              <option value="FRAUD">FRAUD / TAMPERED (Quarantine)</option>
+              <option value="accept">GENUINE (Accept Part)</option>
+              <option value="reject">FRAUD / TAMPERED (Quarantine)</option>
             </select>
           </div>
         )}

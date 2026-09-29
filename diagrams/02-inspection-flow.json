@@ -1,90 +1,96 @@
 {
-  "schema_version": 2,
-  "diagram_type": "workflow",
+  "schema_version": 1,
+  "diagram_type": "architecture",
   "meta": {
-    "title": "VisionForge AI - End-to-End Inspection Pipeline",
+    "title": "VisionForge — Inspection Flow & LangGraph Pipeline",
     "output": "diagrams/02-inspection-flow.html",
     "quality_profile": "showcase",
+    "viewBox": [1320, 480],
     "views": [
       {
-        "id": "full-pipeline",
-        "label": "Complete Inspection Journey",
-        "focus": ["upload", "quality", "reference", "scheduler", "agents", "fusion", "judge", "policy", "review"],
-        "note": "Complete 8-stage state machine from raw capture to human sign-off."
+        "id": "full-journey",
+        "label": "Complete inspection flow",
+        "focus": ["frontend", "api", "quality", "authenticity", "reference", "scheduler", "execution", "fusion", "judge", "policy", "db", "report"],
+        "note": "End-to-end 8-stage pipeline from camera intake to signed PDF audit report."
       },
       {
         "id": "defensive-screening",
         "label": "Defensive Fast-Fail Screening",
-        "focus": ["quality", "reference"],
-        "note": "Early screening eliminates blurred scans and verifies blueprint match."
+        "focus": ["frontend", "api", "quality", "authenticity"],
+        "note": "Early screening eliminates blurred scans (<30ms) and verifies image authenticity."
       },
       {
-        "id": "forensics-and-decision",
-        "label": "Forensic Swarm & Causal Arbitration",
-        "focus": ["scheduler", "agents", "fusion", "judge", "policy"],
-        "note": "Localized ROI analysis, Anomaly Max-Pooling, and Groq LPU reasoning."
+        "id": "forensic-swarm",
+        "label": "Forensic Multi-Agent Swarm",
+        "focus": ["reference", "scheduler", "execution", "fusion"],
+        "note": "FAISS golden reference matching, localized ROI scheduling, parallel agent swarm, and Bayesian fusion."
+      },
+      {
+        "id": "governance-audit",
+        "label": "Governance & Persistence",
+        "focus": ["judge", "policy", "db", "report"],
+        "note": "Groq AI Judge causal reasoning, deterministic policy engine, SQLite WAL persistence, and ReportLab PDF."
       }
     ]
   },
-  "lanes": [
-    { "id": "operator", "label": "Operator & Workstation", "variant": "normal" },
-    { "id": "defensive", "label": "Defensive Ingestion Gates", "variant": "normal" },
-    { "id": "forensic", "label": "Forensic Swarm & Fusion", "variant": "normal" },
-    { "id": "decision", "label": "AI Judge & Governance", "variant": "normal" }
+  "components": [
+    { "id": "frontend", "type": "frontend", "brand": "react", "label": "Operator Intake", "sublabel": "Upload / Camera Scan", "pos": [60, 60], "size": [190, 68], "tag": "React 19 Console" },
+    { "id": "api", "type": "backend", "brand": "fastapi", "label": "FastAPI Gateway", "sublabel": "JWT Auth · StateGraph Init", "pos": [390, 60], "size": [190, 68], "tag": "InspectionState" },
+    { "id": "quality", "type": "backend", "label": "1. Quality Check", "sublabel": "Blur · Noise · Exposure", "pos": [730, 60], "size": [190, 68], "tag": "Laplacian <30ms" },
+    { "id": "authenticity", "type": "backend", "label": "2. Authenticity", "sublabel": "ELA & Tamper Analysis", "pos": [1070, 60], "size": [190, 68], "tag": "Noise Uniformity" },
+    { "id": "reference", "type": "backend", "label": "3. Reference Match", "sublabel": "CLIP + FAISS Vector Search", "pos": [1070, 200], "size": [190, 68], "tag": "Sim >= 0.75" },
+    { "id": "scheduler", "type": "backend", "label": "4. ROI Scheduler", "sublabel": "Text · Structural · VLM", "pos": [730, 200], "size": [190, 68], "tag": "Priority Queue" },
+    { "id": "execution", "type": "backend", "label": "5. Evidence Swarm", "sublabel": "OCR · Label · YOLO · VLM", "pos": [390, 200], "size": [190, 68], "tag": "Semaphore max 4" },
+    { "id": "fusion", "type": "backend", "label": "6. Evidence Fusion", "sublabel": "Signal Weights: 0.45..0.25", "pos": [60, 200], "size": [190, 68], "tag": "Composite Score" },
+    { "id": "judge", "type": "cloud", "label": "7. AI Judge", "sublabel": "Groq LPU · Gemini Fallback", "pos": [60, 340], "size": [190, 68], "tag": "Causal Verdict" },
+    { "id": "policy", "type": "backend", "label": "8. Policy Engine", "sublabel": "AUTHENTIC · SUSPICIOUS · FRAUD", "pos": [390, 340], "size": [190, 68], "tag": "Deterministic" },
+    { "id": "db", "type": "database", "label": "DB Persistence", "sublabel": "PostgreSQL / SQLite WAL", "pos": [730, 340], "size": [190, 68], "tag": "Audit Trail" },
+    { "id": "report", "type": "backend", "label": "ReportLab PDF", "sublabel": "Cryptographic Audit Report", "pos": [1070, 340], "size": [190, 68], "tag": "Signed Cert" }
   ],
-  "phases": [
-    { "id": "intake", "label": "Intake & Quality", "fromCol": 0, "toCol": 1 },
-    { "id": "validation", "label": "Reference & Scheduling", "fromCol": 2, "toCol": 3, "variant": "emphasis" },
-    { "id": "forensics", "label": "Swarm & Arbitration", "fromCol": 4, "toCol": 5, "variant": "dashed" }
+  "boundaries": [
+    { "kind": "region", "label": "1. Ingestion & Defensive Screening", "wraps": ["frontend", "api", "quality", "authenticity"] },
+    { "kind": "region", "label": "2. Golden Reference & Forensic Swarm", "wraps": ["reference", "scheduler", "execution", "fusion"] },
+    { "kind": "region", "label": "3. AI Governance, Persistence & Reporting", "wraps": ["judge", "policy", "db", "report"] }
   ],
-  "mainPath": ["upload", "quality", "reference", "scheduler", "agents", "fusion", "judge", "policy", "review"],
-  "nodes": [
-    { "id": "upload", "lane": "operator", "col": 0, "type": "frontend", "label": "Image Upload", "sublabel": "Operator / API Post", "tag": "Multipart", "width": 130 },
-    { "id": "quality", "lane": "defensive", "col": 1, "type": "backend", "label": "Quality Check", "sublabel": "S1/S2: Blur & ELA Check", "tag": "Laplacian <30ms", "width": 130 },
-    { "id": "reference", "lane": "defensive", "col": 2, "type": "backend", "label": "Golden Reference", "sublabel": "S3: CLIP & FAISS Match", "tag": "Sim >= 0.75", "width": 130 },
-    { "id": "scheduler", "lane": "forensic", "col": 2, "type": "backend", "label": "ROI Scheduler", "sublabel": "S4: Localized Crops", "tag": "8-12x Zoom", "width": 130 },
-    { "id": "agents", "lane": "forensic", "col": 3, "type": "backend", "label": "Evidence Agents", "sublabel": "S5: YOLO, OCR, VLM", "tag": "ThreadPool", "width": 130 },
-    { "id": "fusion", "lane": "forensic", "col": 4, "type": "backend", "label": "Evidence Fusion", "sublabel": "S6: Max-Pooling Math", "tag": "Non-Diluted", "width": 130 },
-    { "id": "judge", "lane": "decision", "col": 4, "type": "cloud", "label": "AI Forensic Judge", "sublabel": "S7: Groq LPU Causal", "tag": "~420ms", "width": 130 },
-    { "id": "policy", "lane": "decision", "col": 5, "type": "security", "label": "Policy / Report", "sublabel": "S8: Verdict & PDF Cert", "tag": "Deterministic", "width": 130 },
-    { "id": "review", "lane": "operator", "col": 5, "type": "external", "label": "Human Review", "sublabel": "HITL Sign-off", "tag": "Audit Trail", "width": 130 }
-  ],
-  "edges": [
-    { "id": "e1", "from": "upload", "to": "quality", "label": "raw scan", "variant": "emphasis" },
-    { "id": "e2", "from": "quality", "to": "reference", "label": "sharp & authentic", "variant": "default" },
-    { "id": "e3", "from": "reference", "to": "scheduler", "label": "blueprint match", "variant": "emphasis" },
-    { "id": "e4", "from": "scheduler", "to": "agents", "label": "crops", "variant": "default" },
-    { "id": "e5", "from": "agents", "to": "fusion", "label": "evidence cards", "variant": "emphasis" },
-    { "id": "e6", "from": "fusion", "to": "judge", "label": "pooled anomaly", "variant": "emphasis" },
-    { "id": "e7", "from": "judge", "to": "policy", "label": "causal verdict", "variant": "security" },
-    { "id": "e8", "from": "policy", "to": "review", "label": "audit certificate", "variant": "emphasis" }
+  "connections": [
+    { "id": "c1", "from": "frontend", "to": "api", "label": "POST image", "variant": "emphasis", "fromSide": "right", "toSide": "left" },
+    { "id": "c2", "from": "api", "to": "quality", "label": "init state", "fromSide": "right", "toSide": "left" },
+    { "id": "c3", "from": "quality", "to": "authenticity", "label": "valid scan", "variant": "emphasis", "fromSide": "right", "toSide": "left" },
+    { "id": "c4", "from": "authenticity", "to": "reference", "label": "authentic", "fromSide": "bottom", "toSide": "top", "labelAt": [1165, 164] },
+    { "id": "c5", "from": "reference", "to": "scheduler", "label": "golden match", "variant": "emphasis", "fromSide": "left", "toSide": "right" },
+    { "id": "c6", "from": "scheduler", "to": "execution", "label": "ROI crops", "fromSide": "left", "toSide": "right" },
+    { "id": "c7", "from": "execution", "to": "fusion", "label": "findings", "variant": "emphasis", "fromSide": "left", "toSide": "right" },
+    { "id": "c8", "from": "fusion", "to": "judge", "label": "fused scores", "variant": "emphasis", "fromSide": "bottom", "toSide": "top", "labelAt": [155, 304] },
+    { "id": "c9", "from": "judge", "to": "policy", "label": "verdict", "variant": "security", "fromSide": "right", "toSide": "left" },
+    { "id": "c10", "from": "policy", "to": "db", "label": "save state", "fromSide": "right", "toSide": "left" },
+    { "id": "c11", "from": "db", "to": "report", "label": "signed cert", "variant": "emphasis", "fromSide": "right", "toSide": "left" }
   ],
   "cards": [
     {
       "dot": "cyan",
       "title": "Ingestion & Defensive Screening",
       "items": [
-        "Stage 1 rejects blurred or glared images in under 30ms before wasting neural compute",
-        "Stage 2 detects manipulated photos or metadata spoofing via Error Level Analysis (ELA)",
-        "Stage 3 matches Open_CLIP 512-dim visual embeddings against golden reference library"
+        "React 19 Console dispatches multipart inspection image to FastAPI /api/v1 with JWT verification",
+        "Stage 1 Quality Check tests Laplacian blur (<30ms) and exposure; failures trigger retake bypass",
+        "Stage 2 Authenticity evaluates Error Level Analysis (ELA) and noise uniformity for tampering"
       ]
     },
     {
       "dot": "emerald",
-      "title": "Forensic Swarm & Mathematical Fusion",
+      "title": "Forensic Multi-Agent Swarm & Fusion",
       "items": [
-        "Stage 4 crops localized sub-regions, expanding micro-components by 8x-12x",
-        "Stage 5 dispatches parallel forensic agents (YOLO11n, PaddleOCR, Label, and VLM)",
-        "Stage 6 fuses anomaly scores using Anomaly Max-Pooling to preserve critical defects"
+        "Stage 3 retrieves golden reference via CLIP visual embedding & FAISS vector similarity search (>=0.75)",
+        "Stage 4 ROI Scheduler plans priority sub-crops dispatched to OCR, Label, Structural YOLO11n, and VLM",
+        "Stage 6 Evidence Fusion calculates composite fraud score with calibrated signal weights (YOLO 0.45, OCR 0.40, VLM 0.35, Label 0.30, SSIM 0.25)"
       ]
     },
     {
-      "dot": "rose",
-      "title": "Causal Arbitration & Governance",
+      "dot": "amber",
+      "title": "Arbitration, Persistence & Governance",
       "items": [
-        "Stage 7 synthesizes root-cause explanation on Groq LPU (gpt-oss-20b) in ~420ms",
-        "Stage 8 renders laboratory-grade PDF certificate with SHA-256 integrity hash",
-        "Human-in-the-loop workbench enables QA inspectors to approve, reject, or override verdicts"
+        "Stage 7 AI Judge synthesizes forensic reasoning using Groq LPU primary with Gemini fallback",
+        "Stage 8 Deterministic Policy Engine classifies verdict into AUTHENTIC, SUSPICIOUS, or FRAUD",
+        "SQLAlchemy SQLite WAL stores audit records while ReportLab renders cryptographically sealed PDF certificates"
       ]
     }
   ]

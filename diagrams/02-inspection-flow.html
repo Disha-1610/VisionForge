@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="generator" content="archify 2.17.0-dev.1">
-  <title>VisionForge AI - End-to-End Inspection Pipeline Diagram</title>
+  <title>VisionForge — Inspection Flow &amp; LangGraph Pipeline Diagram</title>
   <script>
     // Resolve the theme before first paint so light-preference users don't
     // see a dark flash. The toolbar script below re-applies with UI state.
@@ -5081,11 +5081,11 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
            data-preset-badge-blueprint="BLUEPRINT / REV 01"
            data-preset-badge-editorial="EDITORIAL / FIELD NOTE">
         <div class="pulse-dot"></div>
-        <h1>VisionForge AI - End-to-End Inspection Pipeline</h1>
+        <h1>VisionForge — Inspection Flow &amp; LangGraph Pipeline</h1>
       </div>
     </div>
 
-    <script id="archify-guided-views-data" type="application/json">[{"id":"full-pipeline","label":"Complete Inspection Journey","focus":["upload","quality","reference","scheduler","agents","fusion","judge","policy","review"],"note":"Complete 8-stage state machine from raw capture to human sign-off."},{"id":"defensive-screening","label":"Defensive Fast-Fail Screening","focus":["quality","reference"],"note":"Early screening eliminates blurred scans and verifies blueprint match."},{"id":"forensics-and-decision","label":"Forensic Swarm \u0026 Causal Arbitration","focus":["scheduler","agents","fusion","judge","policy"],"note":"Localized ROI analysis, Anomaly Max-Pooling, and Groq LPU reasoning."}]</script>
+    <script id="archify-guided-views-data" type="application/json">[{"id":"full-journey","label":"Complete inspection flow","focus":["frontend","api","quality","authenticity","reference","scheduler","execution","fusion","judge","policy","db","report"],"note":"End-to-end 8-stage pipeline from camera intake to signed PDF audit report."},{"id":"defensive-screening","label":"Defensive Fast-Fail Screening","focus":["frontend","api","quality","authenticity"],"note":"Early screening eliminates blurred scans (\u003c30ms) and verifies image authenticity."},{"id":"forensic-swarm","label":"Forensic Multi-Agent Swarm","focus":["reference","scheduler","execution","fusion"],"note":"FAISS golden reference matching, localized ROI scheduling, parallel agent swarm, and Bayesian fusion."},{"id":"governance-audit","label":"Governance \u0026 Persistence","focus":["judge","policy","db","report"],"note":"Groq AI Judge causal reasoning, deterministic policy engine, SQLite WAL persistence, and ReportLab PDF."}]</script>
 
     <script id="archify-i18n-data" type="application/json">{"locale":"en","messages":{"viewer.kind.frontend":"Frontend","viewer.kind.backend":"Backend","viewer.kind.database":"Database","viewer.kind.cloud":"Cloud","viewer.kind.security":"Security","viewer.kind.messagebus":"Message bus","viewer.kind.external":"External","viewer.kind.neutral":"Neutral","viewer.kind.node":"Node","viewer.kind.start":"Start","viewer.kind.active":"Active","viewer.kind.waiting":"Waiting","viewer.kind.decision":"Decision","viewer.kind.success":"Success","viewer.kind.failure":"Failure","viewer.toolbar.actions":"Diagram actions","viewer.theme.toggle.title":"Toggle theme (T)","viewer.theme.toggle":"Toggle color theme","viewer.theme.dark":"Dark","viewer.theme.light":"Light","viewer.preset.choose.title":"Choose visual style (S cycles)","viewer.preset.choose":"Choose visual style","viewer.preset.style":"Style","viewer.preset.menu":"Visual style","viewer.preset.identity":"Visual identity","viewer.preset.cycles":"S cycles","viewer.preset.classic":"Classic","viewer.preset.classic.short":"Classic","viewer.preset.classic.hint":"Stable technical default","viewer.preset.flow":"Signal Flow","viewer.preset.flow.short":"Flow","viewer.preset.flow.hint":"Motion-forward presentation","viewer.preset.blueprint":"Blueprint","viewer.preset.blueprint.hint":"Engineering review","viewer.preset.editorial":"Editorial","viewer.preset.editorial.hint":"Publication and launch notes","viewer.preset.badge.signalFlow":"SIGNAL FLOW","viewer.preset.badge.blueprint":"BLUEPRINT / REV 01","viewer.preset.badge.editorial":"EDITORIAL / FIELD NOTE","viewer.preset.badge.editorialPlate":"ARCHIFY / PLATE 04","viewer.preset.current":"Visual style: {style}. Choose visual style","viewer.motion.live":"Live","viewer.motion.still":"Still","viewer.motion.pause":"Pause motion","viewer.motion.resume":"Resume motion","viewer.motion.reduced":"Motion paused by reduced-motion preference","viewer.motion.hidden":"Motion paused while this page is hidden","viewer.motion.yielding":"Pause motion; currently yielding to {owner}","viewer.motion.yielding.title":"Live preview enabled · yielding to {owner}","viewer.owner.story":"the guided story","viewer.owner.chapter":"the active chapter","viewer.owner.chapterPreview":"the chapter delta preview","viewer.owner.handoff":"the chapter handoff","viewer.owner.route":"Route Probe","viewer.owner.lens":"Semantic Lens","viewer.owner.relationship":"Relationship Preview","viewer.owner.intent":"Intent Trace","viewer.owner.focus":"semantic focus","viewer.owner.legend":"legend preview","viewer.owner.reader":"reader interaction","viewer.present.enter":"Enter presentation stage","viewer.present.enter.title":"Presentation stage (F)","viewer.present.exit":"Exit presentation stage","viewer.present.exit.title":"Exit presentation stage (F or Escape)","viewer.present.present":"Present","viewer.present.exit.label":"Exit","viewer.export.button":"Export","viewer.export.button.title":"Export diagram (E)","viewer.export.diagram":"Export diagram","viewer.export.menu":"Export","viewer.export.subtitle":"Portable, clean outputs","viewer.export.share":"Share","viewer.export.shareCard":"Share Card","viewer.export.routeShareCard":"Route Share Card","viewer.export.reachShareCard":"Reach Share Card","viewer.export.copyShareCard":"Copy Share Card","viewer.export.copyDiagram":"Copy diagram","viewer.export.clipboardPng":"PNG to clipboard","viewer.export.raster":"Raster images","viewer.export.image":"Image","viewer.export.lossless":"Lossless image","viewer.export.compact":"Compact image","viewer.export.modern":"Modern image","viewer.export.vectorMotion":"Vector and motion","viewer.export.vectorMotion.heading":"Vector \u0026 motion","viewer.export.editable":"Editable vector","viewer.export.motion6s":"6s motion","viewer.export.unsupported":"Not supported by this browser","viewer.export.clipboardUnsupported":"Clipboard image write not supported by this browser","viewer.export.clipboardUnsupported.period":"Clipboard image write not supported by this browser.","viewer.export.clipboardUnsupported.short":"Clipboard image write not supported in this browser.","viewer.export.motionUnavailable":"Motion capture unavailable in this browser","viewer.export.webmUnavailable":"WebM unavailable in this browser","viewer.export.failed":"Export failed: {message}","viewer.export.unknownVariant":"Unknown Share Card variant: {variant}","viewer.export.routeRequired":"Trace a route before exporting a Route Share Card","viewer.export.reachRequired":"Trace authored reach before exporting a Reach Share Card","viewer.export.unknown":"unknown","viewer.export.routeFailed":"Route Share Card export failed: {message}","viewer.export.reachFailed":"Reach Share Card export failed: {message}","viewer.export.copyFailed":"Copy failed: {message}","viewer.export.copiedPng":"Copied PNG to clipboard","viewer.export.copiedShare":"Copied Share Card","viewer.export.downloadedShare":"Downloaded Share Card","viewer.export.downloadedRoute":"Downloaded Route Share Card","viewer.export.downloadedReach":"Downloaded Reach Share Card","viewer.export.downloadedWebm":"Downloaded WebM","viewer.export.recording":"Recording 6 seconds of motion…","viewer.export.card.routeSummary.one":"Route: {source} → {target} · {count} directed hop","viewer.export.card.routeSummary.other":"Route: {source} → {target} · {count} directed hops","viewer.export.card.reachSummary":"Authored {direction} from {origin} · {nodes} · {links} · max {hops}","viewer.export.card.node.one":"{count} node","viewer.export.card.node.other":"{count} nodes","viewer.export.card.link.one":"{count} link","viewer.export.card.link.other":"{count} links","viewer.export.card.hop.one":"{count} hop","viewer.export.card.hop.other":"{count} hops","viewer.export.card.routeBadge":"ARCHIFY · ROUTE · {hops}","viewer.export.card.reachBadge":"ARCHIFY · {direction} REACH","viewer.export.card.defaultBadge":"ARCHIFY · {preset} · {theme}","viewer.export.direction.upstream":"Upstream","viewer.export.direction.downstream":"Downstream","viewer.export.error.canvasUnavailable":"Canvas unavailable for {label}","viewer.export.error.contextUnavailable":"2D canvas context unavailable for {label}","viewer.export.error.toBlobUnavailable":"canvas.toBlob unavailable for {label}","viewer.export.error.toBlobNull":"canvas.toBlob returned no data for {label}","viewer.export.error.variantsCombined":"Share Card variants cannot be combined","viewer.export.error.viewerState":"Share Card export could not remove temporary viewer state","viewer.export.error.routeState":"Route Card export could not preserve the resolved route safely","viewer.export.error.reachState":"Reach Card export could not preserve authored reach safely","viewer.export.error.webmRequirements":"WebM motion export requires a trace animation and browser MediaRecorder support","viewer.export.error.mediaRecorder":"MediaRecorder failed","viewer.export.error.emptyWebm":"MediaRecorder produced an empty WebM","viewer.export.error.webmBackground":"SVG background could not be loaded for WebM export","viewer.guided.region":"Guided diagram views","viewer.guided.previous":"Previous guided view","viewer.guided.previous.title":"Previous guided view ([)","viewer.guided.next":"Next guided view","viewer.guided.next.title":"Next guided view (])","viewer.guided.views":"Guided views","viewer.guided.explore":"Explore this system","viewer.guided.intro":"Step through curated paths without changing the source diagram.","viewer.guided.trail":"Story trail","viewer.guided.beat":"Beat","viewer.guided.nextBeat":"Next","viewer.guided.play":"Play guided story","viewer.guided.play.title":"Play guided story (P)","viewer.guided.pause":"Pause guided story","viewer.guided.pause.title":"Pause guided story (P)","viewer.guided.replay":"Replay guided story","viewer.guided.replay.title":"Replay guided story (P)","viewer.guided.playStory":"Play story","viewer.guided.pauseStory":"Pause","viewer.guided.replayStory":"Replay story","viewer.guided.motionUnavailable":"Story playback unavailable while motion is Still","viewer.guided.enableMotion":"Switch motion to Live to play the guided story","viewer.guided.selectBeatLink":"Select a Story Beat to copy its exact link","viewer.guided.copyMoment":"Copy moment","viewer.guided.momentCopied":"Moment link copied","viewer.guided.momentCopyFailed":"Could not copy story moment link","viewer.guided.copied":"Copied","viewer.guided.copyFailed":"Copy failed","viewer.guided.showAll":"Show all","viewer.guided.showAll.aria":"Show entire diagram","viewer.guided.chapters":"Story chapters","viewer.guided.storyTrail":"Story trail for {label}: {count} beats","viewer.guided.chapter.open":"Open chapter {index} of {total}: {label}, {count} stops","viewer.guided.chapter.current":"Current chapter {index} of {total}: {label}, {count} stops","viewer.guided.chapter.selectedNodes":"{count} selected nodes","viewer.guided.chapter.stops":"{count} stops","viewer.guided.chapter.stop.one":"{count} stop","viewer.guided.chapter.stop.other":"{count} stops","viewer.guided.chapter.current.title":"{label} — current chapter, {count} stops","viewer.guided.chapter.delta.expanded":"{stay} stay, {enter} enter, {leave} leave","viewer.guided.chapter.delta.aria":"Open chapter {index} of {total}: {label}. Chapter focus delta: {delta}","viewer.guided.chapter.delta.title":"{label} — {delta} chapter focus","viewer.guided.handoff":"{from} → {to} · via {label}","viewer.guided.share.chapter":"Chapter {index} / {total}","viewer.guided.share.initial":"Chapter 01 / 01","viewer.guided.share.default":"Guided chapter","viewer.guided.state.ready":"Ready","viewer.guided.state.playing":"Playing","viewer.guided.state.settled":"Settled","viewer.guided.state.paused":"Paused","viewer.guided.state.pinned":"Pinned","viewer.guided.state.still":"Still","viewer.guided.share.step":"Step {index} / {total} · {label}","viewer.guided.share.staticMoment":"{step} · Static moment","viewer.guided.share.complete":"{count} steps complete · {note}","viewer.guided.share.settled":"Path settled for reading.","viewer.guided.share.staticPath":"{count} steps · Static path","viewer.guided.share.ready":"{count} steps · Ready","viewer.guided.share.aria":"{state} chapter {index} of {total}: {label}. {beat}. {route}","viewer.guided.beat.start":"Beat {index} / {total} · {label} · starting point","viewer.guided.beat.forward":"Beat {index} / {total} · {from} → {to}","viewer.guided.beat.reverse":"Beat {index} / {total} · {from} → {to} · reverse authored link","viewer.guided.beat.multiple":"Beat {index} / {total} · {from} ⇄ {to} · {count} authored links","viewer.guided.beat.group":"Beat {index} / {total} · {from} · {to} · grouped · no direct link","viewer.guided.beat.aria.prefix":"Story beat {index} of {total}: {label}. ","viewer.guided.beat.aria.start":"Starting point.","viewer.guided.beat.aria.forward":"From {from} through one authored forward relationship.","viewer.guided.beat.aria.reverse":"From {from}; the authored relationship points from {to} to {from}.","viewer.guided.beat.aria.multiple":"From {from} through {count} authored relationships; shown without arbitrary motion.","viewer.guided.beat.aria.group":"Grouped from {from} with no direct authored relationship.","viewer.guided.caption.start":"Starting point","viewer.guided.caption.grouped":"Grouped transition · no direct authored link","viewer.guided.caption.more":" +{count} more","viewer.guided.caption.reverse":"Reverse authored relationship","viewer.guided.caption.relationships":"{count} authored relationships","viewer.guided.caption.relationship":"Authored relationship","viewer.guided.caption.direction":"authored direction: {from} → {to}","viewer.guided.caption.starting":"Authored starting point","viewer.guided.beatLink":"Copy link to current story moment: Beat {index} of {total}: {label}","viewer.guided.noStory":"This diagram has no authored guided story.","viewer.guide.eyebrow":"Diagram guide","viewer.guide.close":"Close diagram guide","viewer.guide.inspecting":"Inspecting compiled semantics","viewer.guide.actions":"Diagram exploration actions","viewer.guide.find":"Find any node","viewer.guide.find.hint":"Search labels, responsibilities, kinds, and stable IDs.","viewer.guide.route":"Trace a route","viewer.guide.route.aria":"Trace a directed route","viewer.guide.route.hint":"Ask how two semantic nodes connect in authored direction.","viewer.guide.map":"See the whole system","viewer.guide.map.hint":"Open Semantic Radar with a live viewport and stable nodes.","viewer.guide.lens":"Compare semantic kinds","viewer.guide.lens.hint":"Count roles, reveal their traffic, and compare direct authored links.","viewer.guide.story":"Play the guided story","viewer.guide.story.hint":"Walk the authored chapters and real relationships.","viewer.guide.present":"Enter Presentation Stage","viewer.guide.present.hint":"Give the live diagram the viewport without changing export.","viewer.guide.shortcuts":"Additional keyboard shortcuts","viewer.guide.shortcut.export":"Export","viewer.guide.shortcut.theme":"Theme","viewer.guide.shortcut.style":"Style","viewer.guide.shortcut.reset":"Reset","viewer.guide.shortcut.zoomIn":"Zoom in","viewer.guide.shortcut.zoomOut":"Zoom out","viewer.guide.shortcut.close":"Close","viewer.guide.facts":"{nodes} · {relationships} · {views}","viewer.guide.fact.node.one":"{count} semantic node","viewer.guide.fact.node.other":"{count} semantic nodes","viewer.guide.fact.relationship.one":"{count} relationship","viewer.guide.fact.relationship.other":"{count} relationships","viewer.guide.fact.view.one":"{count} guided view","viewer.guide.fact.view.other":"{count} guided views","viewer.guide.story.available.one":"Walk {count} authored chapter and its real relationships.","viewer.guide.story.available.other":"Walk {count} authored chapters and their real relationships.","viewer.guide.story.unavailable":"No authored guided story in this diagram.","viewer.guide.open":"Open diagram guide","viewer.guide.noStory":"This diagram has no authored guided story.","viewer.finder.title":"Find a node","viewer.finder.close":"Close node finder","viewer.finder.placeholder":"Search labels or IDs","viewer.finder.search":"Search diagram nodes","viewer.finder.results":"Diagram nodes","viewer.finder.empty":"No matching nodes","viewer.finder.result.focus":"Focus {label}","viewer.finder.result.routeStart":"Choose {label} as route start","viewer.finder.result.routeTarget":"Choose {label} as route destination, {links}","viewer.finder.status.empty":"No matching nodes","viewer.finder.status.count.one":"{count} matching node","viewer.finder.status.count.other":"{count} matching nodes","viewer.finder.noun.nodes":"nodes","viewer.finder.link.one":"{count} link","viewer.finder.link.other":"{count} links","viewer.finder.result.focus.one":"Focus {label}, {count} related connection","viewer.finder.result.focus.other":"Focus {label}, {count} related connections","viewer.finder.status.filtered":"{visible} of {available} {noun}","viewer.finder.status.all":"{available} {noun}","viewer.passport.eyebrow":"Semantic passport","viewer.passport.metadata":"Node metadata","viewer.passport.evidence":"Verified source evidence","viewer.passport.verified":"Verified source","viewer.passport.verificationScope":"Verified against local Git at the pinned revision. Remote access has not been checked.","viewer.passport.reach":"Authored reach","viewer.passport.reach.trace":"Trace authored reachability","viewer.passport.upstream":"Upstream","viewer.passport.downstream":"Downstream","viewer.passport.upstream.trace":"Trace upstream authored reachability","viewer.passport.downstream.trace":"Trace downstream authored reachability","viewer.passport.close":"Close semantic passport","viewer.passport.copy":"Copy link","viewer.passport.copy.focus":"Copy link to focused node","viewer.passport.relations":"Relations","viewer.passport.relations.show":"Show connected relationships","viewer.passport.relations.hide":"Hide connected relationships","viewer.passport.relations.list":"Connected relationships","viewer.passport.copyRelation":"Copy relation","viewer.passport.copyNode":"Copy node","viewer.passport.copyPinned":"Copy link to pinned relationship","viewer.passport.copySource":"Copy link to source node","viewer.passport.copy.focused.success":"Focused node link copied","viewer.passport.copy.pinned.success":"Pinned relationship link copied","viewer.passport.copy.focused.failed":"Could not copy focused node link","viewer.passport.copy.pinned.failed":"Could not copy pinned relationship link","viewer.passport.relationship.none":"No connected relationships","viewer.passport.relationship.count.one":"{count} relation","viewer.passport.relationship.count.other":"{count} relations","viewer.passport.relationship.show.one":"Show {count} connected relationship","viewer.passport.relationship.show.other":"Show {count} connected relationships","viewer.passport.relationship.summary":"{out} outgoing · {in} incoming{loops}","viewer.passport.relationship.loops":" · {count} loop","viewer.passport.relationship.explorer":"Direct relationship explorer","viewer.passport.relationship.help":"Use arrow keys to explore relationships. Press Enter or Space to pin details; Escape clears.","viewer.passport.relationship.loopsBack":"loops back","viewer.passport.relationship.connectsTo":"connects to","viewer.passport.relationship.connectsFrom":"connects from","viewer.passport.relationship.pinned":"Pinned relationship · {from} → {to} · {label}","viewer.passport.relationship.inspect":"Inspect relationship {index} of {total}: {from} to {to}, {label}. Press Enter for details.","viewer.passport.relationship.group.out":"Outgoing","viewer.passport.relationship.group.in":"Incoming","viewer.passport.relationship.group.loop":"Self loops","viewer.passport.relationship.row":"{group}: {relationship}, {neighbor}","viewer.passport.relationship.direction.out":"OUT →","viewer.passport.relationship.direction.in":"← IN","viewer.passport.relationship.direction.loop":"LOOP","viewer.passport.sourceCount.one":"{count} verified source reference","viewer.passport.sourceCount.other":"{count} verified source references","viewer.passport.sourceMarker":"SRC","viewer.passport.beacon.one":"{count} verified source; focus this node to inspect","viewer.passport.beacon.other":"{count} verified sources; focus this node to inspect","viewer.passport.repository.open":"Open verified repository revision {revision}","viewer.passport.source.open":"Open verified source {path} at revision {revision}","viewer.passport.source.openLink":"Open ↗","viewer.passport.reach.upstream.one":"Trace {count} upstream authored node","viewer.passport.reach.upstream.other":"Trace {count} upstream authored nodes","viewer.passport.reach.downstream.one":"Trace {count} downstream authored node","viewer.passport.reach.downstream.other":"Trace {count} downstream authored nodes","viewer.passport.reach.noUpstream":"No upstream authored nodes","viewer.passport.reach.noDownstream":"No downstream authored nodes","viewer.passport.reach.status":"{direction} · {nodes} nodes · {links} links · max {hops} hops","viewer.route.eyebrow":"Route probe","viewer.route.start":"Choose a start node","viewer.route.start.find":"Find start","viewer.route.start.find.aria":"Find a route start","viewer.route.copy":"Copy link","viewer.route.copy.aria":"Copy link to traced route","viewer.route.clear":"Clear","viewer.route.clear.aria":"Clear route probe","viewer.route.traced":"Traced route","viewer.route.pickTwo":"Pick two semantic nodes on the diagram","viewer.route.pickOne":"Pick a semantic node on the diagram","viewer.route.controls":"Route journey controls","viewer.route.previous":"Previous route position","viewer.route.play":"Play route journey","viewer.route.pause":"Pause route journey","viewer.route.replay":"Replay route journey","viewer.route.next":"Next route position","viewer.route.journey":"Journey","viewer.route.pause.label":"Pause","viewer.route.replay.label":"Replay","viewer.route.overview":"Overview","viewer.route.overview.aria":"Show complete route overview","viewer.route.instructions":"Choose the source, then the destination. Direction matters.","viewer.route.destination":"Choose a destination from {label}","viewer.route.destination.find":"Find target","viewer.route.destination.find.aria":"Find a reachable route destination","viewer.route.differentDestination":"Choose a different destination","viewer.route.distinct":"A route needs two distinct semantic nodes.","viewer.route.unreachable":"No directed route to {label}","viewer.route.unreachable.detail":"{target} is not reachable from {source}. Pick a highlighted destination.","viewer.route.start.instructions":"Select the source. The next step will reveal only directed destinations.","viewer.route.copy.success":"Traced route link copied","viewer.route.copy.failed":"Could not copy traced route link","viewer.route.position":"Route position {index} of {total}: {label}","viewer.route.step":"Step {index} of {total} · {phase} · {label}","viewer.route.motionRequired":"Automatic journey requires Live motion","viewer.route.trigger.clear":"Clear traced route","viewer.route.overview.status":"{nodes} · {hops} · shortest authored route","viewer.route.overview.node.one":"{count} node","viewer.route.overview.node.other":"{count} nodes","viewer.route.overview.hop.one":"{count} directed hop","viewer.route.overview.hop.other":"{count} directed hops","viewer.route.phase.playing":"Playing","viewer.route.phase.complete":"Complete","viewer.route.phase.inspecting":"Inspecting","viewer.route.destination.count.one":"{count} directed destination available. Pick a highlighted node.","viewer.route.destination.count.other":"{count} directed destinations available. Pick a highlighted node.","viewer.route.noOutgoing":"No outgoing route starts here. Clear and choose another source.","viewer.route.result.title":"{source} to {target}","viewer.route.finder.source.title":"Choose route start","viewer.route.finder.source.placeholder":"Search route sources","viewer.route.finder.source.empty":"No matching route sources","viewer.route.finder.source.results":"Nodes that can start a route","viewer.route.finder.source.noun":"route sources","viewer.route.finder.source.badge":"start","viewer.route.finder.target.title":"Destination from {label}","viewer.route.finder.target.placeholder":"Search reachable destinations","viewer.route.finder.target.empty":"No matching reachable destinations","viewer.route.finder.target.results":"Reachable route destinations","viewer.route.finder.target.noun":"reachable destinations","viewer.route.hop.one":"{count} hop","viewer.route.hop.other":"{count} hops","viewer.lens.eyebrow":"Semantic lens","viewer.lens.title":"Compare system roles","viewer.lens.close":"Close semantic lens","viewer.lens.instruction":"Choose up to two semantic kinds. One reveals its real traffic; two compare only direct authored relationships.","viewer.lens.kinds":"Semantic kinds","viewer.lens.choose":"Choose a kind to inspect its nodes and touching relationships.","viewer.lens.copy":"Copy link to semantic lens","viewer.lens.clear":"Clear semantic lens","viewer.lens.open":"Open semantic lens","viewer.lens.openActive":"Open active semantic lens","viewer.lens.legend":"Semantic legend","viewer.lens.legend.inspect.one":"Inspect {label}, {count} node","viewer.lens.legend.inspect.other":"Inspect {label}, {count} nodes","viewer.lens.kind.count.one":"{label}, {count} node","viewer.lens.kind.count.other":"{label}, {count} nodes","viewer.lens.compare.one":"{first} → {second}: {forward} · {second} → {first}: {reverse} · {count} direct relationship","viewer.lens.compare.other":"{first} → {second}: {forward} · {second} → {first}: {reverse} · {count} direct relationships","viewer.lens.single":"{nodes} · {relationships} · connected peers remain visible","viewer.lens.node.one":"{count} {label} node","viewer.lens.node.other":"{count} {label} nodes","viewer.lens.relationship.one":"{count} touching relationship","viewer.lens.relationship.other":"{count} touching relationships","viewer.radar.title":"Semantic radar","viewer.radar.building":"Building overview","viewer.radar.openFull":"Open full semantic radar","viewer.radar.open":"Open radar","viewer.radar.close":"Close semantic radar","viewer.radar.surface":"Diagram overview. Click a node to focus it, or use arrow keys to pan.","viewer.radar.click":"Click node","viewer.radar.drag":"Drag to pan","viewer.radar.space":"Semantic radar needs more MAP space.","viewer.radar.nodes":"Semantic diagram radar nodes","viewer.radar.focus":"Focus {label} from Semantic Radar","viewer.radar.status":"{count} nodes · {viewport}","viewer.radar.fullMap":"{count} nodes · full map","viewer.radar.compacted":"Radar compacted to avoid covering the Semantic Passport or MAP controls.","viewer.radar.cancelWaiting":"Cancel semantic radar waiting for more MAP space","viewer.radar.needsSpace":"Semantic radar needs more visible MAP space","viewer.radar.viewport.full":"full map","viewer.radar.viewport.width":"{percent}% width","viewer.radar.viewport.scale":"{percent}% viewport","viewer.nav.controls":"Diagram view controls","viewer.nav.route":"Trace a directed route","viewer.nav.route.title":"Trace route (R)","viewer.nav.route.short":"PATH","viewer.nav.radar":"Open semantic radar","viewer.nav.radar.title":"Semantic radar (M)","viewer.nav.radar.short":"MAP","viewer.nav.lens":"Open semantic lens","viewer.nav.lens.title":"Semantic lens (L)","viewer.nav.lens.short":"LENS","viewer.nav.find":"Find a node","viewer.nav.find.title":"Find a node (/)","viewer.nav.guide":"Open diagram guide","viewer.nav.guide.title":"Diagram guide (?)","viewer.nav.zoomOut":"Zoom out","viewer.nav.zoomOut.title":"Zoom out (-)","viewer.nav.reset":"Reset diagram view","viewer.nav.reset.title":"Reset view (0)","viewer.nav.read":"READ","viewer.nav.zoomIn":"Zoom in","viewer.nav.zoomIn.title":"Zoom in (+)","viewer.nav.camera":"{hint}. Reset diagram view","viewer.nav.camera.title":"{semantic}{hint} · reset view (0)","viewer.nav.camera.semantic":"Semantic camera active · ","viewer.nav.level.map":"MAP","viewer.nav.level.read":"READ","viewer.nav.level.full":"FULL","viewer.nav.level.auto":"AUTO","viewer.nav.detail.map":"Zoom in to reveal relationship labels and node context","viewer.nav.detail.read":"Zoom in again to reveal tags and annotations","viewer.nav.detail.full":"Full diagram detail","viewer.intent.summary":"{label}. {out} outgoing, {in} incoming{loops}. {total} connections. Press Enter for details.","viewer.intent.loops":", {count} self loop","viewer.common.copied":"Copied","viewer.common.copyFailed":"Copy failed","viewer.common.copyLink":"Copy link","viewer.common.clear":"Clear","viewer.common.close":"Close"}}</script>
     <div class="guided-views no-print" id="guided-views" hidden aria-label="Guided diagram views">
@@ -5130,9 +5130,9 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     <!-- Main Diagram -->
     <div class="diagram-container" data-detail-level="read"
          data-preset-badge-editorial-plate="ARCHIFY / PLATE 04">
-      <svg viewBox="0 0 1236 660" role="img" lang="en" aria-labelledby="archify-diagram-title archify-diagram-description" data-preset="classic" data-quality-profile="showcase">
-        <title id="archify-diagram-title">VisionForge AI - End-to-End Inspection Pipeline</title>
-        <desc id="archify-diagram-description">A workflow diagram generated by Archify.</desc>
+      <svg viewBox="0 0 1320 480" role="img" lang="en" aria-labelledby="archify-diagram-title archify-diagram-description" data-preset="classic" data-quality-profile="showcase">
+        <title id="archify-diagram-title">VisionForge — Inspection Flow &amp; LangGraph Pipeline</title>
+        <desc id="archify-diagram-description">An architecture diagram generated by Archify.</desc>
         <!-- Definitions -->
         <defs>
           <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
@@ -5155,215 +5155,249 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <!-- Background Grid -->
         <rect width="100%" height="100%" fill="url(#grid)" />
 
-        <!-- Swimlanes -->
-        <rect data-graph-role="structural-frame" data-composition-frame-kind="lane" data-composition-frame-id="lane-0" x="40" y="52" width="1098" height="106" rx="10" class="c-lane" stroke-width="1"/>
-        <text x="54" y="74" class="t-dim" font-size="10" font-weight="600">01 / Operator &amp; Workstation</text>
+        <!-- Boundaries (behind everything) -->
+        <rect data-graph-role="structural-frame" data-composition-frame-kind="region" data-composition-frame-id="0" data-composition-frame-label="1. Ingestion &amp; Defensive Screening" x="30" y="30" width="1260" height="118" rx="12" class="c-region" stroke-width="1"/>
 
-        <rect data-graph-role="structural-frame" data-composition-frame-kind="lane" data-composition-frame-id="lane-1" x="40" y="178" width="1098" height="106" rx="10" class="c-lane" stroke-width="1"/>
-        <text x="54" y="200" class="t-dim" font-size="10" font-weight="600">02 / Defensive Ingestion Gates</text>
+        <rect data-graph-role="structural-frame" data-composition-frame-kind="region" data-composition-frame-id="1" data-composition-frame-label="2. Golden Reference &amp; Forensic Swarm" x="30" y="170" width="1260" height="118" rx="12" class="c-region" stroke-width="1"/>
 
-        <rect data-graph-role="structural-frame" data-composition-frame-kind="lane" data-composition-frame-id="lane-2" x="40" y="304" width="1098" height="106" rx="10" class="c-lane" stroke-width="1"/>
-        <text x="54" y="326" class="t-dim" font-size="10" font-weight="600">03 / Forensic Swarm &amp; Fusion</text>
+        <rect data-graph-role="structural-frame" data-composition-frame-kind="region" data-composition-frame-id="2" data-composition-frame-label="3. AI Governance, Persistence &amp; Reporting" x="30" y="310" width="1260" height="118" rx="12" class="c-region" stroke-width="1"/>
 
-        <rect data-graph-role="structural-frame" data-composition-frame-kind="lane" data-composition-frame-id="lane-3" x="40" y="430" width="1098" height="106" rx="10" class="c-lane" stroke-width="1"/>
-        <text x="54" y="452" class="t-dim" font-size="10" font-weight="600">04 / AI Judge &amp; Governance</text>
+        <!-- Connection paths (before components for correct z-order) -->
+        <path data-edge-from="frontend" data-edge-to="api" data-edge-label="POST image" data-edge-key="0" data-edge-id="c1" data-composition-points="250,94;390,94" d="M 250 94 L 390 94" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+        <path data-edge-from="api" data-edge-to="quality" data-edge-label="init state" data-edge-key="1" data-edge-id="c2" data-composition-points="580,94;730,94" d="M 580 94 L 730 94" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="quality" data-edge-to="authenticity" data-edge-label="valid scan" data-edge-key="2" data-edge-id="c3" data-composition-points="920,94;1070,94" d="M 920 94 L 1070 94" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+        <path data-edge-from="authenticity" data-edge-to="reference" data-edge-label="authentic" data-edge-key="3" data-edge-id="c4" data-composition-points="1165,128;1165,200" d="M 1165 128 L 1165 200" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="reference" data-edge-to="scheduler" data-edge-label="golden match" data-edge-key="4" data-edge-id="c5" data-composition-points="1070,234;920,234" d="M 1070 234 L 920 234" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+        <path data-edge-from="scheduler" data-edge-to="execution" data-edge-label="ROI crops" data-edge-key="5" data-edge-id="c6" data-composition-points="730,234;580,234" d="M 730 234 L 580 234" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="execution" data-edge-to="fusion" data-edge-label="findings" data-edge-key="6" data-edge-id="c7" data-composition-points="390,234;250,234" d="M 390 234 L 250 234" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+        <path data-edge-from="fusion" data-edge-to="judge" data-edge-label="fused scores" data-edge-key="7" data-edge-id="c8" data-composition-points="155,268;155,340" d="M 155 268 L 155 340" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+        <path data-edge-from="judge" data-edge-to="policy" data-edge-label="verdict" data-edge-key="8" data-edge-id="c9" data-composition-points="250,374;390,374" d="M 250 374 L 390 374" class="a-security" stroke-width="1.5" marker-end="url(#arrowhead-security)"/>
+        <path data-edge-from="policy" data-edge-to="db" data-edge-label="save state" data-edge-key="9" data-edge-id="c10" data-composition-points="580,374;730,374" d="M 580 374 L 730 374" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="db" data-edge-to="report" data-edge-label="signed cert" data-edge-key="10" data-edge-id="c11" data-composition-points="920,374;1070,374" d="M 920 374 L 1070 374" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
 
-        <!-- Phase headers -->
-        <line x1="67" y1="35" x2="279" y2="35" class="a-default" stroke-width="1.1"/>
-        <rect x="67" y="27" width="212" height="16" rx="4" class="c-mask"/>
-        <text x="173" y="39" class="t-muted" font-size="8" font-weight="600" text-anchor="middle">Intake &amp; Quality</text>
-        <line x1="416.6" y1="35" x2="680.6" y2="35" class="a-emphasis" stroke-width="1.1"/>
-        <rect x="416.6" y="27" width="264" height="16" rx="4" class="c-mask"/>
-        <text x="548.6" y="39" class="t-backend" font-size="8" font-weight="600" text-anchor="middle">Reference &amp; Scheduling</text>
-        <line x1="803.8" y1="35" x2="1111" y2="35" class="a-dashed" stroke-width="1.1"/>
-        <rect x="803.8" y="27" width="307.20000000000005" height="16" rx="4" class="c-mask"/>
-        <text x="957.4" y="39" class="t-messagebus" font-size="8" font-weight="600" text-anchor="middle">Swarm &amp; Arbitration</text>
-
-        <!-- Workflow groups -->
-
-
-        <!-- Edge paths -->
-        <path data-edge-from="upload" data-edge-to="quality" data-edge-label="raw scan" data-edge-key="0" data-edge-id="e1" data-composition-points="48,120;32,120;32,300;233,300;233,280" d="M 48 120 L 32 120 L 32 300 L 233 300 L 233 280" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
-        <path data-edge-from="quality" data-edge-to="reference" data-edge-label="sharp &amp; authentic" data-edge-key="1" data-edge-id="e2" data-composition-points="298,246;397.6,246" d="M 298 246 L 397.6 246" class="a-default" stroke-width="1.4" marker-end="url(#arrowhead)"/>
-        <path data-edge-from="reference" data-edge-to="scheduler" data-edge-label="blueprint match" data-edge-key="2" data-edge-id="e3" data-composition-points="527.6,246;543.6,246;543.6,426;462.6,426;462.6,406" d="M 527.6 246 L 543.6 246 L 543.6 426 L 462.6 426 L 462.6 406" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
-        <path data-edge-from="scheduler" data-edge-to="agents" data-edge-label="crops" data-edge-key="3" data-edge-id="e4" data-composition-points="527.6,372;543.6,372;543.6,288;634.6,288;634.6,338" d="M 527.6 372 L 543.6 372 L 543.6 288 L 634.6 288 L 634.6 338" class="a-default" stroke-width="1.4" marker-end="url(#arrowhead)"/>
-        <path data-edge-from="agents" data-edge-to="fusion" data-edge-label="evidence cards" data-edge-key="4" data-edge-id="e5" data-composition-points="699.6,372;784.8,372" d="M 699.6 372 L 784.8 372" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
-        <path data-edge-from="fusion" data-edge-to="judge" data-edge-label="pooled anomaly" data-edge-key="5" data-edge-id="e6" data-composition-points="914.8,372;930.8,372;930.8,552;849.8,552;849.8,532" d="M 914.8 372 L 930.8 372 L 930.8 552 L 849.8 552 L 849.8 532" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
-        <path data-edge-from="judge" data-edge-to="policy" data-edge-label="causal verdict" data-edge-key="6" data-edge-id="e7" data-composition-points="914.8,498;930.8,498;930.8,414;1065,414;1065,464" d="M 914.8 498 L 930.8 498 L 930.8 414 L 1065 414 L 1065 464" class="a-security" stroke-width="1.4" marker-end="url(#arrowhead-security)"/>
-        <path data-edge-from="policy" data-edge-to="review" data-edge-label="audit certificate" data-edge-key="7" data-edge-id="e8" data-composition-points="1130,498;1217.6,498;1217.6,120;1130,120" d="M 1130 498 L 1217.6 498 L 1217.6 120 L 1130 120" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
-
-        <!-- Nodes -->
-        <g id="node-upload" data-node-id="upload" data-node-label="Image Upload" tabindex="0" role="button" aria-label="Focus Image Upload, Operator / API Post, Operator &amp; Workstation › Intake &amp; Quality" aria-pressed="false" data-node-kind="frontend" data-node-sublabel="Operator / API Post" data-node-tag="Multipart" data-node-context="Operator &amp; Workstation › Intake &amp; Quality">
-          <title>Image Upload · Operator / API Post · Operator &amp; Workstation › Intake &amp; Quality · Multipart</title>
-          <rect x="48" y="86" width="130" height="68" rx="6" class="c-mask"/>
-          <rect x="48" y="86" width="130" height="68" rx="6" class="c-frontend" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="frontend" class="semantic-sigil s-frontend" transform="translate(54 92) scale(0.6875)">
+        <!-- Components -->
+        <g id="node-frontend" data-node-id="frontend" data-node-label="Operator Intake" tabindex="0" role="button" aria-label="Focus Operator Intake, Upload / Camera Scan, 1. Ingestion &amp; Defensive Screening, React" aria-pressed="false" data-node-kind="frontend" data-node-sublabel="Upload / Camera Scan" data-node-tag="React 19 Console" data-node-context="1. Ingestion &amp; Defensive Screening" data-node-brand="React" data-node-brand-id="react" data-node-brand-status="preset" data-node-brand-source="https://github.com/facebook/create-react-app/blob/282c03f9525fdf8061ffa1ec50dce89296d916bd/test/fixtures/relative-paths/src/logo.svg">
+          <title>Operator Intake · Upload / Camera Scan · 1. Ingestion &amp; Defensive Screening · React 19 Console · React</title>
+          <rect x="60" y="60" width="190" height="68" rx="6" class="c-mask"/>
+          <rect x="60" y="60" width="190" height="68" rx="6" class="c-frontend" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="frontend" class="semantic-sigil s-frontend" transform="translate(66 66) scale(0.6875)">
             <rect x="2" y="3" width="12" height="10" rx="2"/>
             <path d="M2 6.5h12"/>
             <circle cx="4.1" cy="4.8" r=".7" class="sigil-fill"/>
             <circle cx="6.3" cy="4.8" r=".7" class="sigil-fill"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="113" y="107" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Image Upload</text>
-          <text data-detail="context" x="113" y="124" class="t-muted" font-size="8" text-anchor="middle">Operator / API Post</text>
-        <text data-detail="fine" x="113" y="142" class="t-frontend" font-size="7" text-anchor="middle">Multipart</text>
-        </g>
-
-        <g id="node-review" data-node-id="review" data-node-label="Human Review" tabindex="0" role="button" aria-label="Focus Human Review, HITL Sign-off, Operator &amp; Workstation › Swarm &amp; Arbitration" aria-pressed="false" data-node-kind="external" data-node-sublabel="HITL Sign-off" data-node-tag="Audit Trail" data-node-context="Operator &amp; Workstation › Swarm &amp; Arbitration">
-          <title>Human Review · HITL Sign-off · Operator &amp; Workstation › Swarm &amp; Arbitration · Audit Trail</title>
-          <rect x="1000" y="86" width="130" height="68" rx="6" class="c-mask"/>
-          <rect x="1000" y="86" width="130" height="68" rx="6" class="c-external" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="external" class="semantic-sigil s-external" transform="translate(1006 92) scale(0.6875)">
-            <rect x="2.5" y="5" width="8.5" height="8" rx="1.5"/>
-            <path d="M8 2.5h5.5V8M13.5 2.5 7.5 8.5"/>
+          <g aria-hidden="true" data-brand-mark="react" data-brand-title="React" data-brand-status="preset" data-brand-source="https://github.com/facebook/create-react-app/blob/282c03f9525fdf8061ffa1ec50dce89296d916bd/test/fixtures/relative-paths/src/logo.svg" class="brand-mark" transform="translate(228 66)">
+            <rect width="16" height="16" rx="4" class="brand-mark-badge"/>
+            <path d="M14.23 12.004a2.236 2.236 0 0 1-2.235 2.236 2.236 2.236 0 0 1-2.236-2.236 2.236 2.236 0 0 1 2.235-2.236 2.236 2.236 0 0 1 2.236 2.236zm2.648-10.69c-1.346 0-3.107.96-4.888 2.622-1.78-1.653-3.542-2.602-4.887-2.602-.41 0-.783.093-1.106.278-1.375.793-1.683 3.264-.973 6.365C1.98 8.917 0 10.42 0 12.004c0 1.59 1.99 3.097 5.043 4.03-.704 3.113-.39 5.588.988 6.38.32.187.69.275 1.102.275 1.345 0 3.107-.96 4.888-2.624 1.78 1.654 3.542 2.603 4.887 2.603.41 0 .783-.09 1.106-.275 1.374-.792 1.683-3.263.973-6.365C22.02 15.096 24 13.59 24 12.004c0-1.59-1.99-3.097-5.043-4.032.704-3.11.39-5.587-.988-6.38-.318-.184-.688-.277-1.092-.278zm-.005 1.09v.006c.225 0 .406.044.558.127.666.382.955 1.835.73 3.704-.054.46-.142.945-.25 1.44-.96-.236-2.006-.417-3.107-.534-.66-.905-1.345-1.727-2.035-2.447 1.592-1.48 3.087-2.292 4.105-2.295zm-9.77.02c1.012 0 2.514.808 4.11 2.28-.686.72-1.37 1.537-2.02 2.442-1.107.117-2.154.298-3.113.538-.112-.49-.195-.964-.254-1.42-.23-1.868.054-3.32.714-3.707.19-.09.4-.127.563-.132zm4.882 3.05c.455.468.91.992 1.36 1.564-.44-.02-.89-.034-1.345-.034-.46 0-.915.01-1.36.034.44-.572.895-1.096 1.345-1.565zM12 8.1c.74 0 1.477.034 2.202.093.406.582.802 1.203 1.183 1.86.372.64.71 1.29 1.018 1.946-.308.655-.646 1.31-1.013 1.95-.38.66-.773 1.288-1.18 1.87-.728.063-1.466.098-2.21.098-.74 0-1.477-.035-2.202-.093-.406-.582-.802-1.204-1.183-1.86-.372-.64-.71-1.29-1.018-1.946.303-.657.646-1.313 1.013-1.954.38-.66.773-1.286 1.18-1.868.728-.064 1.466-.098 2.21-.098zm-3.635.254c-.24.377-.48.763-.704 1.16-.225.39-.435.782-.635 1.174-.265-.656-.49-1.31-.676-1.947.64-.15 1.315-.283 2.015-.386zm7.26 0c.695.103 1.365.23 2.006.387-.18.632-.405 1.282-.66 1.933-.2-.39-.41-.783-.64-1.174-.225-.392-.465-.774-.705-1.146zm3.063.675c.484.15.944.317 1.375.498 1.732.74 2.852 1.708 2.852 2.476-.005.768-1.125 1.74-2.857 2.475-.42.18-.88.342-1.355.493-.28-.958-.646-1.956-1.1-2.98.45-1.017.81-2.01 1.085-2.964zm-13.395.004c.278.96.645 1.957 1.1 2.98-.45 1.017-.812 2.01-1.086 2.964-.484-.15-.944-.318-1.37-.5-1.732-.737-2.852-1.706-2.852-2.474 0-.768 1.12-1.742 2.852-2.476.42-.18.88-.342 1.356-.494zm11.678 4.28c.265.657.49 1.312.676 1.948-.64.157-1.316.29-2.016.39.24-.375.48-.762.705-1.158.225-.39.435-.788.636-1.18zm-9.945.02c.2.392.41.783.64 1.175.23.39.465.772.705 1.143-.695-.102-1.365-.23-2.006-.386.18-.63.406-1.282.66-1.933zM17.92 16.32c.112.493.2.968.254 1.423.23 1.868-.054 3.32-.714 3.708-.147.09-.338.128-.563.128-1.012 0-2.514-.807-4.11-2.28.686-.72 1.37-1.536 2.02-2.44 1.107-.118 2.154-.3 3.113-.54zm-11.83.01c.96.234 2.006.415 3.107.532.66.905 1.345 1.727 2.035 2.446-1.595 1.483-3.092 2.295-4.11 2.295-.22-.005-.406-.05-.553-.132-.666-.38-.955-1.834-.73-3.703.054-.46.142-.944.25-1.438zm4.56.64c.44.02.89.034 1.345.034.46 0 .915-.01 1.36-.034-.44.572-.895 1.095-1.345 1.565-.455-.47-.91-.993-1.36-1.565z" transform="translate(3 3) scale(0.4166666666666667)" fill="#61DAFB"/>
+            <rect width="16" height="16" rx="4" class="brand-mark-frame"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="1065" y="107" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Human Review</text>
-          <text data-detail="context" x="1065" y="124" class="t-muted" font-size="8" text-anchor="middle">HITL Sign-off</text>
-        <text data-detail="fine" x="1065" y="142" class="t-external" font-size="7" text-anchor="middle">Audit Trail</text>
+          <text data-node-label="" data-detail-anchor="" x="155" y="92" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Operator Intake</text>
+        <text data-detail="context" x="155" y="108" class="t-muted" font-size="9" text-anchor="middle">Upload / Camera Scan</text>
+        <text data-detail="fine" x="155" y="120" class="t-frontend" font-size="7" text-anchor="middle">React 19 Console</text>
         </g>
 
-        <g id="node-quality" data-node-id="quality" data-node-label="Quality Check" tabindex="0" role="button" aria-label="Focus Quality Check, S1/S2: Blur &amp; ELA Check, Defensive Ingestion Gates › Intake &amp; Quality" aria-pressed="false" data-node-kind="backend" data-node-sublabel="S1/S2: Blur &amp; ELA Check" data-node-tag="Laplacian &lt;30ms" data-node-context="Defensive Ingestion Gates › Intake &amp; Quality">
-          <title>Quality Check · S1/S2: Blur &amp; ELA Check · Defensive Ingestion Gates › Intake &amp; Quality · Laplacian &lt;30ms</title>
-          <rect x="168" y="212" width="130" height="68" rx="6" class="c-mask"/>
-          <rect x="168" y="212" width="130" height="68" rx="6" class="c-backend" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(174 218) scale(0.6875)">
+        <g id="node-api" data-node-id="api" data-node-label="FastAPI Gateway" tabindex="0" role="button" aria-label="Focus FastAPI Gateway, JWT Auth · StateGraph Init, 1. Ingestion &amp; Defensive Screening, FastAPI" aria-pressed="false" data-node-kind="backend" data-node-sublabel="JWT Auth · StateGraph Init" data-node-tag="InspectionState" data-node-context="1. Ingestion &amp; Defensive Screening" data-node-brand="FastAPI" data-node-brand-id="fastapi" data-node-brand-status="preset" data-node-brand-source="https://github.com/tiangolo/fastapi/blob/ffb4f77a11f83132b521ba0aac6c95792c19e797/docs/en/docs/img/icon-white.svg">
+          <title>FastAPI Gateway · JWT Auth · StateGraph Init · 1. Ingestion &amp; Defensive Screening · InspectionState · FastAPI</title>
+          <rect x="390" y="60" width="190" height="68" rx="6" class="c-mask"/>
+          <rect x="390" y="60" width="190" height="68" rx="6" class="c-backend" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(396 66) scale(0.6875)">
             <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="233" y="233" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Quality Check</text>
-          <text data-detail="context" x="233" y="250" class="t-muted" font-size="8" text-anchor="middle">S1/S2: Blur &amp; ELA Check</text>
-        <text data-detail="fine" x="233" y="268" class="t-backend" font-size="7" text-anchor="middle">Laplacian &lt;30ms</text>
+          <g aria-hidden="true" data-brand-mark="fastapi" data-brand-title="FastAPI" data-brand-status="preset" data-brand-source="https://github.com/tiangolo/fastapi/blob/ffb4f77a11f83132b521ba0aac6c95792c19e797/docs/en/docs/img/icon-white.svg" class="brand-mark" transform="translate(558 66)">
+            <rect width="16" height="16" rx="4" class="brand-mark-badge"/>
+            <path d="M12 .0387C5.3729.0384.0003 5.3931 0 11.9988c-.001 6.6066 5.372 11.9628 12 11.9625 6.628.0003 12.001-5.3559 12-11.9625-.0003-6.6057-5.3729-11.9604-12-11.96m-.829 5.4153h7.55l-7.5805 5.3284h5.1828L5.279 18.5436q2.9466-6.5444 5.892-13.0896" transform="translate(3 3) scale(0.4166666666666667)" fill="#009688"/>
+            <rect width="16" height="16" rx="4" class="brand-mark-frame"/>
+          </g>
+          <text data-node-label="" data-detail-anchor="" x="485" y="92" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">FastAPI Gateway</text>
+        <text data-detail="context" x="485" y="108" class="t-muted" font-size="9" text-anchor="middle">JWT Auth · StateGraph Init</text>
+        <text data-detail="fine" x="485" y="120" class="t-backend" font-size="7" text-anchor="middle">InspectionState</text>
         </g>
 
-        <g id="node-reference" data-node-id="reference" data-node-label="Golden Reference" tabindex="0" role="button" aria-label="Focus Golden Reference, S3: CLIP &amp; FAISS Match, Defensive Ingestion Gates › Reference &amp; Scheduling" aria-pressed="false" data-node-kind="backend" data-node-sublabel="S3: CLIP &amp; FAISS Match" data-node-tag="Sim &gt;= 0.75" data-node-context="Defensive Ingestion Gates › Reference &amp; Scheduling">
-          <title>Golden Reference · S3: CLIP &amp; FAISS Match · Defensive Ingestion Gates › Reference &amp; Scheduling · Sim &gt;= 0.75</title>
-          <rect x="397.6" y="212" width="130" height="68" rx="6" class="c-mask"/>
-          <rect x="397.6" y="212" width="130" height="68" rx="6" class="c-backend" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(403.6 218) scale(0.6875)">
+        <g id="node-quality" data-node-id="quality" data-node-label="1. Quality Check" tabindex="0" role="button" aria-label="Focus 1. Quality Check, Blur · Noise · Exposure, 1. Ingestion &amp; Defensive Screening" aria-pressed="false" data-node-kind="backend" data-node-sublabel="Blur · Noise · Exposure" data-node-tag="Laplacian &lt;30ms" data-node-context="1. Ingestion &amp; Defensive Screening">
+          <title>1. Quality Check · Blur · Noise · Exposure · 1. Ingestion &amp; Defensive Screening · Laplacian &lt;30ms</title>
+          <rect x="730" y="60" width="190" height="68" rx="6" class="c-mask"/>
+          <rect x="730" y="60" width="190" height="68" rx="6" class="c-backend" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(736 66) scale(0.6875)">
             <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="462.6" y="233" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Golden Reference</text>
-          <text data-detail="context" x="462.6" y="250" class="t-muted" font-size="8" text-anchor="middle">S3: CLIP &amp; FAISS Match</text>
-        <text data-detail="fine" x="462.6" y="268" class="t-backend" font-size="7" text-anchor="middle">Sim &gt;= 0.75</text>
+          <text data-node-label="" data-detail-anchor="" x="825" y="92" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">1. Quality Check</text>
+        <text data-detail="context" x="825" y="108" class="t-muted" font-size="9" text-anchor="middle">Blur · Noise · Exposure</text>
+        <text data-detail="fine" x="825" y="120" class="t-backend" font-size="7" text-anchor="middle">Laplacian &lt;30ms</text>
         </g>
 
-        <g id="node-scheduler" data-node-id="scheduler" data-node-label="ROI Scheduler" tabindex="0" role="button" aria-label="Focus ROI Scheduler, S4: Localized Crops, Forensic Swarm &amp; Fusion › Reference &amp; Scheduling" aria-pressed="false" data-node-kind="backend" data-node-sublabel="S4: Localized Crops" data-node-tag="8-12x Zoom" data-node-context="Forensic Swarm &amp; Fusion › Reference &amp; Scheduling">
-          <title>ROI Scheduler · S4: Localized Crops · Forensic Swarm &amp; Fusion › Reference &amp; Scheduling · 8-12x Zoom</title>
-          <rect x="397.6" y="338" width="130" height="68" rx="6" class="c-mask"/>
-          <rect x="397.6" y="338" width="130" height="68" rx="6" class="c-backend" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(403.6 344) scale(0.6875)">
+        <g id="node-authenticity" data-node-id="authenticity" data-node-label="2. Authenticity" tabindex="0" role="button" aria-label="Focus 2. Authenticity, ELA &amp; Tamper Analysis, 1. Ingestion &amp; Defensive Screening" aria-pressed="false" data-node-kind="backend" data-node-sublabel="ELA &amp; Tamper Analysis" data-node-tag="Noise Uniformity" data-node-context="1. Ingestion &amp; Defensive Screening">
+          <title>2. Authenticity · ELA &amp; Tamper Analysis · 1. Ingestion &amp; Defensive Screening · Noise Uniformity</title>
+          <rect x="1070" y="60" width="190" height="68" rx="6" class="c-mask"/>
+          <rect x="1070" y="60" width="190" height="68" rx="6" class="c-backend" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(1076 66) scale(0.6875)">
             <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="462.6" y="359" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">ROI Scheduler</text>
-          <text data-detail="context" x="462.6" y="376" class="t-muted" font-size="8" text-anchor="middle">S4: Localized Crops</text>
-        <text data-detail="fine" x="462.6" y="394" class="t-backend" font-size="7" text-anchor="middle">8-12x Zoom</text>
+          <text data-node-label="" data-detail-anchor="" x="1165" y="92" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">2. Authenticity</text>
+        <text data-detail="context" x="1165" y="108" class="t-muted" font-size="9" text-anchor="middle">ELA &amp; Tamper Analysis</text>
+        <text data-detail="fine" x="1165" y="120" class="t-backend" font-size="7" text-anchor="middle">Noise Uniformity</text>
         </g>
 
-        <g id="node-agents" data-node-id="agents" data-node-label="Evidence Agents" tabindex="0" role="button" aria-label="Focus Evidence Agents, S5: YOLO, OCR, VLM, Forensic Swarm &amp; Fusion › Reference &amp; Scheduling" aria-pressed="false" data-node-kind="backend" data-node-sublabel="S5: YOLO, OCR, VLM" data-node-tag="ThreadPool" data-node-context="Forensic Swarm &amp; Fusion › Reference &amp; Scheduling">
-          <title>Evidence Agents · S5: YOLO, OCR, VLM · Forensic Swarm &amp; Fusion › Reference &amp; Scheduling · ThreadPool</title>
-          <rect x="569.6" y="338" width="130" height="68" rx="6" class="c-mask"/>
-          <rect x="569.6" y="338" width="130" height="68" rx="6" class="c-backend" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(575.6 344) scale(0.6875)">
+        <g id="node-reference" data-node-id="reference" data-node-label="3. Reference Match" tabindex="0" role="button" aria-label="Focus 3. Reference Match, CLIP + FAISS Vector Search, 2. Golden Reference &amp; Forensic Swarm" aria-pressed="false" data-node-kind="backend" data-node-sublabel="CLIP + FAISS Vector Search" data-node-tag="Sim &gt;= 0.75" data-node-context="2. Golden Reference &amp; Forensic Swarm">
+          <title>3. Reference Match · CLIP + FAISS Vector Search · 2. Golden Reference &amp; Forensic Swarm · Sim &gt;= 0.75</title>
+          <rect x="1070" y="200" width="190" height="68" rx="6" class="c-mask"/>
+          <rect x="1070" y="200" width="190" height="68" rx="6" class="c-backend" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(1076 206) scale(0.6875)">
             <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="634.6" y="359" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Evidence Agents</text>
-          <text data-detail="context" x="634.6" y="376" class="t-muted" font-size="8" text-anchor="middle">S5: YOLO, OCR, VLM</text>
-        <text data-detail="fine" x="634.6" y="394" class="t-backend" font-size="7" text-anchor="middle">ThreadPool</text>
+          <text data-node-label="" data-detail-anchor="" x="1165" y="232" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">3. Reference Match</text>
+        <text data-detail="context" x="1165" y="248" class="t-muted" font-size="9" text-anchor="middle">CLIP + FAISS Vector Search</text>
+        <text data-detail="fine" x="1165" y="260" class="t-backend" font-size="7" text-anchor="middle">Sim &gt;= 0.75</text>
         </g>
 
-        <g id="node-fusion" data-node-id="fusion" data-node-label="Evidence Fusion" tabindex="0" role="button" aria-label="Focus Evidence Fusion, S6: Max-Pooling Math, Forensic Swarm &amp; Fusion › Swarm &amp; Arbitration" aria-pressed="false" data-node-kind="backend" data-node-sublabel="S6: Max-Pooling Math" data-node-tag="Non-Diluted" data-node-context="Forensic Swarm &amp; Fusion › Swarm &amp; Arbitration">
-          <title>Evidence Fusion · S6: Max-Pooling Math · Forensic Swarm &amp; Fusion › Swarm &amp; Arbitration · Non-Diluted</title>
-          <rect x="784.8" y="338" width="130" height="68" rx="6" class="c-mask"/>
-          <rect x="784.8" y="338" width="130" height="68" rx="6" class="c-backend" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(790.8 344) scale(0.6875)">
+        <g id="node-scheduler" data-node-id="scheduler" data-node-label="4. ROI Scheduler" tabindex="0" role="button" aria-label="Focus 4. ROI Scheduler, Text · Structural · VLM, 2. Golden Reference &amp; Forensic Swarm" aria-pressed="false" data-node-kind="backend" data-node-sublabel="Text · Structural · VLM" data-node-tag="Priority Queue" data-node-context="2. Golden Reference &amp; Forensic Swarm">
+          <title>4. ROI Scheduler · Text · Structural · VLM · 2. Golden Reference &amp; Forensic Swarm · Priority Queue</title>
+          <rect x="730" y="200" width="190" height="68" rx="6" class="c-mask"/>
+          <rect x="730" y="200" width="190" height="68" rx="6" class="c-backend" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(736 206) scale(0.6875)">
             <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="849.8" y="359" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Evidence Fusion</text>
-          <text data-detail="context" x="849.8" y="376" class="t-muted" font-size="8" text-anchor="middle">S6: Max-Pooling Math</text>
-        <text data-detail="fine" x="849.8" y="394" class="t-backend" font-size="7" text-anchor="middle">Non-Diluted</text>
+          <text data-node-label="" data-detail-anchor="" x="825" y="232" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">4. ROI Scheduler</text>
+        <text data-detail="context" x="825" y="248" class="t-muted" font-size="9" text-anchor="middle">Text · Structural · VLM</text>
+        <text data-detail="fine" x="825" y="260" class="t-backend" font-size="7" text-anchor="middle">Priority Queue</text>
         </g>
 
-        <g id="node-judge" data-node-id="judge" data-node-label="AI Forensic Judge" tabindex="0" role="button" aria-label="Focus AI Forensic Judge, S7: Groq LPU Causal, AI Judge &amp; Governance › Swarm &amp; Arbitration" aria-pressed="false" data-node-kind="cloud" data-node-sublabel="S7: Groq LPU Causal" data-node-tag="~420ms" data-node-context="AI Judge &amp; Governance › Swarm &amp; Arbitration">
-          <title>AI Forensic Judge · S7: Groq LPU Causal · AI Judge &amp; Governance › Swarm &amp; Arbitration · ~420ms</title>
-          <rect x="784.8" y="464" width="130" height="68" rx="6" class="c-mask"/>
-          <rect x="784.8" y="464" width="130" height="68" rx="6" class="c-cloud" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="cloud" class="semantic-sigil s-cloud" transform="translate(790.8 470) scale(0.6875)">
+        <g id="node-execution" data-node-id="execution" data-node-label="5. Evidence Swarm" tabindex="0" role="button" aria-label="Focus 5. Evidence Swarm, OCR · Label · YOLO · VLM, 2. Golden Reference &amp; Forensic Swarm" aria-pressed="false" data-node-kind="backend" data-node-sublabel="OCR · Label · YOLO · VLM" data-node-tag="Semaphore max 4" data-node-context="2. Golden Reference &amp; Forensic Swarm">
+          <title>5. Evidence Swarm · OCR · Label · YOLO · VLM · 2. Golden Reference &amp; Forensic Swarm · Semaphore max 4</title>
+          <rect x="390" y="200" width="190" height="68" rx="6" class="c-mask"/>
+          <rect x="390" y="200" width="190" height="68" rx="6" class="c-backend" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(396 206) scale(0.6875)">
+            <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
+          </g>
+          <text data-node-label="" data-detail-anchor="" x="485" y="232" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">5. Evidence Swarm</text>
+        <text data-detail="context" x="485" y="248" class="t-muted" font-size="9" text-anchor="middle">OCR · Label · YOLO · VLM</text>
+        <text data-detail="fine" x="485" y="260" class="t-backend" font-size="7" text-anchor="middle">Semaphore max 4</text>
+        </g>
+
+        <g id="node-fusion" data-node-id="fusion" data-node-label="6. Evidence Fusion" tabindex="0" role="button" aria-label="Focus 6. Evidence Fusion, Signal Weights: 0.45..0.25, 2. Golden Reference &amp; Forensic Swarm" aria-pressed="false" data-node-kind="backend" data-node-sublabel="Signal Weights: 0.45..0.25" data-node-tag="Composite Score" data-node-context="2. Golden Reference &amp; Forensic Swarm">
+          <title>6. Evidence Fusion · Signal Weights: 0.45..0.25 · 2. Golden Reference &amp; Forensic Swarm · Composite Score</title>
+          <rect x="60" y="200" width="190" height="68" rx="6" class="c-mask"/>
+          <rect x="60" y="200" width="190" height="68" rx="6" class="c-backend" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(66 206) scale(0.6875)">
+            <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
+          </g>
+          <text data-node-label="" data-detail-anchor="" x="155" y="232" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">6. Evidence Fusion</text>
+        <text data-detail="context" x="155" y="248" class="t-muted" font-size="9" text-anchor="middle">Signal Weights: 0.45..0.25</text>
+        <text data-detail="fine" x="155" y="260" class="t-backend" font-size="7" text-anchor="middle">Composite Score</text>
+        </g>
+
+        <g id="node-judge" data-node-id="judge" data-node-label="7. AI Judge" tabindex="0" role="button" aria-label="Focus 7. AI Judge, Groq LPU · Gemini Fallback, 3. AI Governance, Persistence &amp; Reporting" aria-pressed="false" data-node-kind="cloud" data-node-sublabel="Groq LPU · Gemini Fallback" data-node-tag="Causal Verdict" data-node-context="3. AI Governance, Persistence &amp; Reporting">
+          <title>7. AI Judge · Groq LPU · Gemini Fallback · 3. AI Governance, Persistence &amp; Reporting · Causal Verdict</title>
+          <rect x="60" y="340" width="190" height="68" rx="6" class="c-mask"/>
+          <rect x="60" y="340" width="190" height="68" rx="6" class="c-cloud" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="cloud" class="semantic-sigil s-cloud" transform="translate(66 346) scale(0.6875)">
             <path d="M4.3 12.5h7.3a2.4 2.4 0 0 0 .2-4.8 4 4 0 0 0-7.5-1.3A3.1 3.1 0 0 0 4.3 12.5Z"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="849.8" y="485" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">AI Forensic Judge</text>
-          <text data-detail="context" x="849.8" y="502" class="t-muted" font-size="8" text-anchor="middle">S7: Groq LPU Causal</text>
-        <text data-detail="fine" x="849.8" y="520" class="t-cloud" font-size="7" text-anchor="middle">~420ms</text>
+          <text data-node-label="" data-detail-anchor="" x="155" y="372" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">7. AI Judge</text>
+        <text data-detail="context" x="155" y="388" class="t-muted" font-size="9" text-anchor="middle">Groq LPU · Gemini Fallback</text>
+        <text data-detail="fine" x="155" y="400" class="t-cloud" font-size="7" text-anchor="middle">Causal Verdict</text>
         </g>
 
-        <g id="node-policy" data-node-id="policy" data-node-label="Policy / Report" tabindex="0" role="button" aria-label="Focus Policy / Report, S8: Verdict &amp; PDF Cert, AI Judge &amp; Governance › Swarm &amp; Arbitration" aria-pressed="false" data-node-kind="security" data-node-sublabel="S8: Verdict &amp; PDF Cert" data-node-tag="Deterministic" data-node-context="AI Judge &amp; Governance › Swarm &amp; Arbitration">
-          <title>Policy / Report · S8: Verdict &amp; PDF Cert · AI Judge &amp; Governance › Swarm &amp; Arbitration · Deterministic</title>
-          <rect x="1000" y="464" width="130" height="68" rx="6" class="c-mask"/>
-          <rect x="1000" y="464" width="130" height="68" rx="6" class="c-security" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="security" class="semantic-sigil s-security" transform="translate(1006 470) scale(0.6875)">
-            <path d="M8 2.2 13 4v3.5c0 3.1-1.8 5.4-5 6.5-3.2-1.1-5-3.4-5-6.5V4Z"/>
-            <path d="m5.8 8 1.5 1.5 3-3"/>
+        <g id="node-policy" data-node-id="policy" data-node-label="8. Policy Engine" tabindex="0" role="button" aria-label="Focus 8. Policy Engine, AUTHENTIC · SUSPICIOUS · FRAUD, 3. AI Governance, Persistence &amp; Reporting" aria-pressed="false" data-node-kind="backend" data-node-sublabel="AUTHENTIC · SUSPICIOUS · FRAUD" data-node-tag="Deterministic" data-node-context="3. AI Governance, Persistence &amp; Reporting">
+          <title>8. Policy Engine · AUTHENTIC · SUSPICIOUS · FRAUD · 3. AI Governance, Persistence &amp; Reporting · Deterministic</title>
+          <rect x="390" y="340" width="190" height="68" rx="6" class="c-mask"/>
+          <rect x="390" y="340" width="190" height="68" rx="6" class="c-backend" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(396 346) scale(0.6875)">
+            <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="1065" y="485" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Policy / Report</text>
-          <text data-detail="context" x="1065" y="502" class="t-muted" font-size="8" text-anchor="middle">S8: Verdict &amp; PDF Cert</text>
-        <text data-detail="fine" x="1065" y="520" class="t-security" font-size="7" text-anchor="middle">Deterministic</text>
+          <text data-node-label="" data-detail-anchor="" x="485" y="372" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">8. Policy Engine</text>
+        <text data-detail="context" x="485" y="388" class="t-muted" font-size="9" text-anchor="middle">AUTHENTIC · SUSPICIOUS · FRAUD</text>
+        <text data-detail="fine" x="485" y="400" class="t-backend" font-size="7" text-anchor="middle">Deterministic</text>
         </g>
 
-        <!-- Edge labels -->
-        <g data-detail="context" data-edge-from="upload" data-edge-to="quality" data-edge-label="raw scan" data-edge-key="0" data-edge-id="e1">
-          <rect x="108.3" y="280" width="48.4" height="14" rx="3" class="c-mask"/>
-          <text x="132.5" y="290" class="t-backend" font-size="8" text-anchor="middle">raw scan</text>
+        <g id="node-db" data-node-id="db" data-node-label="DB Persistence" tabindex="0" role="button" aria-label="Focus DB Persistence, PostgreSQL / SQLite WAL, 3. AI Governance, Persistence &amp; Reporting" aria-pressed="false" data-node-kind="database" data-node-sublabel="PostgreSQL / SQLite WAL" data-node-tag="Audit Trail" data-node-context="3. AI Governance, Persistence &amp; Reporting">
+          <title>DB Persistence · PostgreSQL / SQLite WAL · 3. AI Governance, Persistence &amp; Reporting · Audit Trail</title>
+          <rect x="730" y="340" width="190" height="68" rx="6" class="c-mask"/>
+          <rect x="730" y="340" width="190" height="68" rx="6" class="c-database" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="database" class="semantic-sigil s-database" transform="translate(736 346) scale(0.6875)">
+            <ellipse cx="8" cy="4" rx="5" ry="2"/>
+            <path d="M3 4v8c0 1.1 2.2 2 5 2s5-.9 5-2V4M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/>
+          </g>
+          <text data-node-label="" data-detail-anchor="" x="825" y="372" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">DB Persistence</text>
+        <text data-detail="context" x="825" y="388" class="t-muted" font-size="9" text-anchor="middle">PostgreSQL / SQLite WAL</text>
+        <text data-detail="fine" x="825" y="400" class="t-database" font-size="7" text-anchor="middle">Audit Trail</text>
         </g>
-        <g data-detail="context" data-edge-from="quality" data-edge-to="reference" data-edge-label="sharp &amp; authentic" data-edge-key="1" data-edge-id="e2">
-          <rect x="302" y="226" width="91.6" height="14" rx="3" class="c-mask"/>
-          <text x="347.8" y="236" class="t-muted" font-size="8" text-anchor="middle">sharp &amp; authentic</text>
+
+        <g id="node-report" data-node-id="report" data-node-label="ReportLab PDF" tabindex="0" role="button" aria-label="Focus ReportLab PDF, Cryptographic Audit Report, 3. AI Governance, Persistence &amp; Reporting" aria-pressed="false" data-node-kind="backend" data-node-sublabel="Cryptographic Audit Report" data-node-tag="Signed Cert" data-node-context="3. AI Governance, Persistence &amp; Reporting">
+          <title>ReportLab PDF · Cryptographic Audit Report · 3. AI Governance, Persistence &amp; Reporting · Signed Cert</title>
+          <rect x="1070" y="340" width="190" height="68" rx="6" class="c-mask"/>
+          <rect x="1070" y="340" width="190" height="68" rx="6" class="c-backend" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(1076 346) scale(0.6875)">
+            <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
+          </g>
+          <text data-node-label="" data-detail-anchor="" x="1165" y="372" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">ReportLab PDF</text>
+        <text data-detail="context" x="1165" y="388" class="t-muted" font-size="9" text-anchor="middle">Cryptographic Audit Report</text>
+        <text data-detail="fine" x="1165" y="400" class="t-backend" font-size="7" text-anchor="middle">Signed Cert</text>
         </g>
-        <g data-detail="context" data-edge-from="reference" data-edge-to="scheduler" data-edge-label="blueprint match" data-edge-key="2" data-edge-id="e3">
-          <rect x="462.1" y="406" width="82" height="14" rx="3" class="c-mask"/>
-          <text x="503.1" y="416" class="t-backend" font-size="8" text-anchor="middle">blueprint match</text>
+
+        <!-- Connection labels -->
+        <g data-detail="context" data-edge-from="frontend" data-edge-to="api" data-edge-label="POST image" data-edge-key="0" data-edge-id="c1">
+          <rect x="291" y="74" width="58" height="14" rx="3" class="c-mask"/>
+          <text x="320" y="84" class="t-backend" font-size="8" text-anchor="middle">POST image</text>
         </g>
-        <g data-detail="context" data-edge-from="scheduler" data-edge-to="agents" data-edge-label="crops" data-edge-key="3" data-edge-id="e4">
-          <rect x="572.1" y="268" width="34" height="14" rx="3" class="c-mask"/>
-          <text x="589.1" y="278" class="t-muted" font-size="8" text-anchor="middle">crops</text>
+        <g data-detail="context" data-edge-from="api" data-edge-to="quality" data-edge-label="init state" data-edge-key="1" data-edge-id="c2">
+          <rect x="626" y="74" width="58" height="14" rx="3" class="c-mask"/>
+          <text x="655" y="84" class="t-muted" font-size="8" text-anchor="middle">init state</text>
         </g>
-        <g data-detail="context" data-edge-from="agents" data-edge-to="fusion" data-edge-label="evidence cards" data-edge-key="4" data-edge-id="e5">
-          <rect x="703.6" y="352" width="77.2" height="14" rx="3" class="c-mask"/>
-          <text x="742.2" y="362" class="t-backend" font-size="8" text-anchor="middle">evidence cards</text>
+        <g data-detail="context" data-edge-from="quality" data-edge-to="authenticity" data-edge-label="valid scan" data-edge-key="2" data-edge-id="c3">
+          <rect x="966" y="74" width="58" height="14" rx="3" class="c-mask"/>
+          <text x="995" y="84" class="t-backend" font-size="8" text-anchor="middle">valid scan</text>
         </g>
-        <g data-detail="context" data-edge-from="fusion" data-edge-to="judge" data-edge-label="pooled anomaly" data-edge-key="5" data-edge-id="e6">
-          <rect x="851.6999999999999" y="532" width="77.2" height="14" rx="3" class="c-mask"/>
-          <text x="890.3" y="542" class="t-backend" font-size="8" text-anchor="middle">pooled anomaly</text>
+        <g data-detail="context" data-edge-from="authenticity" data-edge-to="reference" data-edge-label="authentic" data-edge-key="3" data-edge-id="c4">
+          <rect x="1138.4" y="154" width="53.199999999999996" height="14" rx="3" class="c-mask"/>
+          <text x="1165" y="164" class="t-muted" font-size="8" text-anchor="middle">authentic</text>
         </g>
-        <g data-detail="context" data-edge-from="judge" data-edge-to="policy" data-edge-label="causal verdict" data-edge-key="6" data-edge-id="e7">
-          <rect x="959.3" y="394" width="77.2" height="14" rx="3" class="c-mask"/>
-          <text x="997.9" y="404" class="t-security" font-size="8" text-anchor="middle">causal verdict</text>
+        <g data-detail="context" data-edge-from="reference" data-edge-to="scheduler" data-edge-label="golden match" data-edge-key="4" data-edge-id="c5">
+          <rect x="961.2" y="214" width="67.6" height="14" rx="3" class="c-mask"/>
+          <text x="995" y="224" class="t-backend" font-size="8" text-anchor="middle">golden match</text>
         </g>
-        <g data-detail="context" data-edge-from="policy" data-edge-to="review" data-edge-label="audit certificate" data-edge-key="7" data-edge-id="e8">
-          <rect x="1128" y="478" width="91.6" height="14" rx="3" class="c-mask"/>
-          <text x="1173.8" y="488" class="t-backend" font-size="8" text-anchor="middle">audit certificate</text>
+        <g data-detail="context" data-edge-from="scheduler" data-edge-to="execution" data-edge-label="ROI crops" data-edge-key="5" data-edge-id="c6">
+          <rect x="628.4" y="214" width="53.199999999999996" height="14" rx="3" class="c-mask"/>
+          <text x="655" y="224" class="t-muted" font-size="8" text-anchor="middle">ROI crops</text>
+        </g>
+        <g data-detail="context" data-edge-from="execution" data-edge-to="fusion" data-edge-label="findings" data-edge-key="6" data-edge-id="c7">
+          <rect x="295.8" y="214" width="48.4" height="14" rx="3" class="c-mask"/>
+          <text x="320" y="224" class="t-backend" font-size="8" text-anchor="middle">findings</text>
+        </g>
+        <g data-detail="context" data-edge-from="fusion" data-edge-to="judge" data-edge-label="fused scores" data-edge-key="7" data-edge-id="c8">
+          <rect x="121.2" y="294" width="67.6" height="14" rx="3" class="c-mask"/>
+          <text x="155" y="304" class="t-backend" font-size="8" text-anchor="middle">fused scores</text>
+        </g>
+        <g data-detail="context" data-edge-from="judge" data-edge-to="policy" data-edge-label="verdict" data-edge-key="8" data-edge-id="c9">
+          <rect x="298.2" y="354" width="43.6" height="14" rx="3" class="c-mask"/>
+          <text x="320" y="364" class="t-security" font-size="8" text-anchor="middle">verdict</text>
+        </g>
+        <g data-detail="context" data-edge-from="policy" data-edge-to="db" data-edge-label="save state" data-edge-key="9" data-edge-id="c10">
+          <rect x="626" y="354" width="58" height="14" rx="3" class="c-mask"/>
+          <text x="655" y="364" class="t-muted" font-size="8" text-anchor="middle">save state</text>
+        </g>
+        <g data-detail="context" data-edge-from="db" data-edge-to="report" data-edge-label="signed cert" data-edge-key="10" data-edge-id="c11">
+          <rect x="963.6" y="354" width="62.8" height="14" rx="3" class="c-mask"/>
+          <text x="995" y="364" class="t-backend" font-size="8" text-anchor="middle">signed cert</text>
+        </g>
+
+        <!-- Boundary labels (foreground masks keep routes out of titles) -->
+        <g data-graph-role="structural-frame-label" data-composition-frame-id="0" data-composition-frame-kind="region" data-composition-frame-label="1. Ingestion &amp; Defensive Screening">
+          <rect data-graph-role="structural-frame-label-mask" x="34" y="40" width="193.6" height="16" rx="3" class="c-mask"/>
+          <text data-boundary-label="" x="38" y="53" class="t-cloud" font-size="9" font-weight="600">1. Ingestion &amp; Defensive Screening</text>
+        </g>
+
+        <g data-graph-role="structural-frame-label" data-composition-frame-id="1" data-composition-frame-kind="region" data-composition-frame-label="2. Golden Reference &amp; Forensic Swarm">
+          <rect data-graph-role="structural-frame-label-mask" x="34" y="180" width="204.4" height="16" rx="3" class="c-mask"/>
+          <text data-boundary-label="" x="38" y="193" class="t-cloud" font-size="9" font-weight="600">2. Golden Reference &amp; Forensic Swarm</text>
+        </g>
+
+        <g data-graph-role="structural-frame-label" data-composition-frame-id="2" data-composition-frame-kind="region" data-composition-frame-label="3. AI Governance, Persistence &amp; Reporting">
+          <rect data-graph-role="structural-frame-label-mask" x="34" y="320" width="231.4" height="16" rx="3" class="c-mask"/>
+          <text data-boundary-label="" x="38" y="333" class="t-cloud" font-size="9" font-weight="600">3. AI Governance, Persistence &amp; Reporting</text>
         </g>
 
         <!-- Legend -->
-        <g data-legend="" data-legend-bridge="">
-          <text x="20" y="560" class="t-primary" font-size="12" font-weight="650">Legend</text>
-          <g data-legend-semantic-kind="frontend" data-legend-kind="frontend" data-legend-label="User UI" data-legend-x="20" data-legend-baseline="580" data-legend-width="74">
-            <rect x="20" y="572" width="14" height="9" rx="2" class="c-frontend" stroke-width="1"/>
-            <text x="42" y="580" class="t-muted" font-size="7.5" font-weight="500">User UI</text>
-          </g>
-          <g data-legend-semantic-kind="backend" data-legend-kind="backend" data-legend-label="Agent logic" data-legend-x="101" data-legend-baseline="580" data-legend-width="91">
-            <rect x="101" y="572" width="14" height="9" rx="2" class="c-backend" stroke-width="1"/>
-            <text x="123" y="580" class="t-muted" font-size="7.5" font-weight="500">Agent logic</text>
-          </g>
-          <g data-legend-semantic-kind="security" data-legend-kind="security" data-legend-label="Policy" data-legend-x="199" data-legend-baseline="580" data-legend-width="70">
-            <rect x="199" y="572" width="14" height="9" rx="2" class="c-security" stroke-width="1"/>
-            <text x="221" y="580" class="t-muted" font-size="7.5" font-weight="500">Policy</text>
-          </g>
-          <g data-legend-semantic-kind="cloud" data-legend-kind="cloud" data-legend-label="Cloud service" data-legend-x="276" data-legend-baseline="580" data-legend-width="100">
-            <rect x="276" y="572" width="14" height="9" rx="2" class="c-cloud" stroke-width="1"/>
-            <text x="298" y="580" class="t-muted" font-size="7.5" font-weight="500">Cloud service</text>
-          </g>
-          <g data-legend-semantic-kind="external" data-legend-kind="external" data-legend-label="External system" data-legend-x="383" data-legend-baseline="580" data-legend-width="109">
-            <rect x="383" y="572" width="14" height="9" rx="2" class="c-external" stroke-width="1"/>
-            <text x="405" y="580" class="t-muted" font-size="7.5" font-weight="500">External system</text>
-          </g>
-        </g>
+
       </svg>
       <p class="intent-trace-status no-print" id="intent-trace-status" role="status" aria-live="polite" aria-atomic="true"></p>
       <div class="share-chapter-cue no-print" id="share-chapter-cue" hidden role="status" aria-live="polite">
@@ -5556,33 +5590,33 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           <h3>Ingestion &amp; Defensive Screening</h3>
         </div>
         <ul>
-          <li>&bull; Stage 1 rejects blurred or glared images in under 30ms before wasting neural compute</li>
-          <li>&bull; Stage 2 detects manipulated photos or metadata spoofing via Error Level Analysis (ELA)</li>
-          <li>&bull; Stage 3 matches Open_CLIP 512-dim visual embeddings against golden reference library</li>
+          <li>&bull; React 19 Console dispatches multipart inspection image to FastAPI /api/v1 with JWT verification</li>
+          <li>&bull; Stage 1 Quality Check tests Laplacian blur (&lt;30ms) and exposure; failures trigger retake bypass</li>
+          <li>&bull; Stage 2 Authenticity evaluates Error Level Analysis (ELA) and noise uniformity for tampering</li>
         </ul>
       </div>
 
       <div class="card">
         <div class="card-header">
           <div class="card-dot emerald"></div>
-          <h3>Forensic Swarm &amp; Mathematical Fusion</h3>
+          <h3>Forensic Multi-Agent Swarm &amp; Fusion</h3>
         </div>
         <ul>
-          <li>&bull; Stage 4 crops localized sub-regions, expanding micro-components by 8x-12x</li>
-          <li>&bull; Stage 5 dispatches parallel forensic agents (YOLO11n, PaddleOCR, Label, and VLM)</li>
-          <li>&bull; Stage 6 fuses anomaly scores using Anomaly Max-Pooling to preserve critical defects</li>
+          <li>&bull; Stage 3 retrieves golden reference via CLIP visual embedding &amp; FAISS vector similarity search (&gt;=0.75)</li>
+          <li>&bull; Stage 4 ROI Scheduler plans priority sub-crops dispatched to OCR, Label, Structural YOLO11n, and VLM</li>
+          <li>&bull; Stage 6 Evidence Fusion calculates composite fraud score with calibrated signal weights (YOLO 0.45, OCR 0.40, VLM 0.35, Label 0.30, SSIM 0.25)</li>
         </ul>
       </div>
 
       <div class="card">
         <div class="card-header">
-          <div class="card-dot rose"></div>
-          <h3>Causal Arbitration &amp; Governance</h3>
+          <div class="card-dot amber"></div>
+          <h3>Arbitration, Persistence &amp; Governance</h3>
         </div>
         <ul>
-          <li>&bull; Stage 7 synthesizes root-cause explanation on Groq LPU (gpt-oss-20b) in ~420ms</li>
-          <li>&bull; Stage 8 renders laboratory-grade PDF certificate with SHA-256 integrity hash</li>
-          <li>&bull; Human-in-the-loop workbench enables QA inspectors to approve, reject, or override verdicts</li>
+          <li>&bull; Stage 7 AI Judge synthesizes forensic reasoning using Groq LPU primary with Gemini fallback</li>
+          <li>&bull; Stage 8 Deterministic Policy Engine classifies verdict into AUTHENTIC, SUSPICIOUS, or FRAUD</li>
+          <li>&bull; SQLAlchemy SQLite WAL stores audit records while ReportLab renders cryptographically sealed PDF certificates</li>
         </ul>
       </div>
     </div>

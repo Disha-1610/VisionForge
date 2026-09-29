@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime
 from typing import Any, Optional, Union
 
-from pydantic import BaseModel, Field
+from pydantic import AliasChoices, BaseModel, Field
 
 
 # ── Evidence Schemas ──────────────────────────────────────────────────────────
@@ -43,8 +43,29 @@ class InspectionUpdate(BaseModel):
 
 
 class InspectionReviewRequest(BaseModel):
-    review_decision: str = Field(..., description="approved or overridden")
-    reviewer_comment: Optional[str] = None
+    """Human-review submission.
+
+    The console historically sent ``review_status`` / ``reviewer_notes``, while the
+    service exposes ``review_decision`` / ``reviewer_comment``. Both spellings are
+    accepted so the two contracts cannot drift apart silently.
+
+    ``review_decision`` is optional because ``/approve`` and ``/override`` infer it
+    from the route; ``/review`` requires it explicitly.
+    """
+
+    review_decision: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("review_decision", "review_status"),
+        description="approved or overridden",
+    )
+    reviewer_comment: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("reviewer_comment", "reviewer_notes"),
+    )
+    overridden_verdict: Optional[str] = Field(
+        default=None,
+        description="verdict to apply when overriding: accept or reject",
+    )
 
     @property
     def comment(self) -> Optional[str]:
