@@ -38,14 +38,14 @@ VisionForge assigns the best model for each specific task rather than using one 
 
 ```mermaid
 flowchart TD
-    A[Inspection Stage: VLM / Judge] --> B[LLM Gateway: llm_client.py]
-    B --> C{Primary Model}
-    C -->|200 OK| F[Self-Healing JSON Parser]
-    C -->|429 Rate Limit / 503 Spike| D{Cooldown > 15s?}
-    D -->|Yes: Fast-Fail| E[Fallback Model: Groq / Gemini]
-    E -->|200 OK| F
-    E -->|Exhausted| G[Offline CV Heuristic Fallback]
-    F --> H[Validated Pydantic Response]
+    A["Inspection Stage (VLM / Judge)"] --> B["LLM Gateway (llm_client.py)"]
+    B --> C{"Primary Model"}
+    C -->|"200 OK"| F["Self-Healing JSON Parser"]
+    C -->|"429 Rate Limit / 503 Spike"| D{"Cooldown > 15s?"}
+    D -->|"Yes: Fast-Fail"| E["Fallback Model (Groq / Gemini)"]
+    E -->|"200 OK"| F
+    E -->|"Exhausted"| G["Offline CV Heuristic Fallback"]
+    F --> H["Validated Pydantic Response"]
     G --> H
 ```
 

@@ -111,49 +111,41 @@ Here is what happens in the system when an operator places a circuit board under
 ```mermaid
 sequenceDiagram
     autonumber
-    participant Op as 👷 Line Operator
-    participant HUD as 🖥️ React 19 Workstation
-    participant API as ⚡ FastAPI Gateway
-    participant Graph as 🔄 LangGraph Engine
-    participant Swarm as 🤖 Multi-Agent Swarm
-    participant Judge as ⚖️ AI Forensic Judge
-    participant PDF as 📄 ReportLab Engine
+    participant Op as Line Operator
+    participant HUD as React 19 Workstation
+    participant API as FastAPI Gateway
+    participant Graph as LangGraph Engine
+    participant Swarm as Multi-Agent Swarm
+    participant Judge as AI Forensic Judge
+    participant PDF as ReportLab Engine
 
-    Op->>HUD: Ingests 4K Hardware Photograph (Desktop or Smartphone QR)
+    Op->>HUD: Upload 4K Hardware Photograph (Desktop or QR)
     HUD->>API: POST /api/v1/inspections (Multipart Upload)
-    API-->>HUD: 201 Created (inspection_id returned in 45ms)
-    HUD->>API: Subscribes to Server-Sent Events (SSE Telemetry Stream)
+    API-->>HUD: 201 Created (inspection_id returned in ~45ms)
+    HUD->>API: Connect to Server-Sent Events (SSE Stream)
 
-    rect rgb(20, 25, 40)
-        Note over Graph: 0.0s – 0.2s: Defensive Intake Gates
-        Graph->>Graph: Stage 1: Laplacian blur check (142.5 > 100) & Exposure (118 in 40-220)
-        Graph->>Graph: Stage 2: Error Level Analysis (ELA) verifies photo was not digitally edited
-    end
+    Note over Graph: 0.0s - 0.2s: Defensive Intake Gates
+    Graph->>Graph: Stage 1: Laplacian blur check (>100) & Exposure (40-220)
+    Graph->>Graph: Stage 2: Error Level Analysis verifies photo authenticity
 
-    rect rgb(25, 35, 50)
-        Note over Graph: 0.2s – 0.5s: Blueprint Match & ROI Scheduler
-        Graph->>Graph: Stage 3: Generates 3072-dim embedding -> FAISS retrieves Golden Blueprint in 15ms
-        Graph->>Graph: Stage 4: Segments board into prioritized micro-ROIs (Text, Labels, Structures)
-    end
+    Note over Graph: 0.2s - 0.5s: Blueprint Match & ROI Scheduler
+    Graph->>Graph: Stage 3: 3072-dim embedding matches Golden Blueprint in FAISS (15ms)
+    Graph->>Graph: Stage 4: Segments board into prioritized micro-ROIs
 
-    rect rgb(30, 45, 60)
-        Note over Swarm: 0.5s – 2.5s: Concurrent Multi-Agent Swarm Execution
-        par Parallel Execution across Cropped ROIs
-            Graph->>Swarm: OCR Agent: Extracts stamped serial numbers (EasyOCR)
-            Graph->>Swarm: Label Agent: Verifies QC hologram stamp geometry (NCC)
-            Graph->>Swarm: Structural Agent: Counts capacitors & chips via YOLO11n + SSIM
-            Graph->>Swarm: VLM Agent: Analyzes solder joints & burns (50/50 Gemini + Groq)
-        end
-        Swarm-->>Graph: Emits standardized Evidence Cards with localized bounding boxes
+    Note over Swarm: 0.5s - 2.5s: Concurrent Multi-Agent Swarm
+    par Parallel Execution across Cropped ROIs
+        Graph->>Swarm: OCR Agent: Validates stamped serial numbers (EasyOCR)
+        Graph->>Swarm: Label Agent: Verifies QC hologram stamp geometry (OpenCV)
+        Graph->>Swarm: Structural Agent: Counts components via YOLO11n + SSIM
+        Graph->>Swarm: VLM Agent: Analyzes solder joints & burns (Gemini / Groq)
     end
+    Swarm-->>Graph: Emits standardized Evidence Records with bounding boxes
 
-    rect rgb(40, 25, 30)
-        Note over Judge,PDF: 2.5s – 3.8s: Causal Arbitration & Audit Generation
-        Graph->>Graph: Stage 6: Anomaly Max-Pooling calculates composite fraud probability (0.88)
-        Graph->>Judge: Stage 7: Groq LPU (gpt-oss-20b) arbitrates root-cause in 420ms
-        Judge-->>Graph: Verdict: REJECT | Reason: "Capacitor C12 missing on 12V power rail"
-        Graph->>PDF: Stage 8: Saves evidence & generates PDF audit report
-    end
+    Note over Judge,PDF: 2.5s - 3.8s: Causal Arbitration & Audit Generation
+    Graph->>Graph: Stage 6: Anomaly Max-Pooling calculates composite fraud probability (0.88)
+    Graph->>Judge: Stage 7: Groq LPU (gpt-oss-20b) arbitrates root-cause in ~420ms
+    Judge-->>Graph: Verdict: REJECT — Reason: Capacitor C12 missing on 12V power rail
+    Graph->>PDF: Stage 8: Commits evidence & builds PDF audit report
 
     Graph->>HUD: SSE: verdict (status: completed, verdict: REJECT, PDF URL)
     HUD-->>Op: Displays Crimson Alert Banner, Dual-Image Canvas & PDF Download
@@ -168,12 +160,12 @@ VisionForge AI is decoupled into five distinct, enterprise-grade architectural t
 ```mermaid
 flowchart TD
     subgraph ClientTier["🖥️ Client Workstation Layer"]
-        Desktop["React 19 Desktop HUD (localhost:5173)<br/>• Synchronized Dual-Image Canvas<br/>• Real-Time SSE Telemetry Stepper"]
-        Mobile["Smartphone Camera Intake<br/>• WebRTC Viewfinder<br/>• Cloudflare Quick Tunnel QR Pairing"]
+        Desktop["React 19 Desktop HUD (localhost:5173)<br/>Synchronized Dual-Image Canvas & Telemetry"]
+        Mobile["Smartphone Camera Intake<br/>WebRTC Viewfinder & Cloudflare QR Pairing"]
     end
 
     subgraph GatewayTier["⚡ API Gateway Layer (FastAPI :8000)"]
-        Auth["JWT Dual-Token Security<br/>(30m Access / 7d Refresh / Proactive Timer)"]
+        Auth["JWT Dual-Token Security<br/>30m Access / 7d Refresh"]
         InspectRouter["Inspection Intake & State Router"]
         ProdRouter["Product Blueprint & Catalog Router"]
         ReportRouter["Audit Reports & PDF Stream Router"]
@@ -195,26 +187,43 @@ flowchart TD
         OCR["🔤 OCR Agent (EasyOCR)"]
         LBL["🏷️ Label Agent (OpenCV Template Matcher)"]
         YOLO["🧩 Structural Agent (YOLO11n + SSIM Drift)"]
-        VLM["👁️ VLM Agent (50/50 Gemini 2.5 & Groq Qwen)"]
+        VLM["👁️ VLM Agent (Gemini 2.5 Flash & Groq Qwen)"]
     end
 
     subgraph StorageTier["💾 Persistence & Vector Intelligence"]
-        DB[(SQLAlchemy 2.0 Async<br/>SQLite Dev / PostgreSQL 16+ Prod)]
-        FAISS[(FAISS Vector Index<br/>3072-dim Gemini & 512-dim CLIP)]
-        Files[(File Storage Volume<br/>Uploads, Golden Images, PDF Reports)]
+        DB[("SQLAlchemy 2.0 Async (SQLite / PostgreSQL)")]
+        FAISS[("FAISS Vector Index (3072-dim & 512-dim)")]
+        Files[("File Storage Volume (Uploads, Blueprints, PDFs)")]
     end
 
-    ClientTier -->|REST & Multipart Upload| GatewayTier
-    GatewayTier -->|Spawn Async Background Task| EngineTier
-    EngineTier -.->|Stream Live Progress Events| SSEHub
-    SSEHub -.->|Push Telemetry| ClientTier
+    Desktop -->|"REST / Multipart Upload"| InspectRouter
+    Mobile -->|"Capture Upload"| InspectRouter
+    InspectRouter -->|"Spawn Async Pipeline"| S1
 
-    S1 --> S2 --> S3 --> S4 --> S5 --> S6 --> S7 --> S8
-    S3 <--> FAISS
-    S5 --> SwarmTier
-    SwarmTier --> S6
-    S8 --> DB
-    S8 --> Files
+    S1 --> S2 --> S3 --> S4 --> S5
+    S3 <-->|"Vector Search"| FAISS
+
+    S5 --> OCR
+    S5 --> LBL
+    S5 --> YOLO
+    S5 --> VLM
+
+    OCR --> S6
+    LBL --> S6
+    YOLO --> S6
+    VLM --> S6
+
+    S6 --> S7 --> S8
+
+    S8 -->|"Persist Inspection State"| DB
+    S8 -->|"Save PDF Audit Report"| Files
+
+    S1 -.->|"SSE Progress"| SSEHub
+    S5 -.->|"SSE Progress"| SSEHub
+    S7 -.->|"SSE Progress"| SSEHub
+    S8 -.->|"SSE Final Verdict"| SSEHub
+
+    SSEHub -.->|"Push Real-Time Telemetry"| Desktop
 ```
 
 *For an exhaustive breakdown of system boundaries and failure states, read [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).*
@@ -250,14 +259,14 @@ A core architectural breakthrough of VisionForge is its **decoupled, provider-ag
 
 ```mermaid
 flowchart TD
-    Req[Inspection Pipeline Stage: VLM / Judge] --> GW[Unified LLM Gateway: llm_client.py]
-    GW --> Primary{Primary Provider}
-    Primary -->|200 OK| Parse[Self-Healing JSON Recovery Engine]
-    Primary -->|429 Rate Limit / 503 Spike| Circuit{Cooldown > 15s?}
-    Circuit -->|Yes: Fast-Failover| Backup[Backup Provider: Groq / Gemini]
-    Backup -->|200 OK| Parse
-    Backup -->|Exhausted| Offline[Offline CV Heuristic Fallback]
-    Parse --> Res[Validated Pydantic Payload]
+    Req["Inspection Pipeline Stage (VLM / Judge)"] --> GW["Unified LLM Gateway (llm_client.py)"]
+    GW --> Primary{"Primary Provider"}
+    Primary -->|"200 OK"| Parse["Self-Healing JSON Recovery Engine"]
+    Primary -->|"429 Rate Limit / 503 Spike"| Circuit{"Cooldown > 15s?"}
+    Circuit -->|"Yes: Fast-Failover"| Backup["Backup Provider (Groq / Gemini)"]
+    Backup -->|"200 OK"| Parse
+    Backup -->|"Exhausted"| Offline["Offline CV Heuristic Fallback"]
+    Parse --> Res["Validated Pydantic Payload"]
     Offline --> Res
 ```
 
@@ -312,7 +321,7 @@ Rather than asking a single large model to inspect an entire circuit board, Visi
 VisionForge includes an authoritative, custom fine-tuned **Ultralytics YOLO11n** model (`backend/data/yolo_weights/component_detector.pt`) trained specifically on industrial hardware:
 
 ```mermaid
-pie title Master Training Dataset Distribution (59,773 Total Annotations)
+pie title "Master Training Dataset Distribution (59,773 Total Annotations)"
     "connector" : 27014
     "capacitor" : 14155
     "ic_chip" : 5998
