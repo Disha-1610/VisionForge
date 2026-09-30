@@ -10,8 +10,8 @@
 
 [![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
-[![React](https://img.shields.io/badge/React-18.3-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev)
-[![Ultralytics YOLO11n](https://img.shields.io/badge/YOLO11n-Custom_Trained_8_Classes-00FFFF?style=flat-square&logo=yolo&logoColor=black)](docs/YOLO_MODEL.md)
+[![React](https://img.shields.io/badge/React-19.2-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev)
+[![Ultralytics YOLO11n](https://img.shields.io/badge/YOLO11n-Custom_Trained_8_Classes-00FFFF?style=flat-square&logo=yolo&logoColor=black)](docs/ml_training.md)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.0+-EE4C2C?style=flat-square&logo=pytorch&logoColor=white)](https://pytorch.org)
 [![LangGraph](https://img.shields.io/badge/LangGraph-StateGraph_8_Stages-FF6F00?style=flat-square&logo=langchain&logoColor=white)](docs/PIPELINE.md)
 
@@ -88,10 +88,10 @@ Instead of guessing from a single fallible prompt or relying on rigid legacy com
        DEFENSIVE CV GATES              VECTOR INTELLIGENCE             SPECIALIZED AI AGENTS               CAUSAL ARBITRATION
 ┌─────────────────────────────┐   ┌───────────────────────────┐   ┌─────────────────────────────┐   ┌───────────────────────────────┐
 │ Stage 1: Quality Gate       │   │ Stage 3: Blueprint Match  │   │ Stage 5: Concurrent Swarm   │   │ Stage 7: AI Forensic Judge    │
-│ • Laplacian blur (>100)     │   │ • 3072-dim Gemini / CLIP  │   │ • PaddleOCR Lot Verifier    │   │ • Groq LPU (gpt-oss-20b)      │
+│ • Laplacian blur (>100)     │   │ • 3072-dim Gemini / CLIP  │   │ • EasyOCR Serial Reader     │   │ • Groq LPU (gpt-oss-20b)      │
 │ • Exposure bounds (40-220)  ├──►│ • FAISS vector retrieval  ├──►│ • OpenCV Template Matcher   ├──►│ • Causal root-cause reasoning │
 │ Stage 2: Forensic ELA Gate  │   │ Stage 4: Priority Queue   │   │ • YOLO11n Component Counter │   │ Stage 8: Policy Engine        │
-│ • Compression diff analysis │   │ • Micro-ROI segmentation  │   │ • Gemini/Groq Surface VLM   │   │ • Signed ReportLab PDF        │
+│ • Compression diff analysis │   │ • Micro-ROI segmentation  │   │ • Gemini/Groq Surface VLM   │   │ • Industrial ReportLab PDF    │
 └─────────────────────────────┘   └───────────────────────────┘   └─────────────────────────────┘   └───────────────────────────────┘
 ```
 
@@ -100,7 +100,7 @@ Instead of guessing from a single fallible prompt or relying on rigid legacy com
 - 🎯 **Sub-Millimeter Anomaly Detection:** Custom fine-tuned **YOLO11n** model trained on 4,448 images detects missing capacitors, stolen ICs, and broken seals down to $12 \times 12$ pixels.
 - 🛡️ **Non-Diluting Anomaly Max-Pooling:** A single missing power capacitor is **never** averaged away or diluted by 20 clean resistors.
 - 📱 **Dual Intake Modalities:** Instant desktop drag-and-drop or smartphone camera pairing via an automated Cloudflare Quick Tunnel.
-- 📄 **Legally Defensible Audit Proof:** Generates cryptographically hashed, timestamped ReportLab PDF audit certificates for warranty chargebacks.
+- 📄 **Industrial Audit Reports:** Generates comprehensive ReportLab PDF audit reports with full defect breakdowns, component matrices, and chain-of-custody sign-off blocks.
 
 ---
 
@@ -112,7 +112,7 @@ Here is what happens in the system when an operator places a circuit board under
 sequenceDiagram
     autonumber
     participant Op as 👷 Line Operator
-    participant HUD as 🖥️ React 18 Workstation
+    participant HUD as 🖥️ React 19 Workstation
     participant API as ⚡ FastAPI Gateway
     participant Graph as 🔄 LangGraph Engine
     participant Swarm as 🤖 Multi-Agent Swarm
@@ -139,7 +139,7 @@ sequenceDiagram
     rect rgb(30, 45, 60)
         Note over Swarm: 0.5s – 2.5s: Concurrent Multi-Agent Swarm Execution
         par Parallel Execution across Cropped ROIs
-            Graph->>Swarm: OCR Agent: Extracts stamped serial numbers (PaddleOCR / EasyOCR)
+            Graph->>Swarm: OCR Agent: Extracts stamped serial numbers (EasyOCR)
             Graph->>Swarm: Label Agent: Verifies QC hologram stamp geometry (NCC)
             Graph->>Swarm: Structural Agent: Counts capacitors & chips via YOLO11n + SSIM
             Graph->>Swarm: VLM Agent: Analyzes solder joints & burns (50/50 Gemini + Groq)
@@ -152,10 +152,10 @@ sequenceDiagram
         Graph->>Graph: Stage 6: Anomaly Max-Pooling calculates composite fraud probability (0.88)
         Graph->>Judge: Stage 7: Groq LPU (gpt-oss-20b) arbitrates root-cause in 420ms
         Judge-->>Graph: Verdict: REJECT | Reason: "Capacitor C12 missing on 12V power rail"
-        Graph->>PDF: Stage 8: Commits immutable evidence & signs PDF audit certificate
+        Graph->>PDF: Stage 8: Saves evidence & generates PDF audit report
     end
 
-    Graph->>HUD: SSE: pipeline_complete (Verdict: REJECT, PDF URL)
+    Graph->>HUD: SSE: verdict (status: completed, verdict: REJECT, PDF URL)
     HUD-->>Op: Displays Crimson Alert Banner, Dual-Image Canvas & PDF Download
 ```
 
@@ -168,7 +168,7 @@ VisionForge AI is decoupled into five distinct, enterprise-grade architectural t
 ```mermaid
 flowchart TD
     subgraph ClientTier["🖥️ Client Workstation Layer"]
-        Desktop["React 18 Desktop HUD (localhost:5173)<br/>• Synchronized Dual-Image Canvas<br/>• Real-Time SSE Telemetry Stepper"]
+        Desktop["React 19 Desktop HUD (localhost:5173)<br/>• Synchronized Dual-Image Canvas<br/>• Real-Time SSE Telemetry Stepper"]
         Mobile["Smartphone Camera Intake<br/>• WebRTC Viewfinder<br/>• Cloudflare Quick Tunnel QR Pairing"]
     end
 
@@ -192,7 +192,7 @@ flowchart TD
     end
 
     subgraph SwarmTier["🤖 Specialized Forensic Swarm"]
-        OCR["🔤 OCR Agent (PaddleOCR / EasyOCR)"]
+        OCR["🔤 OCR Agent (EasyOCR)"]
         LBL["🏷️ Label Agent (OpenCV Template Matcher)"]
         YOLO["🧩 Structural Agent (YOLO11n + SSIM Drift)"]
         VLM["👁️ VLM Agent (50/50 Gemini 2.5 & Groq Qwen)"]
@@ -201,7 +201,7 @@ flowchart TD
     subgraph StorageTier["💾 Persistence & Vector Intelligence"]
         DB[(SQLAlchemy 2.0 Async<br/>SQLite Dev / PostgreSQL 16+ Prod)]
         FAISS[(FAISS Vector Index<br/>3072-dim Gemini & 512-dim CLIP)]
-        Files[(File Storage Volume<br/>Uploads, Golden Images, PDF Certificates)]
+        Files[(File Storage Volume<br/>Uploads, Golden Images, PDF Reports)]
     end
 
     ClientTier -->|REST & Multipart Upload| GatewayTier
@@ -226,19 +226,19 @@ flowchart TD
 ```text
 STAGE 1          STAGE 2          STAGE 3          STAGE 4          STAGE 5          STAGE 6          STAGE 7          STAGE 8
 [Quality]  ──►  [Authenticity] ──► [Reference]  ──►  [Scheduler] ──►   [Swarm]    ──►   [Fusion]   ──►   [Judge]    ──►  [Policy]
-Blur/Glare       Forensic ELA      FAISS Match      Micro-ROIs       4 Agents        Max-Pooling      Groq LPU         PDF Sign
+Blur/Glare       Forensic ELA      FAISS Match      Micro-ROIs       4 Agents        Max-Pooling      Groq LPU         PDF Report
 ```
 
 | Stage | Name | Core Technology | Forensic Role & Capability | Failure / Fast-Fail Behavior |
 |:---:|:---|:---|:---|:---|
-| **1** | **Quality Gate** | OpenCV Laplacian ($\text{Var}(\nabla^2 I)$) | Rejects blurry photos ($<100$) and extreme glare ($>220$). | Fast-fails in 25ms $\to$ `RETAKE` prompt. |
-| **2** | **Authenticity Gate** | Error Level Analysis (ELA) | Detects Photoshop clone-stamping and digital tampering. | Flags digital forgeries in 440ms $\to$ `QUARANTINE`. |
-| **3** | **Reference Match** | Gemini Embed / CLIP + FAISS | Matches hardware against Golden Blueprint in $<15\text{ms}$. | If similarity $<0.75 \to$ `UNKNOWN_HARDWARE`. |
-| **4** | **ROI Scheduler** | Python Priority Queue | Segments board into prioritized micro-regions (Text, Seals, Parts). | Sorts safety labels and chips first. |
+| **1** | **Quality Gate** | OpenCV Laplacian ($\text{Var}(\nabla^2 I)$) | Rejects blurry photos ($<100$) and extreme glare ($>220$). | Fast-fails in ~25ms $\to$ `RETAKE` prompt. |
+| **2** | **Authenticity Gate** | Error Level Analysis (ELA) | Detects image cloning, screenshotting, and digital edits. | Flags suspected tampering $\to$ secondary verification. |
+| **3** | **Reference Match** | Gemini Embed / CLIP + FAISS | Matches hardware against Golden Blueprint in $<15\text{ms}$. | Below 0.75 threshold $\to$ flags match for operator review. |
+| **4** | **ROI Scheduler** | Priority Sorting & Batching | Segments board into prioritized micro-regions (Text, Seals, Parts). | Sorts safety labels and chips first. |
 | **5** | **Evidence Swarm** | OCR, Template, YOLO11n, VLM | Runs 4 domain agents concurrently on localized image crops. | Robust crash containment per agent. |
 | **6** | **Evidence Fusion** | Weighted Anomaly Max-Pooling | Fuses findings mathematically: single defect retains full impact. | Prevents dilution of critical missing parts. |
-| **7** | **AI Forensic Judge** | Groq LPU (`gpt-oss-20b`) | Synthesizes cards into human-readable causal root-cause in 1.4s. | Strict JSON contract with Gemini fallback. |
-| **8** | **Policy Engine** | Python Logic + ReportLab | Maps score to operational policy (`ACCEPT`, `RETAKE`, `QUARANTINE`). | Generates signed, tamper-evident PDF. |
+| **7** | **AI Forensic Judge** | Groq LPU (`gpt-oss-20b`) | Synthesizes cards into human-readable causal root-cause in ~1.4s. | Strict JSON contract with Gemini & offline fallback. |
+| **8** | **Policy Engine** | Python Logic + ReportLab | Maps score to operational policy (`ACCEPT`, `RETAKE`, `QUARANTINE`). | Generates audit-ready ReportLab PDF report. |
 
 *For complete mathematical formulas, state dictionaries, and benchmarks, read [`docs/PIPELINE.md`](docs/PIPELINE.md).*
 
@@ -280,7 +280,7 @@ Rather than asking a single large model to inspect an entire circuit board, Visi
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────┐
-│ 🔤 OCR AGENT (PaddleOCR / EasyOCR)                                                               │
+│ 🔤 OCR AGENT (EasyOCR)                                                                           │
 │ Expected: "STM32F407VGT6 - Lot 2408"  | Read: "STM32F407VGT6 - Lot 1802"                        │
 │ Finding: Recycled silicon detected. Batch date code Y1802 (2018) does not match Y2408 (2024).   │
 ├──────────────────────────────────────────────────────────────────────────────────────────────────┤
@@ -335,8 +335,7 @@ pie title Master Training Dataset Distribution (59,773 Total Annotations)
 
 > 🧠 **The Scale Drift Solution:** On a full 4K board image resized to $640 \times 640$, a tiny $0402$ resistor is only $2 \times 1$ pixels. VisionForge's Stage 4 crops localized sub-regions (e.g. $260 \times 180$) *before* YOLO inference, expanding micro-components by **$8\times$ to $12\times$** for reliable detection.
 
-*For model diagnostics, mAP curves, and training metrics, read [`docs/YOLO_MODEL.md`](docs/YOLO_MODEL.md).*  
-*For dataset curation and 4,448-image corpus provenance, read [`docs/DATASET.md`](docs/DATASET.md).*
+*For model diagnostics, 4,448-image corpus curation, and training metrics, read [`docs/ml_training.md`](docs/ml_training.md).*
 
 ---
 
@@ -348,22 +347,22 @@ VisionForge is built on modern, battle-tested technologies designed for reliabil
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────┐
 │                                       VISIONFORGE TECH STACK                                     │
 ├───────────────────────┬──────────────────────────────────────────────────────────────────────────┤
-│ 🖥️ Frontend Client    │ React 18.3 • Vite 5.4 • Tailwind CSS 3.4 (Cyberpunk Tactical HUD)       │
+│ 🖥️ Frontend Client    │ React 19.2 • Vite 8.3 • Tailwind CSS 3.4 (Cyberpunk Tactical HUD)       │
 │                       │ Lucide React Icons • Recharts Analytics • Axios Engine                   │
 ├───────────────────────┼──────────────────────────────────────────────────────────────────────────┤
 │ ⚡ Backend Services   │ FastAPI 0.115 • Python 3.11+ • Uvicorn ASGI • Pydantic v2                │
 │                       │ LangGraph StateGraph • AsyncIO Concurrency Swarm                         │
 ├───────────────────────┼──────────────────────────────────────────────────────────────────────────┤
 │ 👁️ Vision & ML Models │ Ultralytics YOLO11n (2.6M params, PyTorch) • OpenCV 4.9                  │
-│                       │ PaddleOCR (PP-OCRv4) • EasyOCR • OpenCLIP (ViT-B-32)                     │
+│                       │ EasyOCR • OpenCLIP (ViT-B-32)                                            │
 ├───────────────────────┼──────────────────────────────────────────────────────────────────────────┤
 │ 🤖 Cloud Intelligence │ Groq LPU (gpt-oss-20b & Qwen 3.8 27B Vision)                             │
 │                       │ Google Gemini 2.5 Flash & Gemini Cloud Embeddings (3072-dim)             │
 ├───────────────────────┼──────────────────────────────────────────────────────────────────────────┤
 │ 💾 Data & Persistence │ SQLAlchemy 2.0 (Async) • SQLite 3 (Dev) / PostgreSQL 16+ (Prod)          │
-│                       │ FAISS Vector Database • ReportLab Cryptographic PDF Engine               │
+│                       │ FAISS Vector Database • ReportLab Industrial PDF Engine                  │
 ├───────────────────────┼──────────────────────────────────────────────────────────────────────────┤
-│ 🚀 Ingress & Ops      │ Cloudflare Quick Tunnel (cloudflared) • Docker Compose • Pytest (214 T)  │
+│ 🚀 Ingress & Ops      │ Cloudflare Quick Tunnel (cloudflared) • Windows Batch Runner • Pytest 214│
 └───────────────────────┴──────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -396,18 +395,20 @@ The local database initializes automatically on startup with zero configuration 
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Industrial Edge Deployment & Quick Start
+
+VisionForge AI is architected for **on-premises factory edge servers and industrial inspection workstations**. Deploying locally on the factory LAN ensures sub-second transfer of 4K board images, prevents proprietary hardware designs from leaking to the cloud, and guarantees 100% inspection uptime even during internet outages.
 
 ### Prerequisites
 - **Python 3.11+** installed and added to PATH
-- **Node.js 18+** & **npm** installed
-- Free API keys from [Google AI Studio](https://aistudio.google.com/) and [Groq Console](https://console.groq.com/)
+- **Node.js 20.19+ or 22.12+** & **npm** installed (required by Vite 8)
+- *(Optional)* Free API keys from [Google AI Studio](https://aistudio.google.com/) and [Groq Console](https://console.groq.com/) for cloud reasoning (system falls back to deterministic rules if offline)
 
 ---
 
-### Option A: 1-Click Master Launcher (Windows)
+### Option A: 1-Click Master Launcher (Windows Industrial PC / Workstation)
 
-VisionForge includes an automated batch orchestrator that verifies environments, clears busy ports, initializes database tables, and launches both servers:
+VisionForge includes an automated batch orchestrator that verifies environments, clears busy ports, initializes database tables, and launches both backend and frontend servers:
 
 ```cmd
 # 1. Clone the repository
@@ -422,37 +423,57 @@ The script automatically:
 1. Clears zombie processes on ports `8000` and `5173`.
 2. Creates and activates the backend Python virtual environment.
 3. Initializes the SQLite database and seeds default accounts and blueprints.
-4. Starts the FastAPI backend on `http://localhost:8000`.
-5. Starts the Vite React frontend on `http://localhost:5173`.
+4. Starts the FastAPI backend daemon on `http://localhost:8000`.
+5. Starts the Vite React frontend workstation on `http://localhost:5173`.
 6. Opens your browser directly to the dashboard.
 
 ---
 
-### Option B: Step-by-Step Manual Setup (macOS / Linux / Windows)
+### Option B: Production Factory Edge Server (Linux / Ubuntu Daemon)
+
+For deployment on a dedicated on-premises edge server (rackmount or industrial IPC):
+
+```bash
+# 1. Setup backend service
+cd backend
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env
+
+# 2. Build production frontend assets
+cd ../frontend
+npm install
+npm run build     # Outputs optimized bundle to frontend/dist
+
+# 3. Launch with systemd or run directly
+cd ../backend
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 2
+```
+
+> 🏭 **Nginx Reverse Proxy & Air-Gapped Setup:** For complete production Nginx configuration (with SSE `proxy_buffering off;`), systemd service files, and air-gapped cleanroom operation, see [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
+
+---
+
+### Option C: Developer Bench Testing (Step-by-Step)
 
 #### 1. Backend Setup
 ```bash
 cd backend
-
-# Create & activate virtual environment
 python -m venv venv
 source venv/bin/activate       # On Windows: venv\Scripts\activate
-
-# Install Python requirements
 pip install -r requirements.txt
-
-# Create environment configuration
 cp .env.example .env           # On Windows: copy .env.example .env
 ```
 
-Edit `backend/.env` and paste your free API keys:
+Edit `backend/.env` to configure your keys:
 ```ini
+JWT_SECRET_KEY=generate_a_random_64_character_hex_string
 GEMINI_API_KEY=your_gemini_api_key_here
 GROQ_API_KEY=your_groq_api_key_here
-JWT_SECRET_KEY=generate_a_random_64_character_hex_string
 ```
 
-Start the FastAPI server (database seeds automatically on startup):
+Start the FastAPI server:
 ```bash
 python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
@@ -463,11 +484,7 @@ python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 In a new terminal window:
 ```bash
 cd frontend
-
-# Install Node dependencies
 npm install
-
-# Start Vite React workstation
 npm run dev
 ```
 - **Workstation HUD:** `http://localhost:5173`
@@ -494,7 +511,7 @@ VisionForge/
 │   │   └── utils/                 # Image math (Laplacian blur, ELA, SSIM, ROI templates)
 │   ├── data/                      # SQLite database, golden blueprints, and PDF reports
 │   └── tests/                     # Hermetic 23-module pytest test suite (214 tests)
-├── frontend/                      # React 18 + Vite workstation SPA
+├── frontend/                      # React 19 + Vite workstation SPA
 │   ├── src/
 │   │   ├── components/            # DualImageCanvas, PipelineProgress, EvidenceCards, Modals
 │   │   ├── context/               # AuthContext (JWT rotation) & ToastContext
@@ -586,23 +603,22 @@ tests/test_workflow_langgraph.py ......                                  [100%]
 
 ## 📚 Complete Documentation Hub
 
-VisionForge features an exhaustive 13-document technical specification suite:
+VisionForge features an exhaustive technical documentation suite:
 
 | Document | Primary Focus & System Scope |
 |:---|:---|
 | 📐 [**System Architecture**](docs/ARCHITECTURE.md) | End-to-end system topology, LangGraph state machine, data flows, and trade-offs. |
-| 🔄 [**Inspection Pipeline**](docs/PIPELINE.md) | Deep mathematical breakdown of all 8 inspection stages and Anomaly Max-Pooling. |
+| 🔄 [**Inspection Pipeline**](docs/PIPELINE.md) | Deep walkthrough of all 8 inspection stages, thresholds, and Anomaly Max-Pooling. |
 | ⚡ [**LLM Gateway & Routing**](docs/LLM_GATEWAY.md) | Multi-model routing (Groq/Gemini), fast-fail circuit breaking, and self-healing JSON recovery. |
 | 🤖 [**AI & Forensic Agents**](docs/AI_AGENTS.md) | Specifications for OCR, Label, Structural YOLO, and VLM agents + Groq AI Judge. |
-| 👁️ [**YOLO11n Model Guide**](docs/YOLO_MODEL.md) | 8-class model architecture, scale drift analysis, loss curves, and diagnostic benchmarks. |
-| 📊 [**Dataset Provenance**](docs/DATASET.md) | 4,448-image hardware corpus, data cleaning pipeline, and class distributions. |
-| ⚡ [**REST API & Telemetry**](docs/API.md) | OpenAPI schemas, request/response contracts, and Server-Sent Events (SSE) protocol. |
-| 🗄️ [**Database Architecture**](docs/DATABASE.md) | SQLAlchemy models, ER diagram, dual SQLite/Postgres portability, and append-only evidence. |
-| 🖥️ [**Frontend Workstation HUD**](docs/FRONTEND.md) | React 18 component tree, synchronized canvas, Tailwind HUD tokens, and auth timers. |
-| 🚀 [**Deployment & Operations**](docs/DEPLOYMENT.md) | Windows batch scripts, Cloudflare mobile pairing, Docker Compose, and troubleshooting. |
-| 🧪 [**Testing & QA Suite**](docs/TESTING.md) | 23 Pytest test modules, hermetic offline mocking, and CI/CD quality gates. |
-| 🛡️ [**Security & Threat Model**](docs/SECURITY.md) | Hardware counterfeit threat vectors, JWT rotation, RBAC, and SHA-256 PDF signatures. |
-| 🗺️ [**Strategic Roadmap**](docs/ROADMAP.md) | 3-phase progression from MVP to edge TensorRT and factory robotics. |
+| 👁️ [**ML Training & YOLO11n**](docs/ml_training.md) | 8-class YOLO11n architecture, 4,448-image corpus curation, polygon cleanup, and benchmarks. |
+| ⚡ [**REST API Reference**](docs/API.md) | OpenAPI schemas, request/response contracts, and Server-Sent Events (SSE) protocol. |
+| 🗄️ [**Database Architecture**](docs/DATABASE.md) | SQLAlchemy 2.0 models, ER diagram, dual SQLite/Postgres portability, and evidence store. |
+| 🖥️ [**Frontend Workstation**](docs/FRONTEND.md) | React 19 component tree, synchronized canvas, Tailwind HUD tokens, and auth timers. |
+| 🚀 [**Edge Deployment Guide**](docs/DEPLOYMENT.md) | On-premises factory edge server architecture, Nginx reverse proxy, systemd daemons, and air-gapped cleanroom operation. |
+| 🧪 [**Testing & QA Suite**](docs/TESTING.md) | 23 Pytest test modules (214 tests), hermetic offline mocking, and timing breakdown. |
+| 🛡️ [**Security & Threat Model**](docs/SECURITY.md) | Hardware counterfeit threat vectors, JWT rotation, RBAC, and access permissions. |
+| 🗺️ [**Strategic Roadmap**](docs/ROADMAP.md) | Progression from current Phase 1 baseline to Phase 2 edge acceleration (TensorRT, GigE cameras) and Phase 3 factory robotics. |
 
 ---
 
@@ -630,8 +646,8 @@ Following the Grand Final, **Disha Nayak and Anil Pradhan** decided that a billi
 | **Micro-Scale Forensics** | Full-image SSIM (diluted anomaly scores) | **Stage 4 Localized ROI Scheduler** ($8\times$–$12\times$ zoom) + **Anomaly Max-Pooling** |
 | **Inference Latency** | 8.0 – 12.0 seconds per inspection | **< 4.0 seconds** (sub-second on cached/fast-fail scans) |
 | **Reasoning Engine** | Single cloud VLM prompt (`llama-3.2-11b-vision`) | **Groq LPU Causal Judge** (`gpt-oss-20b` in ~420ms) + Dual-Provider Failover |
-| **Operator Interface** | Basic review workbench | **Tactical Cyberpunk HUD** (React 18, Dual-Image Canvas, SSE Telemetry) |
-| **Persistence & Audit** | Basic SQLite database | **SQLAlchemy 2.0 ORM** (PostgreSQL/SQLite), append-only evidence, PDF certs |
+| **Operator Interface** | Basic review workbench | **Tactical Cyberpunk HUD** (React 19, Dual-Image Canvas, SSE Telemetry) |
+| **Persistence & Audit** | Basic SQLite database | **SQLAlchemy 2.0 ORM** (PostgreSQL/SQLite), structured evidence, PDF reports |
 | **Testing & Quality Gates**| 0 automated tests | **23 Pytest Test Modules (214 Passing Tests)** with hermetic offline mocking |
 
 > *"Most hackathon projects die when the demo ends. For us, the Dell FutureMind AI Hackathon was simply Day 1. The original prototype had severe real-world limitations, but the industrial counterfeit problem was real and massive. We spent weeks completely re-architecting the system from the ground up to build what VisionForge AI is today: a production-ready, sub-4-second autonomous hardware forensics workstation."*  
@@ -645,8 +661,8 @@ VisionForge AI was redesigned, engineered, and brought to production by:
 
 | Contributor | Primary Focus & Core Responsibilities |
 |:---|:---|
-| **Disha Nayak** | **Full-Stack Engineering & Data Architecture**<br/>• **Frontend Workstation:** Architected the entire React 18 SPA, Tactical Cyberpunk HUD, Tailwind design system, synchronized dual-image comparator canvas (`DualImageCanvas.jsx`), ROI bounding box overlays, and analytics.<br/>• **Backend & APIs:** Developed complete FastAPI REST API routing (`/auth`, `/inspections`, `/products`, `/vendors`, `/reports`, `/analytics`), dual-token JWT authentication lifecycle with proactive token rotation, and real-time Server-Sent Events (SSE) telemetry.<br/>• **Database & Persistence:** Designed SQLAlchemy 2.0 relational models, dual-dialect PostgreSQL/SQLite compatibility, foreign key integrity constraints, database migrations, and forensic PDF certificate generation. |
-| **Anil Pradhan** | **AI/ML, Computer Vision & Pipeline Engineering**<br/>• **Pipeline Architecture:** Designed and implemented the complete 8-stage LangGraph state machine orchestrator (`workflow.py`, `state.py`), 30ms defensive fast-fail gates, and mathematical Anomaly Max-Pooling algorithm.<br/>• **AI/ML & Object Detection:** Curated and cleaned the 4,448-image hardware corpus, unified the 8-class label space, and fine-tuned the Ultralytics YOLO11n component detector (`component_detector.pt`, 5.2 MB).<br/>• **Computer Vision & Agents:** Implemented OpenCV Laplacian blur, Error Level Analysis (ELA) forensics, FAISS vector retrieval, PaddleOCR lot code verifier, and AI Forensic Judge causal reasoning on Groq LPU (`gpt-oss-20b`).<br/>• **Quality Assurance & Testing:** Authored the hermetic 23-module automated Pytest test suite (205 passing tests) with zero-cost offline mocking. |
+| **Disha Nayak** | **Full-Stack Engineering & Data Architecture**<br/>• **Frontend Workstation:** Architected the entire React 19 SPA, Tactical Cyberpunk HUD, Tailwind design system, synchronized dual-image comparator canvas (`DualImageCanvas.jsx`), ROI bounding box overlays, and analytics.<br/>• **Backend & APIs:** Developed complete FastAPI REST API routing (`/auth`, `/inspections`, `/products`, `/vendors`, `/reports`, `/analytics`), dual-token JWT authentication lifecycle with proactive token rotation, and real-time Server-Sent Events (SSE) telemetry.<br/>• **Database & Persistence:** Designed SQLAlchemy 2.0 relational models, dual-dialect PostgreSQL/SQLite compatibility, foreign key integrity constraints, database migrations, and forensic PDF report generation. |
+| **Anil Pradhan** | **AI/ML, Computer Vision & Pipeline Engineering**<br/>• **Pipeline Architecture:** Designed and implemented the complete 8-stage LangGraph state machine orchestrator (`workflow.py`, `state.py`), 30ms defensive fast-fail gates, and mathematical Anomaly Max-Pooling algorithm.<br/>• **AI/ML & Object Detection:** Curated and cleaned the 4,448-image hardware corpus, unified the 8-class label space, and fine-tuned the Ultralytics YOLO11n component detector (`component_detector.pt`, 5.2 MB).<br/>• **Computer Vision & Agents:** Implemented OpenCV Laplacian blur, Error Level Analysis (ELA) forensics, FAISS vector retrieval, EasyOCR serial reader, and AI Forensic Judge causal reasoning on Groq LPU (`gpt-oss-20b`).<br/>• **Quality Assurance & Testing:** Authored the hermetic 23-module automated Pytest test suite (214 passing tests) with zero-cost offline mocking. |
 
 ---
 

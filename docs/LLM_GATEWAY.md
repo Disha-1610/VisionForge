@@ -73,7 +73,7 @@ If both cloud providers are unavailable or internet connectivity drops:
 * It verifies surface consistency without throwing unhandled exceptions, keeping the pipeline resilient.
 
 
-## 6. How to Configure
+## 5. How to Configure
 
 All gateway settings are controlled via environment variables in `.env`:
 

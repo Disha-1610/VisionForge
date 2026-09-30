@@ -87,7 +87,7 @@ The whole flow is designed around one person standing at a receiving dock with a
 | `npm run preview` | Preview a production build |
 | `npm run tunnel` | Start a public Cloudflare tunnel |
 
-**There is no `test` script and no frontend test suite.** All 204 tests are on the backend. There
+**There is no `test` script and no frontend test suite.** All 214 tests are on the backend. There
 are no tests for the React components.
 
 ## 3. Pages and routes

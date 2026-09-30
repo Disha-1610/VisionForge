@@ -318,8 +318,7 @@ Being clear about the gaps:
 - **No rate limiting** on any endpoint.
 - **No image alignment step.** There is no rotation or alignment handling anywhere, and none is in
   the roadmap. Tilted photos are not corrected before analysis.
-- **The judge can disagree with the policy stage.** The judge's own fallback rules use a threshold
-  of 0.65, while the policy stage uses 0.70. This is not reconciled anywhere.
+- **Fallback threshold alignment.** The judge's offline fallback rule marks `reject` at 0.65 fraud probability, while the policy stage's independent numeric threshold is 0.70. However, the policy engine explicitly inspects `judge_verdict == "reject"`, so a judge rejection always triggers `QUARANTINE` regardless of whether the score reached 0.70.
 
 ---
 

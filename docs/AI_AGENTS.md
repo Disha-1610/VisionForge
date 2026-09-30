@@ -445,4 +445,4 @@ Collected here so nothing is a surprise.
 
 ---
 
-*Next: [YOLO_MODEL.md](YOLO_MODEL.md) for the component detection model in detail.*
+*Next: [ml_training.md](ml_training.md) for the component detection model and dataset in detail.*

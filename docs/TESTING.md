@@ -75,11 +75,7 @@ slightly higher than the number of functions.
 two cloud providers, the embedding model, the OCR reader, the YOLO model, and the database are all
 replaced with controlled stand-ins. **You can run the whole suite with the internet unplugged.**
 
-**The slow part is one test file.** `test_image_utils.py` has 31 tests, and the SSE timeout test
-deliberately waits out a 60 second limit. That accounts for most of the 75 seconds.
-
-**The suite takes about 75 seconds, and one test is why.** The SSE timeout test
-deliberately waits out a 60 second limit, so anything under a minute is impossible.
+**The entire suite runs in approximately 11 to 12 seconds.** All cloud API calls, vector operations, and timer loops use fast mock fixtures in `conftest.py`, ensuring the test suite finishes rapidly without artificial delays.
 
 ## 3. What each test file covers
 

@@ -530,10 +530,8 @@ Names like `VERIFIED`, `TAMPERED`, and `VERIFY` are not valid values in this sys
 
 ## 12. Known problems
 
-**1. The judge's fallback and the policy stage use different thresholds.**
-When the judge falls back to its own rules, it rejects at 0.65. The policy stage quarantines at
-0.70. A score between those two values gets a `reject` verdict from one and a `review` from the
-other. This is not reconciled anywhere.
+**1. Judge fallback and policy stage thresholds.**
+When the judge falls back to its deterministic rules, it rejects at 0.65 fraud probability. The policy stage's independent numeric threshold is 0.70. However, because the policy engine checks `judge_verdict == "reject"` first, any rejection by the judge directly leads to `quarantine`.
 
 **2. Unmatched hardware is not handled clearly.**
 Below the similarity threshold, the pipeline sets a flag and carries on to stage 4. An unrecognised
