@@ -108,11 +108,25 @@ export const EvidenceCard = ({ agentKey, result }) => {
   // Robust check: inspect text for obvious defects even if flag was missing
   const rawExplanation = typeof result.explanation === 'string' ? result.explanation : (typeof result.findings === 'string' ? result.findings : '');
   const lowerExplanation = rawExplanation.toLowerCase();
+  const cleanPhrases = [
+    'no visible defect',
+    'no visual defect',
+    'no visible defects',
+    'no visual defects',
+    'no defect',
+    'no defects',
+    'clean and verified',
+    'normal condition',
+    'components verified',
+    'integrity verified',
+    'no anomaly',
+  ];
+  const isExplicitlyClean = cleanPhrases.some((phrase) => lowerExplanation.includes(phrase));
+
   const defectTerms = [
     'missing',
     'mismatch',
     'anomaly detected',
-    'defect',
     'tamper',
     'swelling',
     'corrosion',
@@ -127,17 +141,17 @@ export const EvidenceCard = ({ agentKey, result }) => {
     'counterfeit',
     'failed',
   ];
-  const textHasDefect = defectTerms.some((term) => lowerExplanation.includes(term));
+  const textHasDefect = !isExplicitlyClean && defectTerms.some((term) => lowerExplanation.includes(term));
 
   const isSuspicious =
     !isInconclusive &&
-    (result.suspicious === true ||
+    (result.has_defect === true ||
+      result.suspicious === true ||
       result.is_suspicious === true ||
-      result.has_defect === true ||
       result.failed === true ||
       hasComponentMismatch ||
       textHasDefect ||
-      (result.confidence != null && result.confidence < 0.6));
+      (result.confidence != null && result.confidence < 0.6 && !isExplicitlyClean));
 
   const displayExplanation = isSuspicious
     ? rawExplanation

@@ -112,7 +112,10 @@ class InspectionState:
         if failed:
             current = failed[0]
             status = "failed"
-        elif completed >= len(STAGE_ORDER):
+        elif completed >= len(STAGE_ORDER) or (
+            PipelineStageName.POLICY_ENGINE in done
+            and done[PipelineStageName.POLICY_ENGINE].status in ("passed", "flagged")
+        ):
             current = STAGE_ORDER[-1]
             status = "completed"
         else:

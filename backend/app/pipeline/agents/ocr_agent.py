@@ -12,6 +12,7 @@ Per VisionForge.md Section 4 Stage 5a & Section 2:
 """
 from __future__ import annotations
 
+import asyncio
 import difflib
 import logging
 import re
@@ -295,9 +296,11 @@ class OCRAgent(BaseAgent):
         golden_cv_pre = self._preprocess_crop(golden_cv)
         inspection_cv_pre = self._preprocess_crop(inspection_cv)
 
-        # Extract inspection text
+        # Extract inspection text in worker thread
         try:
-            actual_text, actual_conf, engine_used = self.extract_text(inspection_cv_pre)
+            actual_text, actual_conf, engine_used = await asyncio.to_thread(
+                self.extract_text, inspection_cv_pre
+            )
         except Exception as exc:
             logger.error("OCR extraction failed on inspection crop: %s", exc)
             return AgentResult(
@@ -312,11 +315,13 @@ class OCRAgent(BaseAgent):
                 failure_reason=str(exc),
             )
 
-        # If expected text was not in metadata, extract it from golden crop
+        # If expected text was not in metadata, extract it from golden crop in worker thread
         golden_extracted = ""
         if not expected_text:
             try:
-                golden_extracted, _g_conf, _ = self.extract_text(golden_cv_pre)
+                golden_extracted, _g_conf, _ = await asyncio.to_thread(
+                    self.extract_text, golden_cv_pre
+                )
                 expected_text = golden_extracted
             except Exception as exc:
                 logger.warning("Could not extract text from golden crop: %s", exc)

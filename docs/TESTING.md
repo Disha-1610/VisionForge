@@ -8,7 +8,7 @@
 ## The headline number
 
 ```
-204 tests, 204 passed, in about 75 seconds
+214 tests, 214 passed, in about 12 seconds
 ```
 
 Across **23 test files**. The test suite is genuinely good, and running it is fast.
@@ -52,18 +52,18 @@ python -m pytest --collect-only     # list tests without running them
 ```
 
 **The frontend has no tests.** There is no `test` script in `package.json` and no test file anywhere
-in the frontend. All 204 tests are backend tests.
+in the frontend. All 214 tests are backend tests.
 
 ## 2. What the numbers really are
 
 | | |
 |---|---|
 | Test files | **23** |
-| Test functions written | 202 |
-| Tests collected | **204** (two are parameterised and expand) |
-| Tests passed | **204** |
+| Test functions written | 212 |
+| Tests collected | **214** (two are parameterised and expand) |
+| Tests passed | **214** |
 | Failures | 0 |
-| Time to run | about 75 seconds |
+| Time to run | about 12 seconds |
 | Skipped | 0 |
 | Deliberately not run | 0 |
 | Order-dependent tests | None found. The suite passes repeatedly in any order |

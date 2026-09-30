@@ -287,13 +287,27 @@ export const InspectionDetailPage = () => {
     }),
   };
 
-  // Extract YOLO detections from structural record or memory
-  const structuralRaw = structuralRecord?.raw_output || {};
+  // Extract YOLO detections across all structural records or memory
+  const allStructuralRecords = evidenceRecords.filter((r) => {
+    const agentType = (r.agent_type || r.detector_name || '').toLowerCase();
+    return agentType.includes('structural') || agentType.includes('yolo');
+  });
+  const aggregatedYoloDetections = allStructuralRecords.flatMap((r) => {
+    const raw = r.raw_output || {};
+    const ev = r.evidence || {};
+    return (
+      raw.detections ||
+      raw.inspection_components ||
+      ev.detections ||
+      ev.inspection_components ||
+      raw.yolo_detections ||
+      []
+    );
+  });
   const yoloDetections =
-    structuralRaw.detections ||
-    structuralRaw.yolo_detections ||
-    memory.yolo_detections ||
-    [];
+    aggregatedYoloDetections.length > 0
+      ? aggregatedYoloDetections
+      : memory.yolo_detections || [];
 
   // Extract ROI regions from template, execution plan, or memory
   const roiTemplate = memory.roi_template || inspection?.roi_template || {};

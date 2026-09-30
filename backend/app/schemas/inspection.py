@@ -25,6 +25,7 @@ class EvidenceResponse(BaseModel):
     processing_time_ms: int
     failed: bool = False
     failure_reason: Optional[str] = None
+    raw_output: Optional[Union[dict, list[Any], Any]] = None
     created_at: datetime
 
     model_config = {"from_attributes": True}

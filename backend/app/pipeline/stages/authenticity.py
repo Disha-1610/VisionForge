@@ -13,6 +13,7 @@ Checks per image:
 """
 from __future__ import annotations
 
+import asyncio
 import io
 import logging
 import time
@@ -110,7 +111,7 @@ class AuthenticityStageOutput(BaseModel):
 
 # ── ELA ─────────────────────────────────────────────────────────────────────
 
-async def _compute_ela(image_path: str) -> ELAResult:
+def _compute_ela_sync(image_path: str) -> ELAResult:
     """
     Error Level Analysis: re-save the image at a known JPEG quality, diff
     against the original in pixel space. Edited/spliced regions compress
@@ -161,12 +162,16 @@ async def _compute_ela(image_path: str) -> ELAResult:
         suspicious_regions=suspicious_regions[:20],
         ela_score=round(ela_score, 4),
     )
+
+
+async def _compute_ela(image_path: str) -> ELAResult:
+    return await asyncio.to_thread(_compute_ela_sync, image_path)
 # ── EXIF ────────────────────────────────────────────────────────────────────
 _EDITING_SOFTWARE_MARKERS = (
     "photoshop", "gimp", "lightroom", "snapseed", "picsart",
     "canva", "pixlr", "affinity photo",
 )
-async def _validate_exif(image_path: str) -> ExifResult:
+def _validate_exif_sync(image_path: str) -> ExifResult:
     """
     Read camera metadata via exifread. Missing EXIF, a known editing-software
     tag, or a datetime that doesn't parse are all inconsistency signals.
@@ -217,8 +222,12 @@ async def _validate_exif(image_path: str) -> ExifResult:
         gps_present=gps_present,
         exif_score=round(score, 4),
     )
+
+
+async def _validate_exif(image_path: str) -> ExifResult:
+    return await asyncio.to_thread(_validate_exif_sync, image_path)
 # ── Screenshot detection ─────────────────────────────────────────────────────
-async def _detect_screenshot(image_path: str) -> ScreenshotResult:
+def _detect_screenshot_sync(image_path: str) -> ScreenshotResult:
     """
     Screenshots exhibit near-uniform rows/columns (UI chrome, solid status
     bars, flat backgrounds) that photographed parts almost never do.
@@ -248,8 +257,12 @@ async def _detect_screenshot(image_path: str) -> ScreenshotResult:
     is_screenshot = confidence >= settings.SCREENSHOT_UNIFORMITY_THRESHOLD
 
     return ScreenshotResult(is_screenshot=is_screenshot, confidence=round(confidence, 4))
+
+
+async def _detect_screenshot(image_path: str) -> ScreenshotResult:
+    return await asyncio.to_thread(_detect_screenshot_sync, image_path)
 # ── Noise consistency ─────────────────────────────────────────────────────────
-async def _check_noise_consistency(image_path: str) -> NoiseConsistencyResult:
+def _check_noise_consistency_sync(image_path: str) -> NoiseConsistencyResult:
     """
     Splice/tamper regions are often denoised or re-compressed differently
     from the rest of the frame. Split the image into an NxN patch grid,
@@ -292,8 +305,12 @@ async def _check_noise_consistency(image_path: str) -> NoiseConsistencyResult:
         region_variances=[round(v, 4) for v in variances],
         consistency_score=round(consistency_score, 4),
     )
+
+
+async def _check_noise_consistency(image_path: str) -> NoiseConsistencyResult:
+    return await asyncio.to_thread(_check_noise_consistency_sync, image_path)
 # ── Copy-move detection ────────────────────────────────────────────────────────
-async def _detect_copy_move(image_path: str) -> CopyMoveResult:
+def _detect_copy_move_sync(image_path: str) -> CopyMoveResult:
     """
     Block-wise duplicate detection: hash fixed-size non-overlapping blocks
     and flag distinct block-pairs that hash-collide with high pixel
@@ -350,6 +367,10 @@ async def _detect_copy_move(image_path: str) -> CopyMoveResult:
         duplicate_regions=duplicate_regions[:20],
         copy_move_score=round(copy_move_score, 4),
     )
+
+
+async def _detect_copy_move(image_path: str) -> CopyMoveResult:
+    return await asyncio.to_thread(_detect_copy_move_sync, image_path)
 # ── Score fusion ────────────────────────────────────────────────────────────
 _WEIGHTS = {
     "ela": 0.30,
@@ -411,11 +432,13 @@ def _calculate_authenticity_score(
 async def _analyze_image(inspection_id: UUID, image_path: str) -> AuthenticityResult:
     start = time.perf_counter()
 
-    ela = await _compute_ela(image_path)
-    exif = await _validate_exif(image_path)
-    screenshot = await _detect_screenshot(image_path)
-    noise = await _check_noise_consistency(image_path)
-    copy_move = await _detect_copy_move(image_path)
+    ela, exif, screenshot, noise, copy_move = await asyncio.gather(
+        _compute_ela(image_path),
+        _validate_exif(image_path),
+        _detect_screenshot(image_path),
+        _check_noise_consistency(image_path),
+        _detect_copy_move(image_path),
+    )
 
     score, flags = _calculate_authenticity_score(ela, exif, screenshot, noise, copy_move)
     processing_time_ms = round((time.perf_counter() - start) * 1000, 2)
@@ -487,20 +510,17 @@ async def run_authenticity_stage(state: InspectionState) -> StageResult:
 
     inspection_id = state.memory.inspection_id
 
-    results: list[AuthenticityResult] = []
-    for path in paths:
-        try:
-            result = await _analyze_image(inspection_id, path)
-        except Exception as exc:
-            logger.exception("Authenticity check crashed for %s", path)
-            return await state.record_stage(
-                StageResult(
-                    stage=PipelineStageName.AUTHENTICITY,
-                    status="failed",
-                    error=f"Authenticity analysis failed on {Path(path).name}: {exc}",
-                )
+    try:
+        results = list(await asyncio.gather(*[_analyze_image(inspection_id, path) for path in paths]))
+    except Exception as exc:
+        logger.exception("Authenticity check crashed for image paths")
+        return await state.record_stage(
+            StageResult(
+                stage=PipelineStageName.AUTHENTICITY,
+                status="failed",
+                error=f"Authenticity analysis failed: {exc}",
             )
-        results.append(result)
+        )
 
     overall_score = round(
         sum(r.authenticity_score for r in results) / len(results), 4

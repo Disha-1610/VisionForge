@@ -17,7 +17,9 @@ Per VisionForge.md Section 4 Stage 5c & Dedicated YOLO11n Specification:
 """
 from __future__ import annotations
 
+import asyncio
 import logging
+import threading
 from collections import Counter
 from pathlib import Path
 from typing import Any
@@ -38,6 +40,9 @@ _BACKEND_DATA_DIR = Path(__file__).resolve().parent.parent.parent.parent / "data
 DEFAULT_WEIGHTS_PATH = _BACKEND_DATA_DIR / "yolo_weights" / "component_detector.pt"
 if not DEFAULT_WEIGHTS_PATH.exists() and Path("data/yolo_weights/component_detector.pt").exists():
     DEFAULT_WEIGHTS_PATH = Path("data/yolo_weights/component_detector.pt")
+
+_GLOBAL_YOLO_CACHE: dict[str, Any] = {}
+_YOLO_LOCK = threading.Lock()
 
 
 def calculate_opencv_ssim(
@@ -107,22 +112,27 @@ class StructuralAgent(BaseAgent):
         self._yolo_initialized = False
 
     def _init_yolo_if_needed(self) -> None:
-        """Lazy load YOLO model if enabled and not already initialized."""
+        """Lazy load YOLO model if enabled and not already initialized (thread-safe cache)."""
         if self._yolo_initialized or not self.enable_yolo:
             return
 
         if self._yolo_model is None:
-            if self.yolo_weights_path.exists():
-                try:
-                    from ultralytics import YOLO  # type: ignore
+            weights_key = str(self.yolo_weights_path)
+            with _YOLO_LOCK:
+                if weights_key in _GLOBAL_YOLO_CACHE:
+                    self._yolo_model = _GLOBAL_YOLO_CACHE[weights_key]
+                elif self.yolo_weights_path.exists():
+                    try:
+                        from ultralytics import YOLO  # type: ignore
 
-                    self._yolo_model = YOLO(str(self.yolo_weights_path))
-                    logger.info("Loaded YOLO model from %s", self.yolo_weights_path)
-                except Exception as exc:
-                    logger.warning("Could not load YOLO model from %s: %s", self.yolo_weights_path, exc)
-                    self._yolo_model = None
-            else:
-                logger.debug("YOLO weights file not found at %s", self.yolo_weights_path)
+                        self._yolo_model = YOLO(str(self.yolo_weights_path))
+                        _GLOBAL_YOLO_CACHE[weights_key] = self._yolo_model
+                        logger.info("Loaded YOLO model from %s into global cache", self.yolo_weights_path)
+                    except Exception as exc:
+                        logger.warning("Could not load YOLO model from %s: %s", self.yolo_weights_path, exc)
+                        self._yolo_model = None
+                else:
+                    logger.debug("YOLO weights file not found at %s", self.yolo_weights_path)
 
         self._yolo_initialized = True
 
@@ -160,7 +170,11 @@ class StructuralAgent(BaseAgent):
             logger.debug("skimage SSIM unavailable: %s, using OpenCV fallback", exc)
             return calculate_opencv_ssim(golden_gray, inspection_gray)
 
-    def _detect_components_yolo(self, img_cv: np.ndarray) -> list[dict[str, Any]]:
+    def _detect_components_yolo(
+        self,
+        img_cv: np.ndarray,
+        roi_bbox: list[float] | None = None,
+    ) -> list[dict[str, Any]]:
         """Run YOLO inference on an image crop and extract detected components."""
         self._init_yolo_if_needed()
         if self._yolo_model is None:
@@ -183,13 +197,27 @@ class StructuralAgent(BaseAgent):
                 cls_id = int(b.cls[0])
                 cls_name = names.get(cls_id, str(cls_id)) if isinstance(names, dict) else str(cls_id)
                 conf = float(b.conf[0])
-                xywhn = [round(float(v), 3) for v in b.xywhn[0]] if hasattr(b, "xywhn") else []
+                xywhn = [round(float(v), 4) for v in b.xywhn[0]] if hasattr(b, "xywhn") else []
+                final_bbox = xywhn
+                # Project crop-relative bbox to full-image normalized coordinates if roi_bbox is present
+                if roi_bbox and len(roi_bbox) >= 4 and len(xywhn) >= 4:
+                    rx, ry, rw, rh = roi_bbox[:4]
+                    if 0.0 <= rx <= 1.0 and 0.0 <= rw <= 1.0:
+                        xc, yc, w, h = xywhn
+                        final_bbox = [
+                            round(rx + (xc * rw), 4),
+                            round(ry + (yc * rh), 4),
+                            round(w * rw, 4),
+                            round(h * rh, 4),
+                        ]
                 detections.append(
                     {
                         "class_id": cls_id,
                         "class_name": cls_name,
                         "confidence": round(conf, 3),
-                        "bbox": xywhn,
+                        "bbox": final_bbox,
+                        "bounding_box": final_bbox,
+                        "crop_bbox": xywhn,
                     }
                 )
             return detections
@@ -272,7 +300,7 @@ class StructuralAgent(BaseAgent):
             diff_pct = 100.0
             mse = float(np.mean((golden_gray.astype(float) - inspection_gray.astype(float)) ** 2))
         else:
-            raw_ssim, diff_img = self._compute_ssim(golden_gray, inspection_gray)
+            raw_ssim, diff_img = await asyncio.to_thread(self._compute_ssim, golden_gray, inspection_gray)
             ssim_score = max(0.0, min(1.0, raw_ssim))
             mse = float(np.mean((golden_gray.astype(np.float64) - inspection_gray.astype(np.float64)) ** 2))
             abs_diff = cv2.absdiff(golden_gray, inspection_gray)
@@ -282,9 +310,12 @@ class StructuralAgent(BaseAgent):
 
         ssim_defect = ssim_score < threshold
 
-        # 5. YOLO Component Detection on Paired Crops
-        golden_components = self._detect_components_yolo(golden_cv)
-        inspection_components = self._detect_components_yolo(inspection_cv)
+        # 5. YOLO Component Detection on Paired Crops (Concurrent worker threads)
+        roi_bbox = roi_data.get("bbox")
+        golden_components, inspection_components = await asyncio.gather(
+            asyncio.to_thread(self._detect_components_yolo, golden_cv, roi_bbox),
+            asyncio.to_thread(self._detect_components_yolo, inspection_cv, roi_bbox),
+        )
 
         golden_counts = Counter(c["class_name"] for c in golden_components)
         inspection_counts = Counter(c["class_name"] for c in inspection_components)
@@ -375,6 +406,8 @@ class StructuralAgent(BaseAgent):
             "component_findings": component_findings,
             "missing_components": missing_components,
             "extra_components": extra_components,
+            "detections": inspection_components,
+            "golden_detections": golden_components,
         }
 
         return AgentResult(
@@ -391,5 +424,7 @@ class StructuralAgent(BaseAgent):
                 "diff_pct": diff_pct,
                 "golden_components": golden_components,
                 "inspection_components": inspection_components,
+                "detections": inspection_components,
+                "yolo_detections": inspection_components,
             },
         )

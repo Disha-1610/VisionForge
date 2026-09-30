@@ -219,11 +219,11 @@ async def get_inspection_status(
 @router.get("/{inspection_id}/events")
 async def stream_inspection_events(
     inspection_id: UUID,
-    db: AsyncSession = Depends(get_db),
 ):
     """
     Real-time Server-Sent Events (SSE) endpoint streaming stage progress (1/8 -> 8/8).
     Closes automatically with a 'verdict' event when the inspection completes.
+    Uses independent session context to avoid closed-session dependency termination.
     """
     async def event_generator():
         sent_verdict = False
@@ -248,34 +248,40 @@ async def stream_inspection_events(
                     sent_verdict = True
                     break
             else:
-                result = await db.execute(select(Inspection).where(Inspection.id == inspection_id))
-                insp = result.scalar_one_or_none()
-                if insp is not None:
-                    if insp.status == InspectionStatus.COMPLETED:
-                        prog = {
-                            "stage": 8,
-                            "stage_name": "policy_engine",
-                            "status": "completed",
-                            "progress": 8,
-                            "verdict": insp.verdict.value if insp.verdict else None,
-                            "policy_action": insp.policy_action.value if insp.policy_action else None,
-                        }
-                        yield f"data: {json.dumps(prog)}\n\n"
-                        yield f"event: verdict\ndata: {json.dumps(prog)}\n\n"
-                        sent_verdict = True
-                        break
-                    elif insp.status == InspectionStatus.FAILED:
-                        prog = {
-                            "stage": 1,
-                            "stage_name": "failed",
-                            "status": "failed",
-                            "progress": 0,
-                            "error": insp.error_message,
-                        }
-                        yield f"data: {json.dumps(prog)}\n\n"
-                        yield f"event: verdict\ndata: {json.dumps(prog)}\n\n"
-                        sent_verdict = True
-                        break
+                if AsyncSessionLocal is not None:
+                    async with AsyncSessionLocal() as session:
+                        result = await session.execute(select(Inspection).where(Inspection.id == inspection_id))
+                        insp = result.scalar_one_or_none()
+                        if insp is not None:
+                            if insp.status == InspectionStatus.COMPLETED:
+                                prog = {
+                                    "stage": 8,
+                                    "stage_name": "policy_engine",
+                                    "status": "completed",
+                                    "progress": 8,
+                                    "verdict": insp.verdict.value if insp.verdict else None,
+                                    "policy_action": insp.policy_action.value if insp.policy_action else None,
+                                }
+                                yield f"data: {json.dumps(prog)}\n\n"
+                                yield f"event: verdict\ndata: {json.dumps(prog)}\n\n"
+                                sent_verdict = True
+                                break
+                            elif insp.status == InspectionStatus.FAILED:
+                                prog = {
+                                    "stage": 1,
+                                    "stage_name": "failed",
+                                    "status": "failed",
+                                    "progress": 0,
+                                    "error": insp.error_message,
+                                }
+                                yield f"data: {json.dumps(prog)}\n\n"
+                                yield f"event: verdict\ndata: {json.dumps(prog)}\n\n"
+                                sent_verdict = True
+                                break
+
+            # Periodic keepalive ping every ~5s
+            if checks % 10 == 0:
+                yield ": ping\n\n"
 
             await asyncio.sleep(0.5)
 

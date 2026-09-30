@@ -26,7 +26,7 @@ from app.core.database import AsyncSessionLocal
 from app.models.product import GoldenReference
 from app.pipeline.stages.roi_scheduler import infer_product_type
 from app.pipeline.state import InspectionState
-from app.services.embedding_service import embedding_service
+from app.services.embedding_service import EmbeddingDimensionMismatch, embedding_service
 from app.shared.memory import PipelineStageName, StageResult
 from app.utils.image_utils import load_pil_image
 
@@ -54,11 +54,13 @@ async def run_reference_match(
         )
     primary_path = paths[0]
 
-    # 1. Generate the query embedding (dual: Gemini 1-shot -> OpenCLIP fallback)
+    # 1. Generate the query embedding matching the index provider space
     try:
-        query_embedding = embedding_service.generate_embedding(
-            load_pil_image(primary_path)
-        )
+        pil_img = load_pil_image(primary_path)
+        if hasattr(embedding_service, "generate_embedding_for_index") and getattr(embedding_service, "_provider", None):
+            query_embedding, _ = embedding_service.generate_embedding_for_index(pil_img)
+        else:
+            query_embedding = embedding_service.generate_embedding(pil_img)
     except Exception as exc:
         logger.exception("Embedding generation failed for inspection %s", inspection_id)
         return await state.record_stage(
@@ -70,7 +72,18 @@ async def run_reference_match(
         )
 
     # 2. Vector search against the golden index
-    candidates: list[tuple[str, float]] = embedding_service.search(query_embedding, k=5)
+    try:
+        candidates: list[tuple[str, float]] = embedding_service.search(query_embedding, k=5)
+    except EmbeddingDimensionMismatch as exc:
+        logger.error("Dimension mismatch during vector search: %s", exc)
+        return await state.record_stage(
+            StageResult(
+                stage=PipelineStageName.REFERENCE_MATCH,
+                status="flagged",
+                data={"reason": "embedding_dimension_mismatch", "error": str(exc)},
+                error="Embedding dimension mismatch against golden index — manual review required",
+            )
+        )
     if not candidates:
         return await state.record_stage(
             StageResult(

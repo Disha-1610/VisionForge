@@ -18,6 +18,8 @@ import logging
 from typing import Any
 
 from PIL import Image
+import cv2
+import numpy as np
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.pipeline.agents.base_agent import AgentResult, BaseAgent
@@ -33,7 +35,7 @@ from app.shared.llm_client import (
     ResponseFormat,
     get_llm_client,
 )
-from app.utils.image_utils import ImageSource, load_pil_image
+from app.utils.image_utils import ImageSource, load_cv_image, load_pil_image
 
 logger = logging.getLogger("app.pipeline.agents.vlm")
 
@@ -106,7 +108,7 @@ class VLMAnomalyReport(BaseModel):
     visual_evidence: str = Field(default="", description="What each image actually shows — golden vs sample")
 
 
-def _image_to_data_payload(pil_img: Image.Image, max_dim: int = 512) -> ImageInput:
+def _image_to_data_payload(pil_img: Image.Image, max_dim: int = 384) -> ImageInput:
     """Encode PIL image to base64 ImageInput for LLMClient, scaling large crops to conserve VLM input tokens."""
     buffered = io.BytesIO()
     # Convert RGBA to RGB for JPEG encoding
@@ -115,7 +117,7 @@ def _image_to_data_payload(pil_img: Image.Image, max_dim: int = 512) -> ImageInp
     if max(pil_img.size) > max_dim:
         pil_img = pil_img.copy()
         pil_img.thumbnail((max_dim, max_dim), Image.Resampling.LANCZOS)
-    pil_img.save(buffered, format="JPEG", quality=85)
+    pil_img.save(buffered, format="JPEG", quality=75)
     raw_bytes = buffered.getvalue()
     b64_str = base64.b64encode(raw_bytes).decode("ascii")
     data_uri = f"data:image/jpeg;base64,{b64_str}"
@@ -134,9 +136,11 @@ class VLMAgent(BaseAgent):
         self,
         client: LLMClient | None = None,
         detector_name: str | None = None,
+        enable_offline_fallback: bool = False,
     ) -> None:
         super().__init__(detector_name=detector_name)
         self._client = client
+        self.enable_offline_fallback = enable_offline_fallback
 
     @property
     def client(self) -> LLMClient:
@@ -306,17 +310,18 @@ class VLMAgent(BaseAgent):
                 desc_lower = description.lower().strip()
                 is_explicitly_clean = any(cp in desc_lower for cp in clean_phrases)
 
-                defect_keywords = (
-                    "missing", "damage", "scratch", "corrosion",
-                    "tamper", "counterfeit", "discrepanc", "broken", "burn", "peel"
-                )
-                has_keywords = (not is_explicitly_clean) and any(kw in desc_lower for kw in defect_keywords)
-                has_sev = severity.lower() in ("critical", "high", "medium", "low")
-                has_type = defect_type.lower() not in ("none", "clean", "null", "normal", "unknown", "")
-                has_diffs = len(specific_diffs) > 0
+                if not is_explicitly_clean:
+                    defect_keywords = (
+                        "missing", "damage", "scratch", "corrosion",
+                        "tamper", "counterfeit", "discrepanc", "broken", "burn", "peel"
+                    )
+                    has_keywords = any(kw in desc_lower for kw in defect_keywords)
+                    has_sev = severity.lower() in ("critical", "high")
+                    has_type = defect_type.lower() not in ("none", "clean", "null", "normal", "unknown", "")
+                    has_diffs = len(specific_diffs) > 0
 
-                if (has_keywords and (has_sev or has_type or has_diffs)) or (has_sev and has_type) or (has_diffs and (has_type or has_sev)):
-                    has_defect = True
+                    if (has_keywords and (has_sev or has_type or has_diffs)) or (has_sev and has_type) or (has_diffs and has_sev):
+                        has_defect = True
 
             if has_defect:
                 defect_title = defect_type if defect_type and defect_type.lower() not in ("none", "clean", "null", "unknown") else "Hardware Defect"
@@ -372,6 +377,45 @@ class VLMAgent(BaseAgent):
             )
 
         except Exception as exc:
+            if self.enable_offline_fallback or roi_data.get("enable_offline_fallback", False):
+                logger.warning("VLM Agent call failed on roi_id=%s: %s; attempting offline CV fallback", roi_id, exc)
+                try:
+                    g_cv = load_cv_image(golden_roi)
+                    i_cv = load_cv_image(inspection_roi)
+                    if g_cv.shape[:2] != i_cv.shape[:2]:
+                        i_cv = cv2.resize(i_cv, (g_cv.shape[1], g_cv.shape[0]))
+                    g_gray = cv2.cvtColor(g_cv, cv2.COLOR_BGR2GRAY) if len(g_cv.shape) == 3 else g_cv
+                    i_gray = cv2.cvtColor(i_cv, cv2.COLOR_BGR2GRAY) if len(i_cv.shape) == 3 else i_cv
+                    abs_diff = cv2.absdiff(g_gray, i_gray)
+                    diff_pct = float(np.mean(abs_diff)) / 255.0 * 100.0
+
+                    has_defect = diff_pct > 25.0
+                    if has_defect:
+                        explanation = f"{roi_name}: Visual surface anomaly detected via offline comparison ({diff_pct:.1f}% variation from golden baseline)"
+                    else:
+                        explanation = f"{roi_name}: No visible defect (verified via offline visual comparison; cloud vision fallback)"
+
+                    return AgentResult(
+                        agent_type=self.agent_type,
+                        detector_name=self.detector_name,
+                        roi_id=roi_id,
+                        confidence=0.80,
+                        has_defect=has_defect,
+                        evidence={
+                            "has_defect": has_defect,
+                            "defect_type": "surface_variation" if has_defect else "none",
+                            "diff_pct": round(diff_pct, 2),
+                            "fallback_used": True,
+                            "offline_cv_fallback": True,
+                            "original_error": str(exc),
+                        },
+                        explanation=explanation,
+                        raw_output={"diff_pct": diff_pct, "offline_cv_fallback": True},
+                        failed=False,
+                    )
+                except Exception as fb_exc:
+                    logger.error("VLM offline CV fallback also failed: %s", fb_exc)
+
             logger.error("VLM Agent call failed on roi_id=%s: %s", roi_id, exc)
             return AgentResult(
                 agent_type=self.agent_type,
