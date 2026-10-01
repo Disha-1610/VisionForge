@@ -16,7 +16,7 @@ This section describes what is actually built, including the parts that are not 
 - **Reports are not stamped with a SHA-256 hash to prove they were not altered.** **There is no
   hashing anywhere in the backend.** The module that would need it is not even imported.
 
-Both are covered below and in [KNOWN_ISSUES.md](KNOWN_ISSUES.md).
+Both are covered below and in [problems.md](../problems.md).
 
 ---
 
@@ -118,7 +118,7 @@ There is no third role. No auditor, no viewer, no superadmin.
    it and read its verdict.
 3. **Any logged-in user can delete any report.** Every other delete in the project is admin-only.
 
-Details in [KNOWN_ISSUES.md](KNOWN_ISSUES.md).
+Details in [problems.md](../problems.md).
 
 **One more, less obvious:** there is no separation between organisations anywhere. Analytics filter
 by vendor and location, and the summary limits an operator to their own inspections, but the
@@ -151,7 +151,7 @@ can be forged.
 ### High: API keys are in the repository
 
 `backend/.env` and `backend/.env.example` both contain real-looking cloud provider keys. See
-[KNOWN_ISSUES.md](KNOWN_ISSUES.md) issue 8.
+[problems.md](../problems.md) issue 8.
 
 ### Medium: no rate limiting
 
@@ -276,4 +276,4 @@ else.
 ---
 
 *Next: [DEPLOYMENT.md](DEPLOYMENT.md) for running the project, or
-[KNOWN_ISSUES.md](KNOWN_ISSUES.md) for the full list of problems.*
+[problems.md](../problems.md) for the full list of problems.*

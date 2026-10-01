@@ -72,7 +72,7 @@ Role values are lowercase in requests and responses: `"operator"` and `"admin"`.
 **Two permissions worth flagging:**
 
 - The registration endpoint accepts a `role` field, so anyone can register as an admin. This is a
-  real bug. See [KNOWN_ISSUES.md](KNOWN_ISSUES.md) issue 1.
+  real bug. See [problems.md](../problems.md) issue 1.
 - The live progress stream takes no token at all. Also a real bug. See issue 2.
 
 ## 3. Error responses
@@ -326,7 +326,7 @@ Unlike approve, this one **requires** a comment. An empty comment returns `400` 
 `reviewer_comment`, not `decision` and `comment`.
 
 The frontend still calls it, so the review dialog in the web app returns 404. See
-[KNOWN_ISSUES.md](KNOWN_ISSUES.md) issue 3.
+[problems.md](../problems.md) issue 3.
 
 ## 6. Live progress stream
 
@@ -341,7 +341,7 @@ Connection: keep-alive
 X-Accel-Buffering: no
 ```
 
-**No login token is required.** This is a bug. See [KNOWN_ISSUES.md](KNOWN_ISSUES.md) issue 2.
+**No login token is required.** This is a bug. See [problems.md](../problems.md) issue 2.
 
 **How the stream behaves:**
 
@@ -366,7 +366,7 @@ data: {"event": "verdict", "status": "completed", "inspection_id": "7b12c8a4-...
 Read this carefully. On the most common path, **this message does not include the verdict or the
 policy action**, even though the event is called `verdict`. The frontend reads those two fields,
 gets nothing back, and shows a blank result. This is a real bug. See
-[KNOWN_ISSUES.md](KNOWN_ISSUES.md) issue 4.
+[problems.md](../problems.md) issue 4.
 
 Two other exit paths build the same event differently, and those two do include the verdict. The
 inconsistency is the bug.
@@ -441,7 +441,7 @@ the `POST /api/v1/products` JSON endpoint that registers an image by file path.
 
 **One bug here:** the update schema accepts an `is_active` field, but the `vendors` table has no such
 column. Sending it returns success and does nothing. See
-[KNOWN_ISSUES.md](KNOWN_ISSUES.md) issue 7.
+[problems.md](../problems.md) issue 7.
 
 ## 9. Reports - `/reports`
 
@@ -463,7 +463,7 @@ There is no `date_range` parameter.
 - Pagination is done in memory. The whole result set is loaded, then sliced. Fine at small scale,
   but it will not stay fast with a lot of data.
 - The delete endpoint has no role check, so any logged-in user can delete any report. Every other
-  delete in the project is admin-only. See [KNOWN_ISSUES.md](KNOWN_ISSUES.md) issue 11.
+  delete in the project is admin-only. See [problems.md](../problems.md) issue 11.
 
 **About the PDFs themselves.** They are real, generated with ReportLab, and contain text and tables.
 They are **not** signed, not hashed, and contain no images. There is no SHA-256 hash stamp and no

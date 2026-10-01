@@ -129,7 +129,7 @@ The suppliers whose parts are being inspected.
 
 **There is no `is_active` column on this table.** The API accepts an `is_active` field when updating
 a vendor and reports one back, but neither is real — see
-[KNOWN_ISSUES.md](KNOWN_ISSUES.md) issue 7.
+[problems.md](../problems.md) issue 7.
 
 ### 3.3 `golden_references`
 
@@ -287,7 +287,7 @@ an error if you try to clear a record. But it is a plain dictionary in memory, i
 server restarts, and its save function does nothing at all — it is an empty function with a note
 saying it is a hook for future database writes.
 
-See [KNOWN_ISSUES.md](KNOWN_ISSUES.md) issue 9.
+See [problems.md](../problems.md) issue 9.
 
 ## 4. How the tables connect
 
@@ -306,7 +306,7 @@ that nulls out rather than blocking a delete.
 PostgreSQL enforces them. But SQLite does not enforce foreign keys unless it is switched on, and
 this project never switches it on. So on the default development database, deleting a supplier
 leaves its inspections pointing at a supplier that no longer exists. See
-[KNOWN_ISSUES.md](KNOWN_ISSUES.md) issue 10.
+[problems.md](../problems.md) issue 10.
 
 ## 5. Types used in columns
 
@@ -478,7 +478,7 @@ matters for the request that triggered a table creation to succeed, but the proc
 
 ## 10. Problems to be aware of
 
-Four real problems, all covered in [KNOWN_ISSUES.md](KNOWN_ISSUES.md):
+Four real problems, all covered in [problems.md](../problems.md):
 
 **1. The migration script does not match the models.**
 `migrations/versions/001_initial_tables.py` never creates `inspections.status` or

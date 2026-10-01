@@ -93,7 +93,7 @@ The flow in plain words:
 
 **A note on the admin role:** the registration endpoint currently lets a new user choose their own
 role, which means anyone can register as an admin. This is a real bug. See
-[KNOWN_ISSUES.md](KNOWN_ISSUES.md) issue 1.
+[problems.md](../problems.md) issue 1.
 
 ### 3.3 The pipeline
 
@@ -149,7 +149,7 @@ explanation. It runs on Groq's `gpt-oss-20b` model, with Gemini as a backup.
 **One thing to be clear about:** the evidence table is **not** permanently
 append-only, and it does not protect against anyone editing past results. That rule is not actually
 enforced anywhere. It is a comment in the code and nothing more, and deleting an inspection also
-deletes its evidence. See [KNOWN_ISSUES.md](KNOWN_ISSUES.md) issue 9.
+deletes its evidence. See [problems.md](../problems.md) issue 9.
 
 ## 4. How the 8 pipeline stages fit together
 
@@ -248,7 +248,7 @@ Events. The browser holds the connection open and the server pushes small messag
 
 **Two more things to know:** there is no keepalive signal on the connection, so an aggressive proxy
 can close it during a quiet period. And the connection currently requires no login, which is a
-security problem. See [KNOWN_ISSUES.md](KNOWN_ISSUES.md) issue 2.
+security problem. See [problems.md](../problems.md) issue 2.
 
 ## 7. Handling failure and slow AI services
 
@@ -278,7 +278,7 @@ Note that Groq is the **primary** for the judge, and Gemini is the backup. Gemin
 **About speed:** no timing has ever been measured. There is no benchmark script in the project, and
 the two stages that call cloud models each allow 10 seconds before giving up. Do not quote a
 per-stage or whole-inspection figure. See
-[KNOWN_ISSUES.md](KNOWN_ISSUES.md) and [PIPELINE.md](PIPELINE.md).
+[problems.md](../problems.md) and [PIPELINE.md](PIPELINE.md).
 
 ## 8. Design decisions and why they were made
 

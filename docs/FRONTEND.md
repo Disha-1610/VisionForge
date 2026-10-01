@@ -254,7 +254,7 @@ fetched once at the end, from the inspection record.
 On the most common path, the final `verdict` message **does not contain the verdict**. The hook reads
 `data.verdict` and `data.policyAction`, gets nothing, and the result banner shows a blank verdict.
 
-The fix is a small change on the server. See [KNOWN_ISSUES.md](KNOWN_ISSUES.md) issue 4.
+The fix is a small change on the server. See [problems.md](../problems.md) issue 4.
 
 ## 7. Keeping the user logged in
 
@@ -276,7 +276,7 @@ knowing.
 
 The QR code modal fetches the machine's network address with a bare `fetch`, without the token.
 That request fails with 401, so the fallback quietly breaks. See
-[KNOWN_ISSUES.md](KNOWN_ISSUES.md) issue 5.
+[problems.md](../problems.md) issue 5.
 
 ## 8. Talking to the backend
 

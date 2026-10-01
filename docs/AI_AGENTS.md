@@ -107,7 +107,7 @@ import fails and **EasyOCR always runs**. The import is wrapped in a try and exc
 silently.
 
 If PaddleOCR is added later, the code calls it using an older version of its API, so that call would
-need updating too. See [KNOWN_ISSUES.md](KNOWN_ISSUES.md) issue 13.
+need updating too. See [problems.md](../problems.md) issue 13.
 
 ### How the comparison actually works
 
