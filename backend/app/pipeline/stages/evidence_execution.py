@@ -46,14 +46,38 @@ logger = logging.getLogger("app.pipeline.evidence_execution")
 DEFAULT_MAX_CONCURRENCY = 4
 
 
-def get_default_agent_registry() -> dict[AgentType, BaseAgent]:
-    """Provide the default set of initialized specialized evidence agents."""
-    return {
-        AgentType.OCR: OCRAgent(),
-        AgentType.LABEL: LabelAgent(),
-        AgentType.STRUCTURAL: StructuralAgent(),
-        AgentType.VLM: VLMAgent(),
-    }
+_DEFAULT_AGENT_REGISTRY: dict[AgentType, BaseAgent] | None = None
+_GLOBAL_INFERENCE_SEMAPHORE: asyncio.Semaphore | None = None
+_VLM_SEMAPHORE: asyncio.Semaphore | None = None
+
+
+def get_default_agent_registry(refresh: bool = False) -> dict[AgentType, BaseAgent]:
+    """Provide the default set of initialized specialized evidence agents (cached singleton)."""
+    global _DEFAULT_AGENT_REGISTRY
+    if _DEFAULT_AGENT_REGISTRY is None or refresh:
+        _DEFAULT_AGENT_REGISTRY = {
+            AgentType.OCR: OCRAgent(),
+            AgentType.LABEL: LabelAgent(),
+            AgentType.STRUCTURAL: StructuralAgent(),
+            AgentType.VLM: VLMAgent(),
+        }
+    return _DEFAULT_AGENT_REGISTRY
+
+
+def get_global_inference_semaphore(max_concurrency: int = DEFAULT_MAX_CONCURRENCY) -> asyncio.Semaphore:
+    """Process-wide concurrency limiter for model inference across all inspections."""
+    global _GLOBAL_INFERENCE_SEMAPHORE
+    if _GLOBAL_INFERENCE_SEMAPHORE is None:
+        _GLOBAL_INFERENCE_SEMAPHORE = asyncio.Semaphore(max_concurrency)
+    return _GLOBAL_INFERENCE_SEMAPHORE
+
+
+def get_vlm_semaphore(max_concurrency: int = 2) -> asyncio.Semaphore:
+    """Dedicated semaphore for VLM API calls to prevent 429 rate limit storms."""
+    global _VLM_SEMAPHORE
+    if _VLM_SEMAPHORE is None:
+        _VLM_SEMAPHORE = asyncio.Semaphore(max_concurrency)
+    return _VLM_SEMAPHORE
 
 
 
@@ -234,6 +258,7 @@ async def _execute_single_roi(
             "roi_id": roi_id,
             "roi_type": roi_type,
             "bbox": final_bbox,
+            "enable_offline_fallback": True,
         }
         result: AgentResult = await agent.run(
             golden_roi=golden_crop,
@@ -251,6 +276,9 @@ async def _execute_single_roi(
                 "detector_name": result.detector_name,
                 "has_defect": result.has_defect,
                 "roi_type": result.roi_type or str(roi_type),
+                "priority": region_info.get("priority"),
+                "critical": region_info.get("critical", region_info.get("priority") == "critical"),
+                "severity": region_info.get("severity", "critical" if region_info.get("priority") == "critical" else "normal"),
             },
             explanation=result.explanation,
             processing_time_ms=result.processing_time_ms,
@@ -349,7 +377,7 @@ async def run_evidence_execution(
     ref_width = int(roi_template_data.get("reference_image_width") or roi_template_data.get("referenceImageWidth") or 0)
     ref_height = int(roi_template_data.get("reference_image_height") or roi_template_data.get("referenceImageHeight") or 0)
 
-    semaphore = asyncio.Semaphore(max_concurrency)
+    semaphore = get_global_inference_semaphore(max_concurrency)
 
     # 5. Execute ROIs by Batch (or directly from regions if no batches)
     executed_results: list[dict[str, Any]] = []
@@ -412,6 +440,7 @@ async def run_evidence_execution(
             and "id" in r
         ]
         if structural_roi_ids:
+            vlm_sem = get_vlm_semaphore(2)
             vlm_tasks = []
             for idx, roi_id in enumerate(structural_roi_ids):
                 region_info = regions_by_id.get(roi_id)
@@ -436,7 +465,7 @@ async def run_evidence_execution(
                         coordinate_system=coord_system,
                         agent_registry=registry,
                         state=state,
-                        semaphore=semaphore,
+                        semaphore=vlm_sem,
                         ref_width=ref_width,
                         ref_height=ref_height,
                     )
@@ -446,7 +475,7 @@ async def run_evidence_execution(
                 vlm_results = await asyncio.gather(*vlm_tasks, return_exceptions=False)
                 executed_results.extend(vlm_results)
                 logger.info(
-                    "VLM validation pass completed on %d targeted structural ROIs",
+                    "VLM validation pass completed on %d targeted structural ROIs (throttled)",
                     len(vlm_results),
                 )
 

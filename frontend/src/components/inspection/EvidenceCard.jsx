@@ -237,6 +237,19 @@ export const EvidenceCard = ({ agentKey, result }) => {
           </div>
         </div>
 
+        {/* Visual Evidence / Model Observations */}
+        {result.visual_evidence &&
+          !displayExplanation?.includes(result.visual_evidence) && (
+            <div className="mt-3 space-y-1.5 text-xs text-slate-300">
+              <span className="font-mono text-[10px] uppercase tracking-wider text-slate-400">
+                Visual Inspection Evidence:
+              </span>
+              <div className="bg-hud-bg/80 p-3 rounded-xl border border-hud-border/70 text-[11px] leading-relaxed text-slate-300">
+                <MarkdownText text={result.visual_evidence} />
+              </div>
+            </div>
+          )}
+
         {/* VLM Specific Differences */}
         {Array.isArray(result.specific_differences) && result.specific_differences.length > 0 && (
           <div className="mt-3 space-y-1.5">
@@ -250,7 +263,11 @@ export const EvidenceCard = ({ agentKey, result }) => {
                   className="px-3 py-2 rounded-xl bg-rose-500/10 border border-rose-500/30 text-[11px] font-mono text-rose-200 flex items-start gap-2"
                 >
                   <span className="w-1.5 h-1.5 rounded-full bg-rose-400 mt-1.5 shrink-0" />
-                  <span>{diff}</span>
+                  <span>
+                    {typeof diff === 'object' && diff !== null
+                      ? (diff.description || diff.detail || diff.difference || JSON.stringify(diff))
+                      : String(diff)}
+                  </span>
                 </li>
               ))}
             </ul>

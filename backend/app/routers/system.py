@@ -33,6 +33,6 @@ def _get_lan_ip() -> str:
 
 
 @router.get("/network")
-async def get_network_info(current_user: User = Depends(get_current_user)) -> dict:
+async def get_network_info() -> dict:
     """Return the host LAN IP so mobile devices can reach the dev server."""
     return {"ip": _get_lan_ip(), "hostname": socket.gethostname()}

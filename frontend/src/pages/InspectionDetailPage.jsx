@@ -207,8 +207,7 @@ export const InspectionDetailPage = () => {
       // Build dynamic engine/provider label from backend telemetry
       let techLabel = null;
       if (rec.detector_name && rec.detector_name.includes('ocr')) {
-        const engine = ev.engine_used;
-        techLabel = engine === 'paddleocr' ? 'PaddleOCR Engine' : engine === 'easyocr' ? 'EasyOCR Engine' : 'OCR Engine';
+        techLabel = 'EasyOCR Engine';
       } else if (rec.detector_name && (rec.detector_name.includes('vlm') || rec.detector_name.includes('visual'))) {
         const provider = ev.provider || raw.provider;
         const model = ev.model || raw.model;
@@ -248,6 +247,7 @@ export const InspectionDetailPage = () => {
         specific_differences: ev.specific_differences || raw.specific_differences || [],
         component_count_expected: ev.component_count_expected ?? raw.component_count_expected ?? null,
         component_count_observed: ev.component_count_observed ?? raw.component_count_observed ?? null,
+        visual_evidence: ev.visual_evidence || raw.visual_evidence || '',
         roi_name: rec.roi_id || rec.roi_type || defaultConfig.roi_name || 'Target ROI',
         techLabel,
       };
@@ -420,6 +420,7 @@ export const InspectionDetailPage = () => {
         inspectionImageUrl={inspectionImageUrl}
         yoloDetections={yoloDetections}
         roiRegions={roiRegions}
+        roiTemplate={roiTemplate}
         partCode={inspection?.part_code || memory.part_code || inspection?.product_type}
       />
 

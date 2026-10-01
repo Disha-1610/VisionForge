@@ -101,13 +101,8 @@ Reads text and compares it against what the reference says it should say.
 
 **EasyOCR.**
 
-PaddleOCR is written in the code as the intended primary, with EasyOCR as the fallback, but this is
-backwards in practice. PaddleOCR is not in the requirements file, so in any clean install the
-import fails and **EasyOCR always runs**. The import is wrapped in a try and except, so this happens
-silently.
-
-If PaddleOCR is added later, the code calls it using an older version of its API, so that call would
-need updating too. See [problems.md](../problems.md) issue 13.
+The project uses **EasyOCR** as the sole, unified text extraction engine running locally on CPU or GPU.
+It extracts serial markings, date codes, and lot numbers from cropped hardware ROIs and normalizes the text for comparison.
 
 ### How the comparison actually works
 
@@ -414,7 +409,7 @@ Collected here so nothing is a surprise.
 | Levenshtein distance for text comparison | Uses `difflib.SequenceMatcher`, a different algorithm |
 | An OCR comparison scoring 0.76 gets flagged | It scores about 0.94 and is **not** flagged |
 | Text reading normalises O/0 and I/1 confusions | Only collapses whitespace and upper-cases |
-| PaddleOCR is the primary reader | Not installed. EasyOCR always runs |
+| OCR engine | EasyOCR is the sole, unified text reader running locally |
 | Multi-scale template matching at 0.90 to 1.10 | One single matching call |
 | Label thresholds of 0.88 perfect and 0.70 defect | One threshold: 0.80 |
 | OpenCV SSIM is the engine | Uses `scikit-image` first, OpenCV as fallback |

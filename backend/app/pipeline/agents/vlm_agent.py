@@ -20,7 +20,7 @@ from typing import Any
 from PIL import Image
 import cv2
 import numpy as np
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from app.pipeline.agents.base_agent import AgentResult, BaseAgent
 from app.shared.evidence_store import AgentType
@@ -82,9 +82,24 @@ You receive TWO images:
 3. Provide component counts when the ROI contains countable components
 4. Confidence must reflect visual evidence strength — if crops are too small/blurry/unclear, lower confidence and say why
 5. defect_type must be SPECIFIC: use one of: scratch, crack, burn_mark, discoloration, corrosion, misalignment, missing_component, extra_component, bent_pin, solder_defect, label_tampering, swelling, contamination, or none
-6. SIMPLE PLAIN ENGLISH: Always write descriptions, observations, and explanations in simple, clear everyday English. Avoid complex mathematical terms, statistical symbols, or obscure jargon so that anyone can immediately understand the findings.
+6. SIMPLE PLAIN ENGLISH: Always write descriptions, observations, and explanations in simple, clear everyday English. Avoid complex mathematical terms, statistical symbols, or obscure jargon so that anyone can immediately understand the findings. Clearly state what components, pins, markings, and solder joints you observe in both Image 1 and Image 2.
 
-Return your evaluation strictly as valid JSON.
+## JSON RESPONSE FORMAT (REQUIRED)
+Return strictly valid JSON adhering to this exact schema:
+```json
+{
+  "has_defect": false,
+  "defect_type": "none",
+  "confidence": 0.90,
+  "severity": "none",
+  "description": "Clear explanation in simple plain English describing what is visible in Image 1 vs Image 2 and if any difference was observed",
+  "visual_evidence": "Detailed description of observed components, solder joints, markings, and surface condition",
+  "affected_area": "none",
+  "component_count_expected": 2,
+  "component_count_observed": 2,
+  "specific_differences": []
+}
+```
 """
 
 
@@ -106,6 +121,108 @@ class VLMAnomalyReport(BaseModel):
     component_count_observed: int | None = Field(default=None, description="Observed component count in inspection sample")
     specific_differences: list[str] = Field(default_factory=list, description="Exact differences found between golden and sample")
     visual_evidence: str = Field(default="", description="What each image actually shows — golden vs sample")
+
+    @field_validator("confidence", mode="before")
+    @classmethod
+    def _normalize_confidence(cls, v: Any) -> float:
+        try:
+            val = float(v)
+            if 1.0 < val <= 100.0:
+                return val / 100.0
+            return max(0.0, min(1.0, val))
+        except (ValueError, TypeError):
+            return 0.85
+
+    @field_validator("specific_differences", mode="before")
+    @classmethod
+    def _normalize_specific_differences(cls, v: Any) -> list[str]:
+        if not v:
+            return []
+        if isinstance(v, str):
+            s = v.strip()
+            return [s] if s else []
+        if isinstance(v, list):
+            res: list[str] = []
+            for item in v:
+                if isinstance(item, str):
+                    s = item.strip()
+                    if s:
+                        res.append(s)
+                elif isinstance(item, dict):
+                    area = item.get("area") or item.get("component") or item.get("location") or item.get("part") or item.get("region")
+                    desc = (
+                        item.get("description")
+                        or item.get("detail")
+                        or item.get("difference")
+                        or item.get("finding")
+                        or item.get("issue")
+                        or item.get("observation")
+                    )
+                    severity = item.get("severity")
+                    parts: list[str] = []
+                    if area:
+                        parts.append(f"[{area}]")
+                    if desc:
+                        parts.append(str(desc))
+                    elif not area:
+                        parts.append(", ".join(f"{k}: {val}" for k, val in item.items() if val))
+                    if severity and str(severity).lower() not in ("none", "unknown"):
+                        parts.append(f"(severity: {severity})")
+                    line = " ".join(parts).strip()
+                    if line:
+                        res.append(line)
+                elif item is not None:
+                    res.append(str(item))
+            return res
+        return [str(v)]
+
+    @field_validator("affected_area", mode="before")
+    @classmethod
+    def _normalize_affected_area(cls, v: Any) -> str:
+        if isinstance(v, list):
+            return ", ".join(str(x) for x in v if x)
+        if isinstance(v, dict):
+            return str(v.get("area") or v.get("name") or v.get("region") or v)
+        return str(v) if v is not None else "none"
+
+    @field_validator("severity", mode="before")
+    @classmethod
+    def _normalize_severity(cls, v: Any) -> str:
+        if isinstance(v, dict):
+            return str(v.get("level") or v.get("severity") or "none")
+        return str(v).lower() if v is not None else "none"
+
+    @field_validator("component_count_expected", "component_count_observed", mode="before")
+    @classmethod
+    def _normalize_counts(cls, v: Any) -> int | None:
+        if v is None:
+            return None
+        try:
+            return int(v)
+        except (ValueError, TypeError):
+            return None
+
+    @model_validator(mode="before")
+    @classmethod
+    def _normalize_fields(cls, data: Any) -> Any:
+        if not isinstance(data, dict):
+            return data
+        d = dict(data)
+        # Normalize alternate field names returned by various models
+        for alt_key in ("findings", "observation", "observations", "details", "summary", "analysis", "explanation", "notes"):
+            if alt_key in d and d[alt_key] and not d.get("description"):
+                d["description"] = str(d[alt_key])
+                break
+        for alt_key in ("comparison", "evidence", "visual_comparison", "visual_analysis"):
+            if alt_key in d and d[alt_key] and not d.get("visual_evidence"):
+                d["visual_evidence"] = str(d[alt_key])
+                break
+        # Cross-fill if one is populated and the other is empty
+        if not d.get("description") and d.get("visual_evidence"):
+            d["description"] = d["visual_evidence"]
+        elif d.get("description") and not d.get("visual_evidence"):
+            d["visual_evidence"] = d["description"]
+        return d
 
 
 def _image_to_data_payload(pil_img: Image.Image, max_dim: int = 384) -> ImageInput:
@@ -347,7 +464,19 @@ class VLMAgent(BaseAgent):
                     f"{desc_clean}"
                 )
             else:
-                explanation = f"{roi_name}: No visible defect — {description}"
+                desc_clean = description.strip()
+                if not desc_clean or desc_clean.lower() in (
+                    "no visual defects detected",
+                    "no visual defects detected.",
+                    "no visual defect detected",
+                    "none",
+                    "clean",
+                ):
+                    if visual_evidence:
+                        desc_clean = visual_evidence.strip()
+                    else:
+                        desc_clean = "All visible components, traces, and surfaces align with the golden reference."
+                explanation = f"{roi_name}: No visible defect — {desc_clean}"
 
             evidence = {
                 "has_defect": has_defect,

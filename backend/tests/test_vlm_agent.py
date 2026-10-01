@@ -163,3 +163,51 @@ async def test_vlm_agent_zero_dimension_crops():
     result = await agent.run(golden_roi=empty, inspection_roi=valid, roi_data={"roi_id": "vlm_zero"})
     assert result.failed is True
     assert "dimensions" in (result.failure_reason or "").lower()
+
+
+def test_vlm_report_normalizes_alternate_keys():
+    raw_dict = {
+        "findings": "Both images show identical solder joints and 4 capacitors intact",
+        "has_defect": False,
+        "confidence": 0.95,
+    }
+    report = VLMAnomalyReport.model_validate(raw_dict)
+    assert "identical solder joints" in report.description
+    assert "identical solder joints" in report.visual_evidence
+
+
+def test_vlm_report_normalizes_dict_specific_differences():
+    raw_dict = {
+        "has_defect": True,
+        "defect_type": "label_tampering",
+        "confidence": 92.5,
+        "severity": {"level": "high"},
+        "affected_area": ["product label", "gold fingers"],
+        "component_count_expected": "8",
+        "component_count_observed": "6",
+        "specific_differences": [
+            {
+                "area": "product label",
+                "description": "The product label has peeling on the bottom edge and serial number ending digit differs from standard.",
+                "severity": "high",
+            },
+            {
+                "area": "gold fingers",
+                "description": "Minor surface discoloration observed near pin 12.",
+                "severity": "medium",
+            },
+        ],
+    }
+    report = VLMAnomalyReport.model_validate(raw_dict)
+    assert report.has_defect is True
+    assert report.confidence == 0.925
+    assert report.severity == "high"
+    assert "product label" in report.affected_area
+    assert report.component_count_expected == 8
+    assert report.component_count_observed == 6
+    assert len(report.specific_differences) == 2
+    assert "[product label]" in report.specific_differences[0]
+    assert "(severity: high)" in report.specific_differences[0]
+    assert "[gold fingers]" in report.specific_differences[1]
+
+

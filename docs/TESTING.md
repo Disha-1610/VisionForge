@@ -243,9 +243,9 @@ Things people often say this suite covers, and what it actually covers:
 | Append-only evidence persistence is tested | The in-memory store's save function does nothing. Nothing is persisted |
 | `pytest --cov=app --cov-fail-under=85` works | Would fail. `pytest-cov` is not installed |
 | `flake8 app tests --max-line-length=120` works | Would fail. flake8 is not installed |
-| GitHub Actions runs the gates | **No CI configuration exists** |
+| GitHub Actions runs the gates | Configured in `.github/workflows/ci.yml` (builds frontend & runs 214 tests on push) |
 | Pytest 8.x | 8.0 or later required, 9.0.3 installed |
-| OCR tests cover PaddleOCR and EasyOCR | Only the stand-in reader is tested. PaddleOCR is not installed |
+| OCR tests cover EasyOCR text matching | Stand-in EasyOCR mock reader verifies serial numbers, revision codes, and error containment |
 | OCR tests cover date code discrepancies | No such test. The cases are serial numbers and a revision code |
 | OCR tests cover Levenshtein distance | No such function exists. The code uses string comparison |
 | OCR tests cover tampered batch numbers | No batch numbers appear in any test |

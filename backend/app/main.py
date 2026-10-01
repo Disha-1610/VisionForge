@@ -8,11 +8,15 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
+from sqlalchemy import update
+
 from app.core.config import get_settings
-from app.core.database import engine, init_db
+from app.core.database import AsyncSessionLocal, engine, init_db
 from app.core.exceptions import register_exception_handlers
+from app.models.inspection import Inspection, InspectionStatus
 from app.routers import analytics, auth, inspections, products, reports, system, vendors
 from app.services.embedding_service import embedding_service
+from app.shared.llm_client import shutdown_llm_client
 
 logging.basicConfig(
     level=logging.INFO,
@@ -43,6 +47,18 @@ async def lifespan(app: FastAPI):
     try:
         await init_db()
         logger.info("Database tables and seed data initialized successfully")
+        if AsyncSessionLocal is not None:
+            async with AsyncSessionLocal() as session:
+                await session.execute(
+                    update(Inspection)
+                    .where(Inspection.status.in_([InspectionStatus.PROCESSING, InspectionStatus.PENDING]))
+                    .values(
+                        status=InspectionStatus.FAILED,
+                        error_message="Pipeline execution interrupted by server restart or power loss",
+                    )
+                )
+                await session.commit()
+                logger.info("Reconciled any stale pending/processing inspections")
     except Exception as e:
         logger.warning("Database initialization deferred: %s", e)
 
@@ -52,6 +68,10 @@ async def lifespan(app: FastAPI):
     yield
 
     # Shutdown
+    try:
+        await shutdown_llm_client()
+    except Exception as exc:
+        logger.debug("LLM client shutdown error: %s", exc)
     await engine.dispose()
     logger.info("Shutdown complete")
 

@@ -329,9 +329,7 @@ So one agent crashing produces a slightly suspicious result rather than a dead i
 
 Full detail is in [AI_AGENTS.md](AI_AGENTS.md).
 
-**Text reading:** the primary reader is EasyOCR, not PaddleOCR. PaddleOCR is
-not in the requirements file, so in a clean install the import always fails and **EasyOCR always
-runs**. The fallback is silent.
+**Text reading:** the unified OCR engine is **EasyOCR**, running locally on CPU or GPU to extract stamped serial numbers, lot codes, and date markings without external cloud calls.
 
 ## 8. Stage 6: Turning findings into one score
 

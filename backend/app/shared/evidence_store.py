@@ -55,8 +55,9 @@ class EvidenceStore:
     In-memory now; swap _persist() for a DB write later without changing the public API.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, max_inspections: int = 100) -> None:
         self._lock = RLock()
+        self._max_inspections = max_inspections
         self._by_inspection: dict[uuid.UUID, list[EvidenceRecord]] = defaultdict(list)
         self._by_id: dict[uuid.UUID, EvidenceRecord] = {}
         self._sequence_counter: dict[uuid.UUID, int] = defaultdict(int)
@@ -79,6 +80,13 @@ class EvidenceStore:
             raise EvidenceStoreError("failure_reason required when failed=True")
 
         with self._lock:
+            # Evict oldest inspection if capacity exceeded
+            if inspection_id not in self._by_inspection and len(self._by_inspection) >= self._max_inspections:
+                oldest_id = next(iter(self._by_inspection))
+                for old_rec in self._by_inspection.pop(oldest_id, []):
+                    self._by_id.pop(old_rec.evidence_id, None)
+                self._sequence_counter.pop(oldest_id, None)
+
             seq = self._sequence_counter[inspection_id]
             self._sequence_counter[inspection_id] = seq + 1
 

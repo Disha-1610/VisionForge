@@ -133,12 +133,27 @@ def _extract_agent_anomaly_score(record: EvidenceRecord) -> tuple[float, str | N
             extra_list.extend(findings.get("extra", []))
             mismatched_list.extend(findings.get("mismatched", []))
 
+        # Scale anomaly score by criticality if specified
+        is_non_critical = (
+            evidence_data.get("critical") is False
+            or str(evidence_data.get("priority", "")).lower() in ("normal", "low")
+            or str(evidence_data.get("severity", "")).lower() in ("low", "normal")
+        )
+        if is_non_critical:
+            score_missing = 0.75
+            score_extra = 0.70
+            score_mismatched = 0.65
+        else:
+            score_missing = 0.95
+            score_extra = 0.90
+            score_mismatched = 0.85
+
         if missing_list:
-            return 0.95, f"missing_components:{len(missing_list)}"
+            return score_missing, f"missing_components:{len(missing_list)}"
         if extra_list:
-            return 0.90, f"counterfeit_extra_components:{len(extra_list)}"
+            return score_extra, f"counterfeit_extra_components:{len(extra_list)}"
         if mismatched_list:
-            return 0.85, f"component_count_mismatch:{len(mismatched_list)}"
+            return score_mismatched, f"component_count_mismatch:{len(mismatched_list)}"
 
         # 2. Check SSIM score
         ssim_val = evidence_data.get("ssim_score")

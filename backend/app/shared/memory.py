@@ -173,9 +173,10 @@ class WorkingMemoryRegistry:
     Not for multi-worker deployments; swap for Redis-backed store there.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, max_size: int = 100) -> None:
         self._store: dict[UUID, WorkingMemory] = {}
         self._registry_lock = asyncio.Lock()
+        self._max_size = max_size
 
     async def get_or_create(
         self,
@@ -185,6 +186,9 @@ class WorkingMemoryRegistry:
     ) -> WorkingMemory:
         async with self._registry_lock:
             if inspection_id not in self._store:
+                if len(self._store) >= self._max_size:
+                    oldest_id = next(iter(self._store))
+                    self._store.pop(oldest_id, None)
                 self._store[inspection_id] = WorkingMemory(
                     inspection_id=inspection_id,
                     vendor_id=vendor_id,

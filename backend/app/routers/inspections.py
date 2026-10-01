@@ -243,6 +243,8 @@ async def stream_inspection_events(
                         "status": prog.get("status"),
                         "inspection_id": str(inspection_id),
                         "detail": prog.get("detail"),
+                        "verdict": prog.get("verdict"),
+                        "policy_action": prog.get("policy_action"),
                     }
                     yield f"event: verdict\ndata: {json.dumps(final_payload)}\n\n"
                     sent_verdict = True

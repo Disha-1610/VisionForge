@@ -461,7 +461,7 @@ class ReportingService:
                 Paragraph("All discrete components verified and matched to golden schematic.", self.style_table_cell),
             ])
             table_rows.append([
-                Paragraph("PaddleOCR", self.style_table_cell),
+                Paragraph("EasyOCR", self.style_table_cell),
                 Paragraph("Serial & Batch", self.style_table_cell),
                 Paragraph("PASS", self.style_badge_pass),
                 Paragraph("99%", self.style_table_cell),

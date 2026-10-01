@@ -14,6 +14,7 @@ Outcomes: passed (pairing locked in) | flagged (below threshold / not found
 """
 from __future__ import annotations
 
+import asyncio
 import logging
 import uuid
 from typing import Any
@@ -58,9 +59,9 @@ async def run_reference_match(
     try:
         pil_img = load_pil_image(primary_path)
         if hasattr(embedding_service, "generate_embedding_for_index") and getattr(embedding_service, "_provider", None):
-            query_embedding, _ = embedding_service.generate_embedding_for_index(pil_img)
+            query_embedding, _ = await asyncio.to_thread(embedding_service.generate_embedding_for_index, pil_img)
         else:
-            query_embedding = embedding_service.generate_embedding(pil_img)
+            query_embedding = await asyncio.to_thread(embedding_service.generate_embedding, pil_img)
     except Exception as exc:
         logger.exception("Embedding generation failed for inspection %s", inspection_id)
         return await state.record_stage(

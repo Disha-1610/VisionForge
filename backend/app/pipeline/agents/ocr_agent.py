@@ -3,8 +3,7 @@
 OCR Evidence Agent (Disha, W3 D2).
 
 Per VisionForge.md Section 4 Stage 5a & Section 2:
-  - Primary engine: PaddleOCR (industrial precision on stamped/micro serials).
-  - Secondary / Fallback engine: EasyOCR (local, CPU/GPU capable).
+  - Unified engine: EasyOCR (local, CPU/GPU capable).
   - Inspects text ROIs (serial numbers, part numbers, batch IDs).
   - Compares extracted text from inspection ROI against golden ROI or expected text.
   - Generates character-level diff analysis and similarity metrics.
@@ -77,32 +76,19 @@ class OCRAgent(BaseAgent):
         languages: list[str] | None = None,
         detector_name: str | None = None,
         reader: Any = None,
-        paddle_ocr: Any = None,
     ) -> None:
         super().__init__(detector_name=detector_name)
         self.default_threshold = default_threshold
         self.languages = languages or ["en"]
         self._easyocr_reader = reader
-        self._paddle_ocr = paddle_ocr
         self._engine_initialized = False
 
     def _init_engines_if_needed(self) -> None:
-        """Lazy initialization of OCR engines."""
+        """Lazy initialization of EasyOCR engine."""
         if self._engine_initialized:
             return
 
-        # 1. Try PaddleOCR if not injected
-        if self._paddle_ocr is None:
-            try:
-                from paddleocr import PaddleOCR  # type: ignore
-
-                self._paddle_ocr = PaddleOCR(use_angle_cls=True, lang="en", show_log=False)
-                logger.info("PaddleOCR engine initialized successfully")
-            except Exception as exc:
-                logger.debug("PaddleOCR not available or failed to load: %s", exc)
-                self._paddle_ocr = None
-
-        # 2. Try EasyOCR if not injected
+        # Initialize EasyOCR if not injected
         if self._easyocr_reader is None:
             try:
                 import easyocr  # type: ignore
@@ -114,27 +100,6 @@ class OCRAgent(BaseAgent):
                 self._easyocr_reader = None
 
         self._engine_initialized = True
-
-    def _extract_with_paddle(self, img: np.ndarray) -> tuple[str, float]:
-        """Extract text and confidence using PaddleOCR."""
-        if self._paddle_ocr is None:
-            raise RuntimeError("PaddleOCR not initialized")
-
-        result = self._paddle_ocr.ocr(img, cls=True)
-        if not result or not result[0]:
-            return "", 0.0
-
-        texts = []
-        confs = []
-        for line in result[0]:
-            if line and len(line) >= 2:
-                text, conf = line[1]
-                texts.append(str(text))
-                confs.append(float(conf))
-
-        combined_text = " ".join(texts).strip()
-        avg_conf = float(np.mean(confs)) if confs else 0.0
-        return combined_text, avg_conf
 
     def _extract_with_easyocr(self, img: np.ndarray) -> tuple[str, float]:
         """Extract text and confidence using EasyOCR.
@@ -178,34 +143,20 @@ class OCRAgent(BaseAgent):
 
     def extract_text(self, img: np.ndarray) -> tuple[str, float, str]:
         """
-        Extract text from an image crop, trying PaddleOCR first then EasyOCR.
+        Extract text from an image crop using EasyOCR.
         Returns: (extracted_text, confidence, engine_used)
         """
         self._init_engines_if_needed()
 
-        errors: list[str] = []
-        # Try PaddleOCR first
-        if self._paddle_ocr is not None:
-            try:
-                text, conf = self._extract_with_paddle(img)
-                if text:
-                    return text, conf, "paddleocr"
-            except Exception as exc:
-                errors.append(f"PaddleOCR error: {exc}")
-                logger.warning("PaddleOCR extraction failed: %s, falling back to EasyOCR", exc)
-
-        # Fallback to EasyOCR
         if self._easyocr_reader is not None:
             try:
                 text, conf = self._extract_with_easyocr(img)
                 return text, conf, "easyocr"
             except Exception as exc:
-                errors.append(f"EasyOCR error: {exc}")
                 logger.warning("EasyOCR extraction failed: %s", exc)
+                raise RuntimeError(f"OCR extraction failed: {exc}") from exc
 
-        if errors:
-            raise RuntimeError(f"OCR extraction failed: {'; '.join(errors)}")
-        raise RuntimeError("No OCR engine available or all extraction attempts failed")
+        raise RuntimeError("No OCR engine available or extraction attempt failed")
 
 
     @staticmethod

@@ -36,7 +36,7 @@
 │                 ▼                                                              │
 │  4. ROI Scheduler                            — pure logic (no model)          │
 │                 ▼                                                              │
-│  5. Evidence Execution — Specialized Agents  — PaddleOCR, OpenCV,             │
+│  5. Evidence Execution — Specialized Agents  — EasyOCR, OpenCV,               │
 │                                                  YOLO11n, Gemini free VLM      │
 │                 ▼                                                              │
 │  6. Multi-View Evidence Fusion               — pure logic (no model)          │
@@ -84,7 +84,7 @@ Every stage below runs on a free-tier API or a fully local/open-source library. 
 | 2. Authenticity Verification | OpenCV + Pillow (ELA, EXIF via `exifread`) | Free — local | No API, no rate limit |
 | 3. Reference Intelligence | Primary: Google Gemini (`gemini-embedding-2`, 3072-dim)<br>Fallback: OpenCLIP (`ViT-B-32`, 512-dim) + FAISS | Free | 1-shot Gemini attempt with seamless local OpenCLIP fallback |
 | 4. ROI Scheduler | Pure Python logic | Free | No model needed |
-| 5a. OCR Agent | Primary: **PaddleOCR**, Secondary: **EasyOCR** | Free — local, open-source | High precision on tiny/stamped industrial serial numbers |
+| 5a. OCR Agent | Unified: **EasyOCR** | Free — local, open-source | High precision on tiny/stamped industrial serial numbers |
 | 5b. Label Agent | OpenCV `cv2.matchTemplate` | Free — local | |
 | 5c. Structural Agent | OpenCV SSIM + **YOLO11n (Ultralytics)** | Free — AGPL-3.0 | See Section 4, Stage 5 for detail |
 | 5d. VLM Agent | Dual Load-Balanced: **Google Gemini 3.5 Flash** (`gemini-3.5-flash`) + **Groq Qwen 3.8 27B Vision** (`qwen/qwen3.8-27b`) | Free — rate-limited | **50-50 Round-Robin Load Balancing**: Odd ROIs dispatch to Gemini primary (Groq fallback), Even ROIs dispatch to Groq primary (Gemini fallback). Prevents 429 quota bursts. |
@@ -215,7 +215,7 @@ Read ROI Template → Map ROI Type → Assigned Agent → Output execution plan
 - Agents must report failure rather than fabricate results; confidence values follow a consistent scale across agents.
 - Store all findings in the Evidence Store.
 
-**5a. OCR Agent** — Primary: **PaddleOCR** (industrial-grade precision on tiny/stamped serials & part numbers), Secondary: **EasyOCR** (lightweight fallback). Reads serials/part numbers from cropped text ROI, diffs against expected text.
+**5a. OCR Agent** — Unified: **EasyOCR** (local, CPU/GPU capable). Reads serials and part numbers from cropped text ROIs, diffs against expected text without external cloud dependency.
 
 **5b. Label Agent** — `cv2.matchTemplate` (free, local). Compares label/seal/logo regions against the golden template.
 

@@ -105,7 +105,9 @@ class EmbeddingService:
             },
         }
 
-        resp = requests.post(url, json=payload, timeout=timeout)
+        import httpx
+
+        resp = httpx.post(url, json=payload, timeout=timeout)
         if resp.status_code != 200:
             raise RuntimeError(f"Gemini API returned status {resp.status_code}: {resp.text[:200]}")
 

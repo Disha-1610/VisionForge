@@ -35,7 +35,9 @@ export const DesktopGuardModal = ({ isOpen, onClose, onContinueDesktop }) => {
       // 3) Dev on localhost → substitute host with this machine's LAN IP
       //    so a phone on the same Wi-Fi can actually reach the server.
       try {
-        const res = await fetch('/api/v1/system/network');
+        const token = localStorage.getItem('token') || localStorage.getItem('access_token');
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+        const res = await fetch('/api/v1/system/network', { headers });
         const data = await res.json();
         if (!cancelled && data?.ip && data.ip !== 'localhost') {
           const p = port || '5173';

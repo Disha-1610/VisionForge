@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import os
 import shutil
 import uuid
@@ -88,7 +89,7 @@ async def upload_golden_reference(
     # Compute embedding and insert into FAISS index
     try:
         pil_img = Image.open(dest_path).convert("RGB")
-        embedding, provider = embedding_service.generate_embedding_for_index(pil_img)
+        embedding, provider = await asyncio.to_thread(embedding_service.generate_embedding_for_index, pil_img)
         embedding_service.add_to_index(embedding, str(ref_id), provider=provider)
         embedding_service.save_index(settings.FAISS_INDEX_PATH)
     except Exception as exc:

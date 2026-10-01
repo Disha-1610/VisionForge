@@ -69,6 +69,15 @@ Phase 2 focuses on hardening the on-premises factory edge server, reducing infer
 * **Current:** Operators approve or override inspections directly on the detail page.
 * **Goal:** A dedicated review queue page with role-based review workflows and SLA tracking for parts held under `VENDOR_VERIFICATION`.
 
+### 2.6 Human-in-the-Loop (HITL) Active Learning & Feedback Loop
+* **Current Baseline:** Passive HITL governance is fully functional. Operators review borderline inspections (`VENDOR_VERIFICATION`) via the Review Modal, with decisions (`APPROVED` / `OVERRIDDEN`) and mandatory audit comments saved to the database and printed on PDF compliance reports. However, models and agents do not dynamically adapt from these human overrides.
+* **Architecture & Objectives:**
+  - **Dynamic Few-Shot Correction Memory (AI Judge):** Store human overrides and technical justifications in a `human_corrections` memory store. When Stage 7 (AI Judge) constructs prompts for the same part family, dynamically inject top-K relevant historical human overrides as few-shot in-context learning (e.g., *"Past QA Lead Correction: Solder flux discoloration on Rev-B is certified genuine OEM variation"*). This delivers zero-retraining, instantaneous adaptation.
+  - **FAISS Reference Envelope Adaptation:** For edge-case boards verified genuine by QA leads, automatically compute and index secondary visual embedding vectors into the FAISS index to reflect acceptable vendor manufacturing variations.
+  - **Hard-Negative Auto-Curator (YOLO11n):** Overridden component detections (false positives / missed components) are automatically formatted and saved to an active learning repository (`data/active_learning/hard_negatives/`) for scheduled weekly fine-tuning of `component_detector.pt`.
+* **Impact:** Transforms VisionForge from a static inspection pipeline into a continuous self-learning system that progressively reduces human intervention over time.
+
+
 ---
 
 ## 4. Phase 3: Factory Automation & Enterprise MES (Future Horizon)
@@ -104,7 +113,8 @@ Phase 3 connects VisionForge from an inspection workstation into the broader fac
 │  Phase 2: Edge Acceleration          │  ◄── IN PROGRESS / NEAR-TERM
 │  • TensorRT FP16 YOLO export         │      (Industrial Edge deployment,
 │  • Industrial GigE / Basler ingress  │       local VLM cleanroom option,
-│  • Perspective homography alignment  │       de-skewing alignment)
+│  • Perspective homography alignment  │       HITL active learning loop)
+│  • HITL Active Learning Loop         │
 └──────────────────┬───────────────────┘
                    │
                    ▼

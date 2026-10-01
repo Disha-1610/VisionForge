@@ -29,7 +29,7 @@
   },
   "components": [
     { "id": "scheduler", "type": "backend", "label": "ROI Scheduler", "sublabel": "Stage 4: Crop Dispatch", "pos": [50, 210], "size": [150, 64], "tag": "8-12x Scale" },
-    { "id": "ocr", "type": "backend", "label": "OCR Agent", "sublabel": "PaddleOCR + EasyOCR", "pos": [270, 60], "size": [155, 60], "tag": "String Diff" },
+    { "id": "ocr", "type": "backend", "label": "OCR Agent", "sublabel": "EasyOCR Engine", "pos": [270, 60], "size": [155, 60], "tag": "String Diff" },
     { "id": "label", "type": "backend", "label": "Label Agent", "sublabel": "Color Hist & QC Seals", "pos": [270, 160], "size": [155, 60], "tag": "Tamper Seal" },
     { "id": "structural", "type": "backend", "label": "Structural Agent", "sublabel": "YOLO11n + SSIM Diff", "pos": [270, 260], "size": [155, 60], "tag": "YOLO + SSIM" },
     { "id": "vlm", "type": "backend", "label": "VLM Agent", "sublabel": "Visual Anomaly Inspector", "pos": [270, 360], "size": [155, 60], "tag": "Multimodal" },
@@ -67,7 +67,7 @@
       "items": [
         "Stage 4 crops localized sub-regions to eliminate scale drift on micro-components",
         "Structural Agent combines fine-tuned YOLO11n object detection with localized SSIM delta heatmaps",
-        "OCR Agent verifies serial numbers and lot codes using PaddleOCR and Levenshtein string distance"
+        "OCR Agent verifies serial numbers and lot codes using EasyOCR and Levenshtein string distance"
       ]
     },
     {

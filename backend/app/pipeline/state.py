@@ -126,12 +126,17 @@ class InspectionState:
         detail = None
         if current_result is not None:
             detail = current_result.error if current_result.status == "failed" else current_result.data
+        judge_res = done.get(PipelineStageName.JUDGE)
+        verdict = judge_res.data.get("verdict") if (judge_res and isinstance(judge_res.data, dict)) else None
+        policy_action = getattr(self.memory, "policy_action", None)
         return {
             "stage": STAGE_ORDER.index(current) + 1,
             "stage_name": current.value,
             "status": status,
             "progress": completed,
             "detail": detail,
+            "verdict": verdict,
+            "policy_action": policy_action,
         }
 
     def snapshot(self) -> dict[str, Any]:
