@@ -1,6 +1,5 @@
 # backend/app/pipeline/stages/evidence_execution.py
 """
-Stage 5 — Evidence Execution (Disha, W3 D1).
 
 Per VisionForge.md Section 4 Stage 5 & Section 1:
   - Consumes Stage 4 ROIExecutionPlan and ROITemplate from WorkingMemory.

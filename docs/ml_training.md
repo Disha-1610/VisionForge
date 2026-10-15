@@ -598,11 +598,24 @@ Real images from the intended inspection environment can help reduce this gap.
 
 A future benchmark should include images captured under the actual VisionForge inspection setup, not only public datasets.
 
-## 27. Interview-Ready Explanation
+## 27. Recorded Baseline Training Results (First Run)
 
-> "For VisionForge, I created a unified object-detection dataset by combining PCB, battery, screw, seal, and gold-finger datasets. Because each source dataset used different class IDs, I remapped them into a common 8-class label space. The final dataset contained 3,393 training images, 715 validation images, and 340 test images. I fine-tuned pretrained YOLO11n for 100 epochs at 640×640 with batch size 16 on a Tesla T4. The run took about 2.4 hours and produced a best checkpoint. During post-training evaluation, I found that some source labels were segmentation polygons instead of detection boxes, so I converted those annotations into standard YOLO detection format and verified the cleaned dataset. I did not complete a second training run, so the reported metrics are baseline results from the original run."
+The recorded evaluation metrics from our initial training run before annotation cleaning were:
 
-## 28. Key Engineering Lesson
+| Metric | Result | Description |
+|:---|:---:|:---|
+| **mAP@50** | **50.24%** | Mean Average Precision at IoU 0.50 threshold |
+| **mAP@50–95** | **33.06%** | Mean Average Precision across IoU 0.50 to 0.95 |
+| **Precision** | **62%** | Fraction of predicted detections that were correct (lowers false alarms) |
+| **Recall** | **51%** | Fraction of actual components that were successfully localized (lowers missed defects) |
+
+> **Crucial Clarification:** Prediction confidence on an individual detection (e.g., YOLO detecting a capacitor with `0.984` confidence) is **not** overall model accuracy. The baseline model achieved 50.24% mAP@50, reflecting initial dataset annotation noise that was subsequently cleaned and formatted.
+
+## 28. Interview-Ready Explanation
+
+> "For VisionForge, I created a unified object-detection dataset by combining PCB, battery, screw, seal, and gold-finger datasets. Because each source dataset used different class IDs, I remapped them into a common 8-class label space. The final dataset contained 3,393 training images, 715 validation images, and 340 test images. I fine-tuned pretrained YOLO11n for 100 epochs at 640×640 with batch size 16 on a Tesla T4. The run took about 2.4 hours and produced a best checkpoint. In our initial evaluation, we achieved 50.24% mAP50 with 62% Precision and 51% Recall. During post-training evaluation, I discovered that some source labels were segmentation polygons instead of detection boxes, so I converted those annotations into standard YOLO detection format and verified the cleaned dataset. I did not complete a second training run, so the reported metrics are baseline results from the original run."
+
+## 29. Key Engineering Lesson
 
 ```text
 Good Model

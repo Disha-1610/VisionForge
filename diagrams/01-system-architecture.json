@@ -4,53 +4,60 @@
   "meta": {
     "title": "VisionForge — System Architecture",
     "output": "diagrams/01-system-architecture.html",
+    "animation": "trace",
     "quality_profile": "showcase",
-    "viewBox": [1320, 580],
+    "viewBox": [1320, 520],
     "views": [
       {
         "id": "full-journey",
         "label": "Full inspection journey",
         "focus": ["frontend", "api", "bg_task", "pipeline", "intake", "refmatch", "agents", "fusion", "judge", "policy", "db", "pdf"],
-        "note": "End-to-end flow from React console upload through 8-stage LangGraph pipeline to DB persistence and PDF report."
+        "note": "Complete end-to-end flow from React upload through 8-stage LangGraph pipeline to DB persistence and PDF report."
       },
       {
-        "id": "api-gateway",
-        "label": "API gateway & background worker",
+        "id": "gateway-intake",
+        "label": "Client UI & API Gateway",
         "focus": ["frontend", "api", "bg_task"],
-        "note": "FastAPI gateway handling JWT auth and dispatching async background inspection."
+        "note": "React 19 console with live SSE streaming, FastAPI JWT auth guard, and non-blocking background task worker."
       },
       {
-        "id": "pipeline-core",
-        "label": "8-stage LangGraph pipeline",
+        "id": "langgraph-core",
+        "label": "LangGraph 8-Stage StateGraph",
         "focus": ["pipeline", "intake", "refmatch", "agents", "fusion", "judge", "policy"],
-        "note": "Deterministic quality gates, FAISS golden retrieval, parallel agent execution swarm, Bayesian fusion, and policy engine."
+        "note": "Strict state graph managing blur fast-fail, FAISS golden matching, 4-agent swarm, max-pooling fusion, and Groq judge."
       },
       {
-        "id": "persistence",
-        "label": "Persistence and reporting",
+        "id": "cv-ai-swarm",
+        "label": "Computer Vision & AI Swarm",
+        "focus": ["intake", "refmatch", "agents", "fusion", "judge"],
+        "note": "OpenCV Laplacian & ELA, FAISS vector search, EasyOCR, custom YOLO11n component detector, and Multimodal VLM."
+      },
+      {
+        "id": "persistence-audit",
+        "label": "Storage & Audit Compliance",
         "focus": ["policy", "db", "pdf"],
-        "note": "Final verdict persistence in SQLite WAL and ReportLab cryptographically signed PDF audit report generation."
+        "note": "Asynchronous persistence across 5 core SQLAlchemy tables and ReportLab PDF compliance certificate generation."
       }
     ]
   },
   "components": [
-    { "id": "frontend", "type": "frontend", "brand": "react", "label": "React 19 + Vite", "sublabel": "Operator Console · SSE Stream", "pos": [60, 60], "size": [180, 66], "tag": "Tailwind UI" },
-    { "id": "api", "type": "backend", "brand": "fastapi", "label": "FastAPI /api/v1", "sublabel": "5 Routers · JWT Auth Guard", "pos": [390, 60], "size": [190, 66], "tag": "API Gateway" },
-    { "id": "bg_task", "type": "backend", "label": "Background Inspection", "sublabel": "FastAPI BackgroundTasks", "pos": [730, 60], "size": [190, 66], "tag": "Async Worker" },
-    { "id": "pipeline", "type": "backend", "label": "LangGraph Pipeline", "sublabel": "8-Stage StateGraph", "pos": [1070, 196], "size": [190, 68], "tag": "Orchestrator" },
-    { "id": "intake", "type": "backend", "label": "1. Quality & 2. ELA", "sublabel": "Laplacian Blur · Tamper Gate", "pos": [730, 196], "size": [190, 68], "tag": "Stages 1–2" },
-    { "id": "refmatch", "type": "backend", "label": "3. Ref & 4. ROI Sched", "sublabel": "FAISS Golden · Dynamic Crops", "pos": [390, 196], "size": [190, 68], "tag": "Stages 3–4" },
-    { "id": "agents", "type": "backend", "label": "5. Evidence Execution", "sublabel": "OCR · Label · Structural · VLM", "pos": [60, 196], "size": [190, 68], "tag": "4 Parallel Agents" },
-    { "id": "fusion", "type": "backend", "label": "6. Evidence Fusion", "sublabel": "Bayesian Score Pooling", "pos": [60, 334], "size": [190, 68], "tag": "Stage 6" },
-    { "id": "judge", "type": "cloud", "label": "7. AI Judge", "sublabel": "Gemini 2.5 · Groq Failover", "pos": [390, 334], "size": [190, 68], "tag": "Stage 7" },
-    { "id": "policy", "type": "backend", "label": "8. Policy Engine", "sublabel": "ACCEPT · QUARANTINE · RETAKE", "pos": [730, 334], "size": [190, 68], "tag": "Stage 8" },
-    { "id": "db", "type": "database", "label": "DB Persistence", "sublabel": "SQLAlchemy SQLite WAL", "pos": [540, 472], "size": [180, 68], "tag": "Audit Trail" },
-    { "id": "pdf", "type": "backend", "label": "PDF Report", "sublabel": "ReportLab Compliance Report", "pos": [870, 472], "size": [180, 68], "tag": "Signed Audit" }
+    { "id": "frontend", "type": "frontend", "brand": "react", "label": "React 19 + Vite", "sublabel": "DualImageCanvas · Live SSE", "pos": [60, 50], "size": [190, 64], "tag": "Operator UI" },
+    { "id": "api", "type": "backend", "brand": "fastapi", "label": "FastAPI /api/v1", "sublabel": "JWT Guard · 5 Async Routers", "pos": [390, 50], "size": [190, 64], "tag": "API Gateway" },
+    { "id": "bg_task", "type": "backend", "label": "Background Worker", "sublabel": "FastAPI BackgroundTasks", "pos": [730, 50], "size": [190, 64], "tag": "Async Runner" },
+    { "id": "pipeline", "type": "backend", "label": "LangGraph Pipeline", "sublabel": "Deterministic 8-Stage DAG", "pos": [1070, 176], "size": [190, 64], "tag": "Orchestrator" },
+    { "id": "intake", "type": "backend", "label": "1. Quality & 2. ELA", "sublabel": "Laplacian Blur · Tamper Gate", "pos": [730, 176], "size": [190, 64], "tag": "OpenCV Forensics" },
+    { "id": "refmatch", "type": "backend", "label": "3. Ref & 4. Micro-ROI", "sublabel": "FAISS In-Memory · 12x Crops", "pos": [390, 176], "size": [190, 64], "tag": "Vector Intelligence" },
+    { "id": "agents", "type": "backend", "label": "5. Evidence Swarm", "sublabel": "OCR · NCC · YOLO11n · VLM", "pos": [60, 176], "size": [190, 64], "tag": "4 Parallel Models" },
+    { "id": "fusion", "type": "backend", "label": "6. Evidence Fusion", "sublabel": "Anomaly Max-Pooling Math", "pos": [60, 302], "size": [190, 64], "tag": "Deterministic Merge" },
+    { "id": "judge", "type": "cloud", "label": "7. AI Forensic Judge", "sublabel": "Groq LPU (Primary) · Gemini", "pos": [390, 302], "size": [190, 64], "tag": "LLM Reasoning" },
+    { "id": "policy", "type": "backend", "label": "8. Policy Engine", "sublabel": "ACCEPT · RETAKE · QUARANTINE", "pos": [730, 302], "size": [190, 64], "tag": "Decision Matrix" },
+    { "id": "db", "type": "database", "label": "Database & NVMe", "sublabel": "SQLAlchemy Async · 5 Tables", "pos": [540, 428], "size": [190, 64], "tag": "Relational Storage" },
+    { "id": "pdf", "type": "backend", "label": "Compliance Report", "sublabel": "ReportLab Audit Certificate", "pos": [870, 428], "size": [190, 64], "tag": "Export Artifact" }
   ],
   "boundaries": [
-    { "kind": "region", "label": "Frontend & Ingestion Gateway", "wraps": ["frontend", "api", "bg_task"] },
-    { "kind": "region", "label": "LangGraph Autonomous Pipeline", "wraps": ["pipeline", "intake", "refmatch", "agents", "fusion", "judge", "policy"] },
-    { "kind": "region", "label": "Persistence & Audit Records", "wraps": ["db", "pdf"] }
+    { "kind": "region", "label": "Client & Ingestion Gateway", "wraps": ["frontend", "api", "bg_task"] },
+    { "kind": "region", "label": "LangGraph Autonomous Inspection Pipeline", "wraps": ["pipeline", "intake", "refmatch", "agents", "fusion", "judge", "policy"] },
+    { "kind": "region", "label": "Storage & Compliance Records", "wraps": ["db", "pdf"] }
   ],
   "connections": [
     { "id": "c1", "from": "frontend", "to": "api", "label": "upload / SSE", "variant": "emphasis" },
@@ -59,7 +66,7 @@
     { "id": "c4", "from": "pipeline", "to": "intake", "label": "stages 1–2", "fromSide": "left", "toSide": "right" },
     { "id": "c5", "from": "intake", "to": "refmatch", "label": "stages 3–4", "fromSide": "left", "toSide": "right" },
     { "id": "c6", "from": "refmatch", "to": "agents", "label": "crop ROIs", "fromSide": "left", "toSide": "right" },
-    { "id": "c7", "from": "agents", "to": "fusion", "label": "findings", "fromSide": "bottom", "toSide": "top", "labelAt": [155, 299] },
+    { "id": "c7", "from": "agents", "to": "fusion", "label": "findings", "fromSide": "bottom", "toSide": "top", "labelAt": [155, 271] },
     { "id": "c8", "from": "fusion", "to": "judge", "label": "fused scores", "variant": "emphasis", "fromSide": "right", "toSide": "left" },
     { "id": "c9", "from": "judge", "to": "policy", "label": "verdict", "fromSide": "right", "toSide": "left" },
     { "id": "c10", "from": "policy", "to": "db", "label": "save state", "fromSide": "bottom", "toSide": "top" },
@@ -70,25 +77,25 @@
       "dot": "cyan",
       "title": "Client & Gateway Layer",
       "items": [
-        "React 19 + Vite console: dual canvas, camera intake, and real-time SSE progress streaming",
-        "FastAPI /api/v1: JWT Auth guard, 5 modular routers (Inspections, Products, Vendors, Reports, Analytics), and async background dispatch"
+        "React 19 + Vite console: DualImageCanvas pan/zoom sync, camera/QR intake, and live SSE telemetry",
+        "FastAPI /api/v1: JWT Auth guard (30m access/7d refresh), 5 modular routers, and async BackgroundTasks worker"
       ]
     },
     {
       "dot": "emerald",
-      "title": "8-Stage LangGraph Pipeline",
+      "title": "LangGraph 8-Stage Pipeline & CV/AI Swarm",
       "items": [
-        "Stages 1–4: Deterministic Laplacian blur & ELA tamper gates, FAISS golden reference retrieval, dynamic ROI scheduler",
-        "Stage 5 Swarm: OCR Agent, Label Agent, Structural YOLO11n Detector, and Multimodal VLM running concurrently",
-        "Stages 6–8: Bayesian max-pooling evidence fusion, LLM forensic judge (Gemini 2.5 with Groq failover), and policy engine"
+        "Stages 1–4: OpenCV Laplacian blur gate (<25ms), ELA tamper check, FAISS golden vector search (<15ms), 12x micro-ROI scheduler",
+        "Stage 5 Swarm: EasyOCR serials, OpenCV NCC logos, custom YOLO11n components, and Multimodal VLM running concurrently",
+        "Stages 6–8: Anomaly Max-Pooling (0.65 mean + 0.35 max override), Groq LPU forensic judge (Gemini backup), and policy engine"
       ]
     },
     {
       "dot": "amber",
-      "title": "Persistence & Audit Compliance",
+      "title": "Storage & Compliance Audit",
       "items": [
-        "SQLAlchemy 2.0 with SQLite WAL mode stores inspections, operator audits, and live telemetry with zero mock data",
-        "ReportLab generates cryptographically sealed PDF audit reports with SHA-256 hashes and dual-control override signatures"
+        "SQLAlchemy 2.0 Async (PostgreSQL / SQLite) managing 5 core tables + local NVMe image storage",
+        "ReportLab generates downloadable industrial PDF inspection certificates with complete evidence findings"
       ]
     }
   ]
