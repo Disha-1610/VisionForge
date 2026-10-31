@@ -1,5 +1,3 @@
 # GitHub Linguist / language statistics
 # Architecture diagrams are exported documentation artifacts, not application source.
-diagrams/*.html           linguist-documentation
-# Training notebook with heavy embedded outputs; keep language stats focused on source code.
-YOLO11_trainning.ipynb    linguist-documentation
+diagrams/*.html linguist-documentation
